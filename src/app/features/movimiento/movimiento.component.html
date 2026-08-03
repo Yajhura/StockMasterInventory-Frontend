@@ -1,0 +1,334 @@
+<section class="anim-fade-in-up">
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+    <!-- Formulario de movimiento (1/3) -->
+    <aside class="surface-card p-6 self-start">
+      <header class="flex items-center gap-2 mb-5">
+        <svg class="w-5 h-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v6H3zM3 15h18v6H3z"/><path d="M7 6h.01M7 18h.01"/></svg>
+        <h3 class="text-[15px] font-semibold text-slate-900">Registrar Movimiento</h3>
+      </header>
+
+      <form [formGroup]="formMovimiento" (ngSubmit)="procesarMovimiento()" class="space-y-4">
+        <div>
+          <label class="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">Producto</label>
+          <app-dropdown
+            formControlName="productoId"
+            [options]="opcionesProducto()"
+            placeholder="— Buscar producto —"
+            [searchable]="true"
+            (selectionChange)="onProductoSeleccionado($event)"
+          />
+
+          @if (productoDelForm(); as p) {
+            <div class="mt-2 flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200">
+              <div class="flex items-center gap-2 text-xs text-slate-600">
+                <span class="font-mono text-[11px] tracking-tight text-slate-500">{{ p.codigoBarra ?? 'sin codigo' }}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Stock:</span>
+                <span
+                  class="inline-flex items-center justify-center min-w-[2rem] h-6 px-2 rounded-md text-xs font-bold tabular-nums"
+                  [class.bg-rose-50]="(stockDisponible() ?? 0) < (stockMinimoDelForm() ?? 10)"
+                  [class.text-rose-700]="(stockDisponible() ?? 0) < (stockMinimoDelForm() ?? 10)"
+                  [class.bg-emerald-50]="(stockDisponible() ?? 0) >= (stockMinimoDelForm() ?? 10)"
+                  [class.text-emerald-700]="(stockDisponible() ?? 0) >= (stockMinimoDelForm() ?? 10)"
+                  [class.ring-1]="true"
+                  [class.ring-inset]="true"
+                  [class.ring-rose-200]="(stockDisponible() ?? 0) < (stockMinimoDelForm() ?? 10)"
+                  [class.ring-emerald-200]="(stockDisponible() ?? 0) >= (stockMinimoDelForm() ?? 10)"
+                >
+                  {{ p.stockActual }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">Tipo de Movimiento</label>
+          <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-lg">
+            <button
+              type="button"
+              class="flex items-center justify-center gap-2 h-10 rounded-md text-sm font-semibold transition-all duration-200"
+              [class.bg-white]="formMovimiento.get('tipoMovimientoId')?.value === 1"
+              [class.shadow-sm]="formMovimiento.get('tipoMovimientoId')?.value === 1"
+              [class.text-emerald-700]="formMovimiento.get('tipoMovimientoId')?.value === 1"
+              [class.text-slate-500]="formMovimiento.get('tipoMovimientoId')?.value !== 1"
+              (click)="formMovimiento.get('tipoMovimientoId')?.setValue(1)"
+            >
+              <span
+                class="w-2 h-2 rounded-full"
+                [class.bg-emerald-500]="formMovimiento.get('tipoMovimientoId')?.value === 1"
+                [class.bg-slate-300]="formMovimiento.get('tipoMovimientoId')?.value !== 1"
+              ></span>
+              Ingreso
+            </button>
+            <button
+              type="button"
+              class="flex items-center justify-center gap-2 h-10 rounded-md text-sm font-semibold transition-all duration-200"
+              [class.bg-white]="formMovimiento.get('tipoMovimientoId')?.value === 2"
+              [class.shadow-sm]="formMovimiento.get('tipoMovimientoId')?.value === 2"
+              [class.text-rose-600]="formMovimiento.get('tipoMovimientoId')?.value === 2"
+              [class.text-slate-500]="formMovimiento.get('tipoMovimientoId')?.value !== 2"
+              (click)="formMovimiento.get('tipoMovimientoId')?.setValue(2)"
+            >
+              <span
+                class="w-2 h-2 rounded-full"
+                [class.bg-rose-500]="formMovimiento.get('tipoMovimientoId')?.value === 2"
+                [class.bg-slate-300]="formMovimiento.get('tipoMovimientoId')?.value !== 2"
+              ></span>
+              Salida
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">Cantidad</label>
+            <input
+              type="number"
+              min="1"
+              formControlName="cantidad"
+              class="input-base tabular-nums"
+              placeholder="0"
+            />
+            @if (formMovimiento.get('cantidad')?.invalid && formMovimiento.get('cantidad')?.touched) {
+              <p class="text-[11px] text-rose-600 mt-1 font-semibold">La cantidad debe ser mayor a 0.</p>
+            }
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">Precio Unitario</label>
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              formControlName="precioUnitario"
+              class="input-base tabular-nums"
+              placeholder="S/. 0.00"
+            />
+            @if (formMovimiento.get('precioUnitario')?.invalid && formMovimiento.get('precioUnitario')?.touched) {
+              <p class="text-[11px] text-rose-600 mt-1 font-semibold">El precio unitario debe ser mayor a 0.</p>
+            }
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">Cliente (Opcional)</label>
+          <input
+            type="text"
+            formControlName="cliente"
+            class="input-base"
+            placeholder="Ej. Juan Perez"
+            maxlength="250"
+          />
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">Observación (Opcional)</label>
+          <textarea
+            formControlName="observacion"
+            class="input-base h-auto min-h-[120px] py-2.5 resize-none w-full"
+            placeholder="Ej. Lote de reposición mensual"
+            rows="4"
+          ></textarea>
+        </div>
+
+        @if (advertenciaStock().mensaje; as msg) {
+          <div
+            class="flex items-start gap-2.5 px-3 py-2.5 rounded-lg border anim-fade-in-up"
+            [class.bg-rose-50]="advertenciaStock().tipo === 'error'"
+            [class.border-rose-200]="advertenciaStock().tipo === 'error'"
+            [class.text-rose-700]="advertenciaStock().tipo === 'error'"
+            [class.bg-amber-50]="advertenciaStock().tipo === 'warning'"
+            [class.border-amber-200]="advertenciaStock().tipo === 'warning'"
+            [class.text-amber-700]="advertenciaStock().tipo === 'warning'"
+            role="alert"
+          >
+            <svg class="w-4 h-4 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/>
+              <path d="M12 9v4M12 17h.01"/>
+            </svg>
+            <p class="text-xs leading-relaxed">{{ msg }}</p>
+          </div>
+        }
+
+        <button
+          type="submit"
+          class="w-full h-12 rounded-lg bg-blue-600 text-white text-sm font-semibold inline-flex items-center justify-center gap-2 shadow-sm shadow-blue-600/30 hover:bg-blue-700 active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          [disabled]="formMovimiento.invalid || procesando() || advertenciaStock().tipo === 'error'"
+        >
+          @if (procesando()) {
+            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+            Procesando...
+          } @else {
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+            Procesar Movimiento
+          }
+        </button>
+      </form>
+
+      <div class="mt-5 flex items-start gap-2.5 p-3.5 rounded-lg bg-blue-50/60 border border-blue-100">
+        <svg class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-blue-700">Nota de Sistema</p>
+          <p class="mt-0.5 text-xs text-slate-600 leading-relaxed">Los movimientos registrados impactarán automáticamente al valor del inventario y los reportes mensuales.</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Últimos Movimientos (Resumen) (2/3) -->
+    <div class="lg:col-span-2 self-start space-y-4">
+      <div class="surface-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>
+          <h3 class="text-[15px] font-semibold text-slate-900">Últimos Movimientos</h3>
+          <span class="text-xs font-semibold text-slate-400 tabular-nums">({{ historialReciente().length }})</span>
+        </div>
+
+        <div class="flex items-center justify-between sm:justify-end gap-3">
+          <!-- Toggle de Vista: Tarjetas / Tabla -->
+          <div class="inline-flex p-1 bg-slate-100 rounded-lg text-xs font-semibold">
+            <button
+              type="button"
+              class="px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
+              [class.bg-white]="vistaModo() === 'cards'"
+              [class.shadow-sm]="vistaModo() === 'cards'"
+              [class.text-blue-600]="vistaModo() === 'cards'"
+              [class.text-slate-500]="vistaModo() !== 'cards'"
+              (click)="vistaModo.set('cards')"
+            >
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+              Tarjetas
+            </button>
+            <button
+              type="button"
+              class="px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
+              [class.bg-white]="vistaModo() === 'tabla'"
+              [class.shadow-sm]="vistaModo() === 'tabla'"
+              [class.text-blue-600]="vistaModo() === 'tabla'"
+              [class.text-slate-500]="vistaModo() !== 'tabla'"
+              (click)="vistaModo.set('tabla')"
+            >
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              Tabla
+            </button>
+          </div>
+
+          <a class="text-xs font-semibold text-blue-600 hover:text-blue-700 inline-flex items-center gap-1" routerLink="/kardex">
+            Kardex
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- VISTA EN TARJETAS (Móvil / Táctil) -->
+      @if (vistaModo() === 'cards') {
+        @if (historialReciente().length === 0) {
+          <div class="surface-card p-8 text-center text-slate-400">
+            <svg class="w-10 h-10 mx-auto mb-2 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/></svg>
+            <p class="text-xs">
+              {{ sinProductoSeleccionado() ? 'Seleccione un producto para consultar sus movimientos.' : 'Aún no hay movimientos registrados para este producto.' }}
+            </p>
+          </div>
+        } @else {
+          <div class="space-y-3">
+            @for (h of historialReciente(); track h.id) {
+              <article class="surface-card p-4 rounded-xl border border-slate-200/80 hover:shadow-md transition-all relative overflow-hidden">
+                <!-- Barra de acento lateral según tipo -->
+                <div class="absolute left-0 top-0 bottom-0 w-1.5" [class.bg-emerald-500]="h.tipo === 'INGRESO'" [class.bg-rose-500]="h.tipo === 'SALIDA'"></div>
+
+                <div class="pl-1">
+                  <!-- Header: Badge tipo, Producto y Fecha -->
+                  <div class="flex items-center justify-between gap-2 mb-2">
+                    <div class="flex items-center gap-2">
+                      <span [class]="h.tipo === 'INGRESO' ? 'chip chip-success text-[10px] font-extrabold' : 'chip chip-danger text-[10px] font-extrabold'">
+                        {{ h.tipo }}
+                      </span>
+                    </div>
+                    <span class="text-[11px] font-mono text-slate-400 tabular-nums">{{ h.fechaHora }}</span>
+                  </div>
+
+                  <!-- Detalle numérico de la operación -->
+                  <div class="grid grid-cols-3 gap-2 py-2 px-3 rounded-lg bg-slate-50 border border-slate-100 my-2.5">
+                    <div>
+                      <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Cantidad</p>
+                      <p class="text-sm font-extrabold tabular-nums" [class.text-emerald-600]="h.cantidad > 0" [class.text-rose-600]="h.cantidad < 0">
+                        {{ h.cantidad > 0 ? '+' : '' }}{{ h.cantidad }}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">P. Unitario</p>
+                      <p class="text-xs font-bold text-slate-700 tabular-nums">S/. {{ h.precioUnitario | number:'1.2-2' }}</p>
+                    </div>
+
+                    <div>
+                      <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Monto Total</p>
+                      <p class="text-sm font-extrabold text-slate-900 tabular-nums">S/. {{ h.monto | number:'1.2-2' }}</p>
+                    </div>
+                  </div>
+
+                  <!-- Pie: Cliente registrado -->
+                  <div class="flex items-center justify-between text-xs text-slate-500 pt-0.5">
+                    <div class="flex items-center gap-1.5">
+                      <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <span class="font-medium text-slate-700 truncate max-w-[200px]">{{ h.cliente || 'Sin cliente registrado' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      }
+
+      <!-- VISTA EN TABLA (Escritorio / Tradicional) -->
+      @if (vistaModo() === 'tabla') {
+        <app-tabla
+          modo="scroll"
+          class="mt-5"
+          [limiteScroll]="10"
+          [itemsCount]="historialReciente().length"
+          [isEmpty]="historialReciente().length === 0"
+          [mensajeVacio]="sinProductoSeleccionado() ? 'Seleccione un producto para consultar sus movimientos.' : 'Aún no hay movimientos registrados para este producto.'"
+        >
+          <tr table-header class="text-left">
+            <th app-th>Fecha y Hora</th>
+            <th app-th>Tipo</th>
+            <th app-th align="right">Cant.</th>
+            <th app-th align="right">Precio Unit.</th>
+            <th app-th align="right">Total</th>
+            <th app-th>Cliente</th>
+          </tr>
+
+          <ng-container table-body>
+            @for (h of historialReciente(); track h.id) {
+              <tr app-tr>
+                <td app-td extraClass="text-xs text-slate-600 tabular-nums whitespace-nowrap">{{ h.fechaHora }}</td>
+                <td app-td>
+                  <span [class]="h.tipo === 'INGRESO' ? 'chip chip-success' : 'chip chip-danger'">
+                    {{ h.tipo }}
+                  </span>
+                </td>
+                <td app-td align="right" extraClass="text-sm font-bold tabular-nums" [class.text-emerald-600]="h.cantidad > 0" [class.text-rose-600]="h.cantidad < 0">
+                  {{ h.cantidad > 0 ? '+' : '' }}{{ h.cantidad }}
+                </td>
+                <td app-td align="right" extraClass="text-sm text-slate-700 tabular-nums whitespace-nowrap">
+                  S/. {{ h.precioUnitario | number:'1.2-2' }}
+                </td>
+                <td app-td align="right" extraClass="text-sm font-semibold text-slate-900 tabular-nums whitespace-nowrap">
+                  S/. {{ h.monto | number:'1.2-2' }}
+                </td>
+                <td app-td extraClass="text-xs text-slate-500 max-w-[150px] truncate" [title]="h.cliente || ''">
+                  {{ h.cliente || '—' }}
+                </td>
+              </tr>
+            }
+          </ng-container>
+        </app-tabla>
+      }
+    </div>
+  </div>
+
+</section>

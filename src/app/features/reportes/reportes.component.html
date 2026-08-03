@@ -1,0 +1,738 @@
+<div class="space-y-8 animate-fade-in">
+  <!-- HEADER PRINCIPAL -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+        <svg class="w-7 h-7 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        Módulo de Reportes & Analítica
+      </h2>
+      <p class="text-xs text-slate-500 mt-1">Dashboard gerencial con métricas de ventas, rentabilidad, stock crítico y ranking comercial.</p>
+    </div>
+  </div>
+
+  <!-- 1. SECCIÓN: DIVS RESUMEN KPI (INGRESOS, SALIDAS, SALDO NETO) -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+    <!-- DIV INGRESOS -->
+    <div class="surface-card p-5 relative overflow-hidden group hover:border-emerald-200 transition-all">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">
+          Ingresos (Reposición)
+        </span>
+        <div class="w-9 h-9 rounded-xl bg-emerald-100/60 text-emerald-600 grid place-items-center">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7-7 7 7"/></svg>
+        </div>
+      </div>
+      <div class="space-y-1">
+        <div class="text-2xl font-black text-slate-900 tabular-nums">
+          +{{ kpiData().unidadesIngresadas | number }} <span class="text-sm font-semibold text-slate-500">unidades</span>
+        </div>
+        <div class="text-xs font-semibold text-emerald-700 flex items-center gap-1">
+          Inversión total: S/. {{ kpiData().montoIngresos | number:'1.2-2' }}
+        </div>
+      </div>
+      <div class="mt-3 pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex justify-between">
+        <span>Transacciones: {{ kpiData().cantidadIngresos }}</span>
+        <span>Histórico global</span>
+      </div>
+    </div>
+
+    <!-- DIV SALIDAS -->
+    <div class="surface-card p-5 relative overflow-hidden group hover:border-rose-200 transition-all">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-2.5 py-1 rounded-md">
+          Salidas (Ventas)
+        </span>
+        <div class="w-9 h-9 rounded-xl bg-rose-100/60 text-rose-600 grid place-items-center">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7 7 7-7"/></svg>
+        </div>
+      </div>
+      <div class="space-y-1">
+        <div class="text-2xl font-black text-slate-900 tabular-nums">
+          -{{ kpiData().unidadesSalidas | number }} <span class="text-sm font-semibold text-slate-500">unidades</span>
+        </div>
+        <div class="text-xs font-semibold text-rose-700 flex items-center gap-1">
+          Ingreso por ventas: S/. {{ kpiData().montoSalidas | number:'1.2-2' }}
+        </div>
+      </div>
+      <div class="mt-3 pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex justify-between">
+        <span>Transacciones: {{ kpiData().cantidadSalidas }}</span>
+        <span>Histórico global</span>
+      </div>
+    </div>
+
+    <!-- DIV SALDO NETO -->
+    <div class="surface-card p-5 relative overflow-hidden group hover:border-blue-200 transition-all">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">
+          Saldo Neto (Stock)
+        </span>
+        <div class="w-9 h-9 rounded-xl bg-blue-100/60 text-blue-600 grid place-items-center">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        </div>
+      </div>
+      <div class="space-y-1">
+        <div class="text-2xl font-black text-slate-900 tabular-nums" [class.text-rose-600]="kpiData().saldoNeto < 0">
+          {{ kpiData().saldoNeto > 0 ? '+' : '' }}{{ kpiData().saldoNeto | number }} <span class="text-sm font-semibold text-slate-500">unidades</span>
+        </div>
+        <div class="text-xs font-semibold text-slate-700 flex items-center gap-1">
+          Flujo Neto: S/. {{ (kpiData().montoSalidas - kpiData().montoIngresos) | number:'1.2-2' }}
+        </div>
+      </div>
+      <div class="mt-3 pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex justify-between">
+        <span>Balance general</span>
+        <span>Total histórico</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. SECCIÓN: RENTABILIDAD Y MARGEN DE GANANCIA POR PRODUCTO / CATEGORIA -->
+  <section class="surface-card p-6 relative">
+    <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div>
+        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <svg class="w-5 h-5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Rentabilidad y Margen de Ganancia
+        </h3>
+        <p class="text-xs text-slate-500 mt-1">Análisis de ventas vs. costos de inversión por producto y categoría</p>
+      </div>
+
+      <!-- Selector de vista: Por Producto / Por Categoría -->
+      <div class="flex items-center p-1 bg-slate-100 rounded-lg border border-slate-200 self-start sm:self-auto">
+        <button
+          type="button"
+          class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer"
+          [class.bg-white]="tabRentabilidad() === 'producto'"
+          [class.text-slate-900]="tabRentabilidad() === 'producto'"
+          [class.shadow-sm]="tabRentabilidad() === 'producto'"
+          [class.text-slate-600]="tabRentabilidad() !== 'producto'"
+          (click)="tabRentabilidad.set('producto')"
+        >
+          Por Producto
+        </button>
+        <button
+          type="button"
+          class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer"
+          [class.bg-white]="tabRentabilidad() === 'categoria'"
+          [class.text-slate-900]="tabRentabilidad() === 'categoria'"
+          [class.shadow-sm]="tabRentabilidad() === 'categoria'"
+          [class.text-slate-600]="tabRentabilidad() !== 'categoria'"
+          (click)="tabRentabilidad.set('categoria')"
+        >
+          Por Categoría
+        </button>
+      </div>
+    </header>
+
+    <!-- Mini KPIs de Rentabilidad -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="bg-emerald-50/60 border border-emerald-100 rounded-xl p-4">
+        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-700 block">Ventas Totales</span>
+        <span class="text-xl font-extrabold text-emerald-900 block mt-1 tabular-nums">S/. {{ rentabilidadKpis().totalVentas | number:'1.2-2' }}</span>
+        <span class="text-[11px] text-emerald-700 mt-1 block">{{ rentabilidadKpis().unidadesVendidas }} unidades vendidas</span>
+      </div>
+
+      <div class="bg-rose-50/60 border border-rose-100 rounded-xl p-4">
+        <span class="text-xs font-semibold uppercase tracking-wider text-rose-700 block">Costo Compras / Reposición</span>
+        <span class="text-xl font-extrabold text-rose-900 block mt-1 tabular-nums">S/. {{ rentabilidadKpis().totalGasto | number:'1.2-2' }}</span>
+        <span class="text-[11px] text-rose-700 mt-1 block">Inversión en mercadería</span>
+      </div>
+
+      <div class="bg-blue-50/60 border border-blue-100 rounded-xl p-4">
+        <span class="text-xs font-semibold uppercase tracking-wider text-blue-700 block">Ganancia Neta</span>
+        <span class="text-xl font-extrabold text-blue-900 block mt-1 tabular-nums">S/. {{ rentabilidadKpis().gananciaTotal | number:'1.2-2' }}</span>
+        <span class="text-[11px] text-blue-700 mt-1 block">Ventas − Inversión</span>
+      </div>
+
+      <div class="bg-amber-50/60 border border-amber-100 rounded-xl p-4">
+        <span class="text-xs font-semibold uppercase tracking-wider text-amber-700 block">Margen Promedio Global</span>
+        <span class="text-xl font-extrabold text-amber-900 block mt-1 tabular-nums">{{ rentabilidadKpis().margenGlobal }}%</span>
+        <span class="text-[11px] text-amber-700 mt-1 block">Sobre ventas realizadas</span>
+      </div>
+    </div>
+
+    <div class="min-h-[260px] relative transition-opacity duration-200" [class.opacity-50]="cargandoRentabilidad()" [class.pointer-events-none]="cargandoRentabilidad()">
+      @if (tabRentabilidad() === 'producto') {
+        @if (rentabilidadItems().length > 0) {
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  <th class="px-4 py-3">Producto</th>
+                  <th class="px-4 py-3">Categoría / Marca</th>
+                  <th class="px-4 py-3 text-right">Und. Compradas</th>
+                  <th class="px-4 py-3 text-right">Und. Vendidas</th>
+                  <th class="px-4 py-3 text-right">Inversión Gasto (S/)</th>
+                  <th class="px-4 py-3 text-right">Venta Ingreso (S/)</th>
+                  <th class="px-4 py-3 text-right">Ganancia Neta (S/)</th>
+                  <th class="px-4 py-3 text-center">Margen (%)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-sm">
+                @for (item of rentabilidadItems(); track item.productoId) {
+                  <tr class="hover:bg-slate-50/60 transition-colors">
+                    <td class="px-4 py-3 font-medium text-slate-900">
+                      {{ item.productoNombre }}
+                      @if (item.productoCodigo) {
+                        <span class="text-xs text-slate-500 font-normal block">{{ item.productoCodigo }}</span>
+                      }
+                    </td>
+                    <td class="px-4 py-3 text-xs text-slate-600">
+                      <span class="font-medium text-slate-700">{{ item.categoriaNombre || 'Sin Categoría' }}</span>
+                      <span class="text-slate-400 block">{{ item.marcaNombre || 'Sin Marca' }}</span>
+                    </td>
+                    <td class="px-4 py-3 text-right tabular-nums text-slate-700 font-semibold">{{ item.unidadesIngresadas }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums text-emerald-700 font-bold">{{ item.unidadesVendidas }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums text-rose-600">S/. {{ item.totalGastoCompras | number:'1.2-2' }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums text-emerald-600 font-semibold">S/. {{ item.totalIngresoVentas | number:'1.2-2' }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums font-bold" [class.text-emerald-600]="item.gananciaNeta >= 0" [class.text-rose-600]="item.gananciaNeta < 0">
+                      S/. {{ item.gananciaNeta | number:'1.2-2' }}
+                    </td>
+                    <td class="px-4 py-3 text-center tabular-nums">
+                      <span
+                        class="px-2.5 py-1 rounded-full text-xs font-bold inline-block"
+                        [class.bg-emerald-100]="item.margenPorcentaje >= 30"
+                        [class.text-emerald-800]="item.margenPorcentaje >= 30"
+                        [class.bg-amber-100]="item.margenPorcentaje >= 10 && item.margenPorcentaje < 30"
+                        [class.text-amber-800]="item.margenPorcentaje >= 10 && item.margenPorcentaje < 30"
+                        [class.bg-rose-100]="item.margenPorcentaje < 10"
+                        [class.text-rose-800]="item.margenPorcentaje < 10"
+                      >
+                        {{ item.margenPorcentaje }}%
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="p-8 text-center border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-500">
+            No se registraron datos de rentabilidad para los filtros seleccionados.
+          </div>
+        }
+      } @else {
+        <!-- Vista Por Categoría -->
+        @if (rentabilidadPorCategoria().length > 0) {
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  <th class="px-4 py-3">Categoría</th>
+                  <th class="px-4 py-3 text-center">Cant. Productos</th>
+                  <th class="px-4 py-3 text-right">Und. Vendidas</th>
+                  <th class="px-4 py-3 text-right">Inversión Gasto (S/)</th>
+                  <th class="px-4 py-3 text-right">Venta Ingreso (S/)</th>
+                  <th class="px-4 py-3 text-right">Ganancia Neta (S/)</th>
+                  <th class="px-4 py-3 text-center">Margen Promedio (%)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-sm">
+                @for (cat of rentabilidadPorCategoria(); track cat.categoriaNombre) {
+                  <tr class="hover:bg-slate-50/60 transition-colors">
+                    <td class="px-4 py-3 font-bold text-slate-900">{{ cat.categoriaNombre }}</td>
+                    <td class="px-4 py-3 text-center tabular-nums text-slate-600 font-semibold">{{ cat.productosCount }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums text-emerald-700 font-bold">{{ cat.unidadesVendidas }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums text-rose-600">S/. {{ cat.totalGasto | number:'1.2-2' }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums text-emerald-600 font-semibold">S/. {{ cat.totalVentas | number:'1.2-2' }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums font-bold" [class.text-emerald-600]="cat.gananciaNeta >= 0" [class.text-rose-600]="cat.gananciaNeta < 0">
+                      S/. {{ cat.gananciaNeta | number:'1.2-2' }}
+                    </td>
+                    <td class="px-4 py-3 text-center tabular-nums">
+                      <span
+                        class="px-2.5 py-1 rounded-full text-xs font-bold inline-block"
+                        [class.bg-emerald-100]="cat.margenPorcentaje >= 30"
+                        [class.text-emerald-800]="cat.margenPorcentaje >= 30"
+                        [class.bg-amber-100]="cat.margenPorcentaje >= 10 && cat.margenPorcentaje < 30"
+                        [class.text-amber-800]="cat.margenPorcentaje >= 10 && cat.margenPorcentaje < 30"
+                        [class.bg-rose-100]="cat.margenPorcentaje < 10"
+                        [class.text-rose-800]="cat.margenPorcentaje < 10"
+                      >
+                        {{ cat.margenPorcentaje }}%
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="p-8 text-center border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-500">
+            No hay categorías registradas en este periodo.
+          </div>
+        }
+      }
+
+      @if (cargandoRentabilidad()) {
+        <div class="absolute inset-0 bg-white/60 backdrop-blur-[1px] grid place-items-center rounded-xl z-10">
+          <div class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-lg">
+            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+            Calculando márgenes...
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- 3. SECCIÓN: TOP PRODUCTOS MÁS VENDIDOS -->
+  <section class="surface-card p-6 relative">
+    <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div>
+        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <svg class="w-5 h-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Top Productos Más Vendidos
+        </h3>
+        <p class="text-xs text-slate-500 mt-1">Ranking comercial por volumen de ventas de unidades</p>
+      </div>
+
+      <!-- Selector de periodo para Top Vendidos -->
+      <div class="flex items-center p-1 bg-slate-100 rounded-lg border border-slate-200 self-start sm:self-auto">
+        <button
+          type="button"
+          class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer"
+          [class.bg-white]="topRango() === '7d'"
+          [class.text-slate-900]="topRango() === '7d'"
+          [class.shadow-sm]="topRango() === '7d'"
+          [class.text-slate-600]="topRango() !== '7d'"
+          (click)="onTopRangoChange('7d')"
+        >
+          Últimos 7 Días
+        </button>
+        <button
+          type="button"
+          class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer"
+          [class.bg-white]="topRango() === 'mes'"
+          [class.text-slate-900]="topRango() === 'mes'"
+          [class.shadow-sm]="topRango() === 'mes'"
+          [class.text-slate-600]="topRango() !== 'mes'"
+          (click)="onTopRangoChange('mes')"
+        >
+          Este Mes
+        </button>
+        <button
+          type="button"
+          class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer"
+          [class.bg-white]="topRango() === 'anio'"
+          [class.text-slate-900]="topRango() === 'anio'"
+          [class.shadow-sm]="topRango() === 'anio'"
+          [class.text-slate-600]="topRango() !== 'anio'"
+          (click)="onTopRangoChange('anio')"
+        >
+          Este Año
+        </button>
+      </div>
+    </header>
+
+    <!-- CONTENEDOR CON ALTURA FIJA Y SIN SALTO DE MAQUETACIÓN -->
+    <div class="min-h-[220px] relative transition-opacity duration-200" [class.opacity-50]="cargandoTop()" [class.pointer-events-none]="cargandoTop()">
+      @if (topVendidos().length > 0) {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          @for (item of topVendidos(); track item.productoId; let i = $index) {
+            <div class="border border-slate-200 hover:border-blue-200 rounded-xl p-4 transition-all hover:shadow-md bg-white flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-bold text-xs grid place-items-center">
+                    #{{ i + 1 }}
+                  </span>
+                  <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                    {{ item.cantidadVendida }} und. vendidas
+                  </span>
+                </div>
+                <h4 class="text-sm font-bold text-slate-900 line-clamp-2" [title]="item.productoNombre">
+                  {{ item.productoNombre }}
+                </h4>
+                <p class="text-xs text-slate-500 mt-1">
+                  {{ item.categoriaNombre || 'Sin Categoría' }} • {{ item.marcaNombre || 'Sin Marca' }}
+                </p>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                <span class="text-slate-500">Total Recaudado:</span>
+                <span class="font-extrabold text-slate-900 tabular-nums">S/. {{ item.montoVendido | number:'1.2-2' }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="p-8 text-center border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-500">
+          No hay ventas registradas en el periodo seleccionado.
+        </div>
+      }
+
+      @if (cargandoTop()) {
+        <div class="absolute inset-0 bg-white/60 backdrop-blur-[1px] grid place-items-center rounded-xl z-10">
+          <div class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-lg">
+            <svg class="w-4 h-4 animate-spin text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+            Cargando ranking de ventas...
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- 4. SECCIÓN: TOP CLIENTES E HISTORIAL DE VENTAS POR CLIENTE -->
+  <section class="surface-card p-6 relative">
+    <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div>
+        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <svg class="w-5 h-5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Top Clientes e Historial de Compras
+        </h3>
+        <p class="text-xs text-slate-500 mt-1">Ranking de principales compradores y consulta detallada de su historial de pedidos</p>
+      </div>
+    </header>
+
+    <div class="min-h-[260px] relative transition-opacity duration-200" [class.opacity-50]="cargandoTopClientes()" [class.pointer-events-none]="cargandoTopClientes()">
+      @if (topClientesList().length > 0) {
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                <th class="px-4 py-3">#</th>
+                <th class="px-4 py-3">Cliente</th>
+                <th class="px-4 py-3 text-center">N° Transacciones</th>
+                <th class="px-4 py-3 text-right">Und. Compradas</th>
+                <th class="px-4 py-3 text-right">Monto Total Comprado (S/)</th>
+                <th class="px-4 py-3 text-center">Última Compra</th>
+                <th class="px-4 py-3 text-center">Acción</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-sm">
+              @for (c of topClientesList(); track c.clienteNombre; let i = $index) {
+                <tr class="hover:bg-slate-50/60 transition-colors">
+                  <td class="px-4 py-3 font-bold text-slate-400">#{{ i + 1 }}</td>
+                  <td class="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-full bg-indigo-50 text-indigo-700 text-xs font-black grid place-items-center uppercase">
+                      {{ c.clienteNombre.substring(0, 2) }}
+                    </span>
+                    <span>{{ c.clienteNombre }}</span>
+                  </td>
+                  <td class="px-4 py-3 text-center tabular-nums text-slate-700 font-semibold">{{ c.totalTransacciones }} pedidos</td>
+                  <td class="px-4 py-3 text-right tabular-nums text-emerald-700 font-bold">{{ c.unidadesCompradas }}</td>
+                  <td class="px-4 py-3 text-right tabular-nums text-indigo-700 font-extrabold">S/. {{ c.montoTotalComprado | number:'1.2-2' }}</td>
+                  <td class="px-4 py-3 text-center text-xs text-slate-500 tabular-nums">{{ formatearFecha(c.ultimaCompra) }}</td>
+                  <td class="px-4 py-3 text-center">
+                    <button
+                      type="button"
+                      class="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-bold transition-colors cursor-pointer"
+                      (click)="verHistorialCliente(c.clienteNombre)"
+                    >
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                      Ver Historial
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="p-8 text-center border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-500">
+          No hay compras registradas a clientes con nombre en el periodo seleccionado.
+        </div>
+      }
+
+      @if (cargandoTopClientes()) {
+        <div class="absolute inset-0 bg-white/60 backdrop-blur-[1px] grid place-items-center rounded-xl z-10">
+          <div class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-lg">
+            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+            Cargando ranking de clientes...
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- 5. SECCIÓN: CONTROL DE STOCK CRÍTICO Y PRODUCTOS SIN MOVIMIENTO (ESTANCADOS) -->
+  <section class="surface-card p-6 relative">
+    <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div>
+        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <svg class="w-5 h-5 text-rose-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Control de Stock Crítico y Productos Sin Movimiento
+        </h3>
+        <p class="text-xs text-slate-500 mt-1">Alerta temprana de inventario bajo / agotado y capital estancado sin rotación comercial</p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        @if (tabStock() === 'estancado') {
+          <div class="flex items-center p-1 bg-slate-100 rounded-lg border border-slate-200">
+            <button
+              type="button"
+              class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer"
+              [class.bg-white]="diasEstancado() === 30"
+              [class.text-slate-900]="diasEstancado() === 30"
+              [class.shadow-sm]="diasEstancado() === 30"
+              [class.text-slate-600]="diasEstancado() !== 30"
+              (click)="onDiasEstancadoChange(30)"
+            >
+              +30 Días
+            </button>
+            <button
+              type="button"
+              class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer"
+              [class.bg-white]="diasEstancado() === 60"
+              [class.text-slate-900]="diasEstancado() === 60"
+              [class.shadow-sm]="diasEstancado() === 60"
+              [class.text-slate-600]="diasEstancado() !== 60"
+              (click)="onDiasEstancadoChange(60)"
+            >
+              +60 Días
+            </button>
+            <button
+              type="button"
+              class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer"
+              [class.bg-white]="diasEstancado() === 90"
+              [class.text-slate-900]="diasEstancado() === 90"
+              [class.shadow-sm]="diasEstancado() === 90"
+              [class.text-slate-600]="diasEstancado() !== 90"
+              (click)="onDiasEstancadoChange(90)"
+            >
+              +90 Días
+            </button>
+          </div>
+        }
+
+        <div class="flex items-center p-1 bg-slate-100 rounded-lg border border-slate-200">
+          <button
+            type="button"
+            class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer"
+            [class.bg-white]="tabStock() === 'critico'"
+            [class.text-slate-900]="tabStock() === 'critico'"
+            [class.shadow-sm]="tabStock() === 'critico'"
+            [class.text-slate-600]="tabStock() !== 'critico'"
+            (click)="tabStock.set('critico')"
+          >
+            Stock Crítico / Agotado
+          </button>
+          <button
+            type="button"
+            class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer"
+            [class.bg-white]="tabStock() === 'estancado'"
+            [class.text-slate-900]="tabStock() === 'estancado'"
+            [class.shadow-sm]="tabStock() === 'estancado'"
+            [class.text-slate-600]="tabStock() !== 'estancado'"
+            (click)="tabStock.set('estancado')"
+          >
+            Productos Sin Movimiento
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Mini KPIs de Stock Crítico -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="bg-rose-50/60 border border-rose-100 rounded-xl p-4">
+        <span class="text-xs font-semibold uppercase tracking-wider text-rose-700 block">Productos Agotados</span>
+        <span class="text-xl font-extrabold text-rose-900 block mt-1 tabular-nums">{{ stockCriticoData()?.totalAgotados ?? 0 }}</span>
+        <span class="text-[11px] text-rose-700 mt-1 block">Stock actual = 0 u.</span>
+      </div>
+
+      <div class="bg-amber-50/60 border border-amber-100 rounded-xl p-4">
+        <span class="text-xs font-semibold uppercase tracking-wider text-amber-700 block">Stock Bajo / Crítico</span>
+        <span class="text-xl font-extrabold text-amber-900 block mt-1 tabular-nums">{{ stockCriticoData()?.totalCriticos ?? 0 }}</span>
+        <span class="text-[11px] text-amber-700 mt-1 block">Por debajo del stock mínimo</span>
+      </div>
+
+      <div class="bg-indigo-50/60 border border-indigo-100 rounded-xl p-4">
+        <span class="text-xs font-semibold uppercase tracking-wider text-indigo-700 block">Productos Estancados</span>
+        <span class="text-xl font-extrabold text-indigo-900 block mt-1 tabular-nums">{{ stockCriticoData()?.totalEstancados ?? 0 }}</span>
+        <span class="text-[11px] text-indigo-700 mt-1 block">Sin ventas en {{ diasEstancado() }}+ días</span>
+      </div>
+
+      <div class="bg-slate-100/80 border border-slate-200 rounded-xl p-4">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-700 block">Capital Estancado</span>
+        <span class="text-xl font-extrabold text-slate-900 block mt-1 tabular-nums">S/. {{ stockCriticoData()?.capitalEstancadoTotal ?? 0 | number:'1.2-2' }}</span>
+        <span class="text-[11px] text-slate-600 mt-1 block">Valor en costo de compra</span>
+      </div>
+    </div>
+
+    <!-- CONTENEDOR CON ALTURA CONSTANTE Y SIN SALTO DE MAQUETACIÓN -->
+    <div class="min-h-[300px] relative transition-opacity duration-200" [class.opacity-50]="cargandoStockCritico()" [class.pointer-events-none]="cargandoStockCritico()">
+      @if (tabStock() === 'critico') {
+        @if ((stockCriticoData()?.stockCritico?.length ?? 0) > 0) {
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  <th class="px-4 py-3">Estado</th>
+                  <th class="px-4 py-3">Producto</th>
+                  <th class="px-4 py-3">Categoría / Marca</th>
+                  <th class="px-4 py-3 text-right">Stock Actual</th>
+                  <th class="px-4 py-3 text-right">Stock Mínimo</th>
+                  <th class="px-4 py-3 text-right">Déficit Reposición</th>
+                  <th class="px-4 py-3 text-right">Costo Inversión (S/)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-sm">
+                @for (item of stockCriticoData()?.stockCritico; track item.productoId) {
+                  <tr class="hover:bg-slate-50/60 transition-colors">
+                    <td class="px-4 py-3">
+                      <span [class]="item.stockActual <= 0 ? 'chip chip-danger' : 'chip chip-warning'">
+                        {{ item.stockActual <= 0 ? 'AGOTADO' : 'CRÍTICO' }}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3 font-bold text-slate-900">
+                      {{ item.productoNombre }}
+                      @if (item.productoCodigo) {
+                        <span class="text-xs text-slate-500 font-normal block">{{ item.productoCodigo }}</span>
+                      }
+                    </td>
+                    <td class="px-4 py-3 text-xs text-slate-600">
+                      <span class="font-medium text-slate-700">{{ item.categoriaNombre || 'Sin Categoría' }}</span>
+                      <span class="text-slate-400 block">{{ item.marcaNombre || 'Sin Marca' }}</span>
+                    </td>
+                    <td class="px-4 py-3 text-right tabular-nums font-black" [class.text-rose-600]="item.stockActual <= 0" [class.text-amber-600]="item.stockActual > 0">
+                      {{ item.stockActual }} u.
+                    </td>
+                    <td class="px-4 py-3 text-right tabular-nums text-slate-600 font-semibold">{{ item.stockMinimo }} u.</td>
+                    <td class="px-4 py-3 text-right tabular-nums font-bold text-rose-600">+{{ item.deficit }} u.</td>
+                    <td class="px-4 py-3 text-right tabular-nums text-slate-700 font-semibold">S/. {{ item.valorInversion | number:'1.2-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="p-12 text-center border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-500">
+            ¡Excelente! No hay productos con stock bajo o agotado en este momento.
+          </div>
+        }
+      } @else {
+        @if ((stockCriticoData()?.productosEstancados?.length ?? 0) > 0) {
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  <th class="px-4 py-3">Días Estancado</th>
+                  <th class="px-4 py-3">Producto</th>
+                  <th class="px-4 py-3">Categoría / Marca</th>
+                  <th class="px-4 py-3 text-right">Stock en Depósito</th>
+                  <th class="px-4 py-3 text-center">Última Venta</th>
+                  <th class="px-4 py-3 text-right">Capital Estancado (S/)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-sm">
+                @for (item of stockCriticoData()?.productosEstancados; track item.productoId) {
+                  <tr class="hover:bg-slate-50/60 transition-colors">
+                    <td class="px-4 py-3">
+                      <span class="px-2.5 py-1 rounded-full text-xs font-extrabold bg-indigo-100 text-indigo-800">
+                        {{ item.diasSinMovimiento }} días
+                      </span>
+                    </td>
+                    <td class="px-4 py-3 font-bold text-slate-900">
+                      {{ item.productoNombre }}
+                      @if (item.productoCodigo) {
+                        <span class="text-xs text-slate-500 font-normal block">{{ item.productoCodigo }}</span>
+                      }
+                    </td>
+                    <td class="px-4 py-3 text-xs text-slate-600">
+                      <span class="font-medium text-slate-700">{{ item.categoriaNombre || 'Sin Categoría' }}</span>
+                      <span class="text-slate-400 block">{{ item.marcaNombre || 'Sin Marca' }}</span>
+                    </td>
+                    <td class="px-4 py-3 text-right tabular-nums text-slate-900 font-extrabold">{{ item.stockActual }} u.</td>
+                    <td class="px-4 py-3 text-center text-xs text-slate-500 tabular-nums">{{ formatearFecha(item.ultimoMovimientoFecha) }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums font-extrabold text-indigo-700">S/. {{ item.capitalEstancado | number:'1.2-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="p-12 text-center border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-500">
+            No se encontraron productos estancados sin movimiento en los últimos {{ diasEstancado() }} días.
+          </div>
+        }
+      }
+
+      @if (cargandoStockCritico()) {
+        <div class="absolute inset-0 bg-white/60 backdrop-blur-[1px] grid place-items-center rounded-xl z-10">
+          <div class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-lg">
+            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+            Cargando inventario crítico...
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+</div>
+
+<!-- MODAL DE HISTORIAL DE COMPRAS DEL CLIENTE -->
+@if (isClienteModalOpen()) {
+  <app-modal-overlay [open]="isClienteModalOpen()" containerClass="w-full max-w-4xl max-h-[90vh] overflow-hidden" (close)="cerrarClienteModal()">
+    <div class="flex flex-col h-full max-h-[90vh]">
+      <header class="px-6 py-4 border-b border-slate-200 flex items-center justify-between gap-4 flex-shrink-0">
+        <div class="min-w-0 flex-1">
+          <h3 class="text-sm font-bold text-slate-900 inline-flex items-center gap-2">
+            <svg class="w-4 h-4 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            Historial de Ventas: {{ clienteModal() }}
+          </h3>
+          <p class="text-[11px] text-slate-500 mt-0.5 tabular-nums">
+            {{ historialCliente().length }} pedidos registrados
+          </p>
+        </div>
+        <button
+          type="button"
+          class="grid place-items-center w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+          (click)="cerrarClienteModal()"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </header>
+
+      <div class="p-6 overflow-y-auto flex-1 min-h-0">
+        @if (cargandoHistorialCliente()) {
+          <div class="flex items-center justify-center gap-2 py-8 text-sm text-slate-500">
+            <svg class="w-4 h-4 animate-spin text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+            Cargando historial de compras...
+          </div>
+        } @else {
+          @if (historialCliente().length > 0) {
+            <div class="rounded-xl border border-slate-200 overflow-hidden">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    <th class="px-4 py-3">Fecha y Hora</th>
+                    <th class="px-4 py-3">Producto Vendido</th>
+                    <th class="px-4 py-3 text-right">Cantidad</th>
+                    <th class="px-4 py-3 text-right">Precio Unit.</th>
+                    <th class="px-4 py-3 text-right">Monto Total</th>
+                    <th class="px-4 py-3">Atendido Por</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-sm">
+                  @for (m of historialCliente(); track m.id) {
+                    <tr class="hover:bg-slate-50/60 transition-colors">
+                      <td class="px-4 py-3 text-xs text-slate-600 tabular-nums whitespace-nowrap">{{ formatearFecha(m.fecha) }}</td>
+                      <td class="px-4 py-3 font-medium text-slate-900">{{ resolverNombreProducto(m) }}</td>
+                      <td class="px-4 py-3 text-right tabular-nums font-bold text-rose-600">-{{ m.cantidad }}</td>
+                      <td class="px-4 py-3 text-right tabular-nums text-slate-700">S/. {{ m.precioUnitario | number:'1.2-2' }}</td>
+                      <td class="px-4 py-3 text-right tabular-nums font-semibold text-slate-900">S/. {{ (m.cantidad * m.precioUnitario) | number:'1.2-2' }}</td>
+                      <td class="px-4 py-3 text-xs text-slate-500">{{ m.creadoPorNombre || 'ADMIN' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <div class="p-8 text-center border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-500">
+              No se encontraron detalles de compras para este cliente.
+            </div>
+          }
+        }
+      </div>
+
+      <footer class="px-6 py-3 border-t border-slate-200 bg-slate-50 flex justify-end flex-shrink-0">
+        <button
+          type="button"
+          class="btn-secondary h-9 px-4 text-xs font-semibold"
+          (click)="cerrarClienteModal()"
+        >
+          Cerrar
+        </button>
+      </footer>
+    </div>
+  </app-modal-overlay>
+}

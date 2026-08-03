@@ -1,0 +1,398 @@
+<section class="anim-fade-in-up">
+
+  <!-- ============================================ -->
+  <!--  Barra de filtros                         -->
+  <!-- ============================================ -->
+  <!-- ============================================ -->
+  <!--  Botón Nuevo Producto                        -->
+  <!-- ============================================ -->
+  <div class=" p-4 mb-4 flex justify-end">
+    <button
+      type="button"
+      class="btn-primary h-10"
+      [disabled]="mostrarPapelera()"
+      (click)="abrirModal()"
+    >
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Nuevo Producto
+    </button>
+  </div>
+
+  <!-- ============================================ -->
+  <!--  Barra de filtros y búsqueda                -->
+  <!-- ============================================ -->
+  <div class="surface-card p-4 mb-5">
+    <div class="flex flex-col gap-4">
+
+      <!-- Fila 1: Buscador y Acciones -->
+      <div class="flex flex-col md:flex-row md:items-center gap-4">
+        <!-- Buscador -->
+        <div class="relative flex-grow min-w-[320px]">
+          <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input
+            type="search"
+            [ngModel]="filtro()"
+            (ngModelChange)="onFiltroChange($event)"
+            (keyup.enter)="refrescar(1)"
+            (search)="onFiltroChange($any($event.target).value); refrescar(1)"
+            name="filtroProducto"
+            autocomplete="off"
+            class="input-base h-10 pl-10 pr-9 w-full"
+            placeholder="Buscar por nombre..."
+          />
+          <!-- @if (buscando()) {
+            <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-600 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+          } @else if (filtro()) {
+            <button
+              type="button"
+              class="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-6 h-6 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              (click)="onFiltroChange('')"
+              aria-label="Limpiar busqueda"
+              title="Limpiar"
+            >
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          } -->
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center gap-2 flex-wrap md:flex-nowrap flex-shrink-0">
+
+          <button type="button" class="btn-primary h-10" (click)="refrescar(1)">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+            Buscar
+          </button>
+
+          <button
+            type="button"
+            class="btn-secondary h-10"
+            (click)="limpiarFiltros()"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 2v6h-6"/>
+              <path d="M3 11a9 9 0 0 1 15.55-5.36L21 8"/>
+              <path d="M3 22v-6h6"/>
+              <path d="M21 13a9 9 0 0 1-15.55 5.36L3 16"/>
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-sm"
+            [ngClass]="mostrarPapelera() ? 'bg-rose-600 text-white hover:bg-rose-700 ring-2 ring-rose-600/20' : 'bg-white border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'"
+            (click)="togglePapelera()"
+            [title]="mostrarPapelera() ? 'Ver productos activos' : 'Ver papelera de reciclaje'"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              @if (mostrarPapelera()) {
+                <path d="M3 3h18v4H3zM5 7l1 13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-13M10 11v6M14 11v6"/>
+              } @else {
+                <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+              }
+            </svg>
+            {{ mostrarPapelera() ? 'Papelera Activa' : 'Papelera' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Fila 2: Filtros Adicionales (Marca, Categoría, Stock Bajo) -->
+      <div class="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4">
+        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-2">Filtros:</span>
+
+        <!-- Selector marca -->
+        <app-dropdown
+          class="w-full sm:w-56"
+          [options]="opcionesMarcaFiltro()"
+          [ngModel]="filtroMarcaValue()"
+          (ngModelChange)="setFiltroMarca($event)"
+          placeholder="Todas las marcas"
+        />
+
+        <!-- Selector categoria -->
+        <app-dropdown
+          class="w-full sm:w-56"
+          [options]="opcionesCategoriaFiltro()"
+          [ngModel]="filtroCategoriaValue()"
+          (ngModelChange)="setFiltroCategoria($event)"
+          placeholder="Todas las categorías"
+        />
+
+        <!-- Stock bajo -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-500 whitespace-nowrap">Stock ≤</span>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            [ngModel]="filtroStockMax() ?? ''"
+            (ngModelChange)="setFiltroStockMax($event)"
+            class="w-20 h-10 px-2.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 tabular-nums"
+            placeholder="10"
+          />
+        </div>
+      </div>
+
+      <!-- Fila 2: Chips de filtros activos + atributos -->
+      @if (hayFiltros() || atributos().length > 0) {
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Chips activos -->
+          @if (filtroMarcaId() !== undefined) {
+            <span class="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[11px] font-semibold ring-1 ring-inset ring-blue-200">
+              Marca: {{ nombreMarcaDeFiltro(filtroMarcaId()) }}
+              <button type="button" class="grid place-items-center w-4 h-4 rounded-full hover:bg-blue-200" (click)="setFiltroMarca('all')" aria-label="Quitar marca">
+                <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </span>
+          }
+          @if (filtroCategoriaId() !== undefined) {
+            <span class="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[11px] font-semibold ring-1 ring-inset ring-blue-200">
+              Categoría: {{ nombreCategoriaDeFiltro(filtroCategoriaId()) }}
+              <button type="button" class="grid place-items-center w-4 h-4 rounded-full hover:bg-blue-200" (click)="setFiltroCategoria('all')" aria-label="Quitar categoría">
+                <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </span>
+          }
+          @for (fa of filtroAtributos(); track $index) {
+            <span class="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[11px] font-semibold ring-1 ring-inset ring-blue-200">
+              {{ nombreAtributo(fa.atributoId) }}: {{ fa.valor }}
+              <button type="button" class="grid place-items-center w-4 h-4 rounded-full hover:bg-blue-200" (click)="quitarFiltroAtributo($index)" aria-label="Quitar filtro">
+                <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </span>
+          }
+          @if (filtroStockMax() !== null) {
+            <span class="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-semibold ring-1 ring-inset ring-amber-200">
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+              Stock ≤ {{ filtroStockMax() }}
+              <button type="button" class="grid place-items-center w-4 h-4 rounded-full hover:bg-amber-200" (click)="setFiltroStockMax(null)" aria-label="Quitar filtro de stock bajo">
+                <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </span>
+          }
+
+          <!-- Atributos como chips selecionables -->
+          @if (atributos().length > 0) {
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Atributos:</span>
+              @for (a of atributos(); track a.id) {
+                <span class="text-[11px] text-slate-500">{{ a.nombre }}:</span>
+                @for (v of valoresPara(a.id); track v.id) {
+                  <button
+                    type="button"
+                    class="px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors"
+                    [ngClass]="isFiltroAtributoActivo(a.id, v.nombre) ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                    (click)="toggleFiltroAtributo(a.id, v.nombre)"
+                  >
+                    {{ v.nombre }}
+                  </button>
+                }
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!--  Listado de productos                      -->
+  <!-- ============================================ -->
+  <app-tabla
+    modo="paginado"
+    [limiteScroll]="10"
+    [itemsCount]="productos().length"
+    [cargando]="buscando()"
+    [isEmpty]="productos().length === 0"
+    [mensajeVacio]="mensajeVacio()"
+    [titulo]="mostrarPapelera() ? 'Productos Eliminados' : 'Inventario de Accesorios'"
+    [subtitulo]="totalItems() > 0 ? (totalItems() + (totalItems() === 1 ? ' producto' : ' productos') + (filtro() ? ' · filtrando por &quot;' + filtro() + '&quot;' : '')) : ''"
+    [page]="page()"
+    [totalPages]="totalPages()"
+    [totalItems]="totalItems()"
+    [pageSize]="pageSize()"
+    (pageChange)="irAPagina($event)"
+  >
+    <tr table-header class="text-left">
+      <th app-th>
+        <button type="button" class="relative text-left flex items-center gap-1 hover:text-slate-900 transition-colors" (click)="ordenarPorColumna('nombre')">
+          Producto
+          @if (ordenarPor() === 'nombre') {
+            <svg class="w-3 h-3" [class.rotate-180]="ordenarDir() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          }
+        </button>
+      </th>
+      <th app-th>Marca</th>
+      <th app-th>Categoría</th>
+      <th app-th align="right">
+        <button type="button" class="relative text-right flex items-center justify-end gap-1 hover:text-slate-900 transition-colors ml-auto" (click)="ordenarPorColumna('stock')">
+          Stock
+          @if (ordenarPor() === 'stock') {
+            <svg class="w-3 h-3" [class.rotate-180]="ordenarDir() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          }
+        </button>
+      </th>
+      <th app-th align="right">
+        <button type="button" class="relative text-right flex items-center justify-end gap-1 hover:text-slate-900 transition-colors ml-auto" (click)="ordenarPorColumna('precio')">
+          Precio
+          @if (ordenarPor() === 'precio') {
+            <svg class="w-3 h-3" [class.rotate-180]="ordenarDir() === 'desc'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          }
+        </button>
+      </th>
+      <th app-th align="center" extraClass="pr-4">Acciones</th>
+    </tr>
+
+    <ng-container table-body>
+      @for (p of productos(); track p.id) {
+        <tr
+          app-tr
+          [clickable]="!p.eliminado"
+          [hoverable]="!p.eliminado"
+          [extraClass]="p.eliminado ? 'bg-rose-50/90 hover:bg-rose-100/70 cursor-default border-b border-rose-100' : ''"
+          (click)="!p.eliminado && toggleExpandir(p)"
+        >
+          <td app-td>
+            <div class="flex items-center gap-3 min-w-0">
+              @if (p.imagenDataUrl) {
+                <img [src]="p.imagenDataUrl" alt="" class="w-10 h-10 rounded-lg object-cover ring-1 ring-slate-200 flex-shrink-0" />
+              } @else {
+                <div class="w-10 h-10 rounded-lg bg-slate-100 ring-1 ring-slate-200 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>
+                </div>
+              }
+              <div class="flex flex-col min-w-0 flex-1">
+                <div class="flex items-start gap-2 min-w-0">
+                  <span
+                    class="text-sm font-semibold leading-snug line-clamp-2 min-w-0 flex-1"
+                    [ngClass]="p.eliminado ? 'text-slate-600 line-through decoration-rose-400' : 'text-slate-900'"
+                    [title]="displayName(p)"
+                  >{{ displayName(p) }}</span>
+                  @if (p.eliminado) {
+                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ring-1 ring-inset ring-rose-200">
+                      <svg class="w-3 h-3 text-rose-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                      Eliminado
+                    </span>
+                  }
+                </div>
+                <div class="text-[11px] text-slate-500 mt-0.5 truncate font-mono tracking-tight flex items-center gap-1">
+                  <span>{{ nombreMarca(p.marcaId) }}</span>
+                  @if (p.codigoBarra) {
+                    <span class="text-slate-300">·</span>
+                    <span>SKU {{ p.codigoBarra }}</span>
+                  }
+                </div>
+                @if (p.eliminado && p.modificadoEn) {
+                  <span class="text-[10px] text-rose-600 mt-0.5">
+                    eliminado {{ p.modificadoPorNombre ? 'por ' + p.modificadoPorNombre : '' }} · {{ formatearFechaCorta(p.modificadoEn) }}
+                  </span>
+                }
+              </div>
+            </div>
+          </td>
+          <td app-td>
+            <span class="brand-pill bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-100">
+              {{ nombreMarca(p.marcaId) }}
+            </span>
+          </td>
+          <td app-td>
+            <span class="text-[12px] text-slate-700 truncate block" [title]="nombreCategoria(p.categoriaId)">
+              {{ nombreCategoria(p.categoriaId) }}
+            </span>
+          </td>
+          <td app-td align="right">
+            <span
+              class="inline-block min-w-[2.5rem] text-sm font-bold tabular-nums"
+              [class.text-rose-600]="p.stockActual < p.stockMinimo"
+              [class.text-slate-900]="p.stockActual >= p.stockMinimo"
+            >
+              {{ p.stockActual }}
+            </span>
+          </td>
+          <td app-td align="right" extraClass="text-sm font-semibold text-slate-700 tabular-nums">
+            S/. {{ p.precioVentaSugerido | number:'1.2-2' }}
+          </td>
+          <td app-td align="right" extraClass="pr-4">
+            <div class="flex items-center justify-end gap-1.5">
+              <button
+                type="button"
+                class="grid place-items-center w-8 h-8 rounded-lg transition-colors"
+                [class.bg-blue-50]="state.kardexProductoId() === p.id"
+                [class.text-blue-600]="state.kardexProductoId() === p.id"
+                [class.text-slate-400]="state.kardexProductoId() !== p.id"
+                [class.hover:bg-slate-100]="state.kardexProductoId() !== p.id"
+                [class.hover:text-slate-700]="state.kardexProductoId() !== p.id"
+                [attr.aria-label]="(state.kardexProductoId() === p.id ? 'Cerrar' : 'Ver') + ' Kardex de ' + displayName(p)"
+                [attr.aria-expanded]="state.kardexProductoId() === p.id"
+                [title]="state.kardexProductoId() === p.id ? 'Cerrar Kardex' : 'Ver Kardex'"
+                (click)="toggleExpandir(p); $event.stopPropagation()"
+              >
+                <svg
+                  class="w-4 h-4"
+                  [class.text-blue-600]="state.kardexProductoId() === p.id"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10 9 9 9 8 9"/>
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="grid place-items-center w-8 h-8 rounded-lg transition-colors"
+                [ngClass]="p.eliminado ? 'text-slate-300 cursor-not-allowed' : 'text-slate-500 hover:bg-blue-50 hover:text-blue-600'"
+                [disabled]="p.eliminado"
+                [attr.aria-label]="'Editar ' + displayName(p)"
+                [title]="p.eliminado ? 'No se puede editar un producto eliminado' : 'Editar producto'"
+                (click)="editarProducto(p); $event.stopPropagation()"
+              >
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              @if (p.eliminado && mostrarPapelera()) {
+                <button
+                  type="button"
+                  class="grid place-items-center w-8 h-8 rounded-lg text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                  [attr.aria-label]="'Restaurar ' + displayName(p)"
+                  title="Restaurar producto"
+                  (click)="restaurarProducto(p); $event.stopPropagation()"
+                >
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                </button>
+              }
+              <button
+                type="button"
+                class="grid place-items-center w-8 h-8 rounded-lg transition-colors"
+                [ngClass]="p.eliminado ? 'text-slate-300 cursor-not-allowed' : 'text-slate-500 hover:bg-rose-50 hover:text-rose-600'"
+                [disabled]="p.eliminado"
+                [attr.aria-label]="'Eliminar ' + displayName(p)"
+                [title]="p.eliminado ? 'Este producto ya está eliminado' : 'Eliminar producto'"
+                (click)="confirmarEliminar(p); $event.stopPropagation()"
+              >
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+              <span class="mx-1 w-px h-5 bg-slate-200" aria-hidden="true"></span>
+            </div>
+          </td>
+        </tr>
+      }
+    </ng-container>
+  </app-tabla>
+
+</section>
+
+<app-confirm-dialog
+  [visible]="confirmandoEliminar()"
+  [variant]="'danger'"
+  titulo="Eliminar producto"
+  [mensaje]="mensajeEliminar()"
+  textoConfirmar="Eliminar"
+  textoCancelar="Cancelar"
+  [cargando]="eliminando()"
+  (confirmar)="ejecutarEliminar()"
+  (cancelar)="confirmandoEliminar.set(false)"
+/>

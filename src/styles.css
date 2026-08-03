@@ -1,0 +1,226 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --surface: #f8f9ff;
+    --surface-container-lowest: #ffffff;
+    --surface-container-low: #eff4ff;
+    --surface-container: #e5eeff;
+    --surface-container-high: #dce9ff;
+    --surface-container-highest: #d3e4fe;
+    --on-surface: #0b1c30;
+    --on-surface-variant: #434655;
+    --inverse-surface: #213145;
+    --inverse-on-surface: #eaf1ff;
+    --outline: #737686;
+    --outline-variant: #c3c6d7;
+    --primary: #2563eb;
+    --on-primary: #ffffff;
+    --primary-container: #dbe1ff;
+    --on-primary-container: #00174b;
+    --secondary: #10b981;
+    --on-secondary: #ffffff;
+    --secondary-container: #d1fae5;
+    --on-secondary-container: #064e3b;
+    --tertiary: #ef4444;
+    --on-tertiary: #ffffff;
+    --tertiary-container: #fee2e2;
+    --on-tertiary-container: #7f1d1d;
+    --background: #f8f9ff;
+    --on-background: #0b1c30;
+  }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    @apply font-sans antialiased text-slate-900;
+    background: linear-gradient(180deg, #f8f9ff 0%, #eef2ff 100%);
+    background-attachment: fixed;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer components {
+  .kpi-card {
+    @apply bg-white rounded-2xl border border-slate-200/70 shadow-[0_4px_12px_rgba(15,23,42,0.05)] p-5 transition-all duration-200;
+  }
+
+  .kpi-card:hover {
+    @apply shadow-[0_10px_24px_rgba(15,23,42,0.08)] -translate-y-0.5;
+  }
+
+  .surface-card {
+    @apply bg-white rounded-2xl border border-slate-200/70 shadow-[0_4px_12px_rgba(15,23,42,0.05)];
+  }
+
+  .input-base {
+    @apply w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 transition-all duration-200;
+  }
+
+  .input-base:focus {
+    @apply outline-none border-blue-600 ring-4 ring-blue-600/20;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 h-11 px-5 rounded-lg bg-blue-600 text-white text-sm font-semibold transition-all duration-200 shadow-sm hover:bg-blue-700 active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 h-11 px-5 rounded-lg bg-white border border-slate-200 text-slate-700 text-sm font-semibold transition-all duration-200 hover:border-blue-600 hover:text-blue-600 active:scale-[0.98];
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider;
+  }
+
+  .chip-success {
+    @apply bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200/60;
+  }
+
+  .chip-danger {
+    @apply bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200/60;
+  }
+
+  .chip-info {
+    @apply bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-200/60;
+  }
+
+  .chip-warning {
+    @apply bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200/60;
+  }
+
+  .chip-neutral {
+    @apply bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200;
+  }
+
+  .brand-pill {
+    @apply inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-wider uppercase;
+  }
+
+  .nav-tab {
+    @apply relative inline-flex items-center h-9 px-3 text-sm font-medium text-slate-500 transition-colors duration-200 hover:text-slate-900;
+  }
+
+  .nav-tab-active {
+    @apply text-blue-600;
+  }
+
+  .nav-tab-active::after {
+    content: '';
+    @apply absolute -bottom-px left-2 right-2 h-0.5 rounded-full bg-blue-600;
+  }
+
+  .row-expandido {
+    @apply bg-blue-50/40;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 rounded-full;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-300;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.anim-fade-in-up {
+  animation: fadeInUp 0.35s ease-out both;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ============================================================================
+   Impresion del catalogo
+   ----------------------------------------------------------------------------
+   - Esconde chrome de la app (toolbar, sidebar, etc) via la clase .no-print
+   - Respeta los colores de marca (violeta #5b3df5, naranja #ff8a1a)
+   - Quita el gradient del body para que el blanco del catalogo se vea limpio
+   - Page size A4 portrait, margenes pequenos
+   ============================================================================ */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+  html, body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  /* Oculta todo lo de la app, menos la seccion .print-area */
+  app-root > *:not(.print-area),
+  app-shell,
+  .no-print {
+    display: none !important;
+  }
+  .print-area {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    animation: none !important;
+  }
+  /* Cada .catalogo-marca arranca en pagina nueva salvo la primera */
+  .catalogo-marca {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  /* Cada tarjeta no se parte a la mitad */
+  .catalogo-card {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+  /* El header y el titulo del catalogo se mantienen juntos */
+  .catalogo-header,
+  .catalogo-titulo {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+  /* Mantener colores de fondo exactos (Chrome los respeta con -webkit-print-color-adjust) */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* Reducir tamanio de fuente base para que entren 4 columnas en A4 */
+  .catalogo-card h4 {
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+  }
+  .catalogo-card .text-lg {
+    font-size: 14px !important;
+  }
+}

@@ -1,0 +1,345 @@
+<section class="anim-fade-in-up space-y-5">
+  <header>
+    <h1 class="text-[26px] font-extrabold tracking-tight text-slate-900">Catálogos</h1>
+    <p class="mt-1 text-sm text-slate-500">
+      Gestiona las categorías, marcas y atributos dinámicos del sistema (modelo EAV).
+    </p>
+  </header>
+
+  <!-- Tabs -->
+  <div class="border-b border-slate-200 flex items-center gap-1">
+    <button
+      type="button"
+      class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors"
+      [class.border-blue-600]="tab() === 'categorias'"
+      [class.text-blue-600]="tab() === 'categorias'"
+      [class.border-transparent]="tab() !== 'categorias'"
+      [class.text-slate-500]="tab() !== 'categorias'"
+      [class.hover:text-slate-900]="tab() !== 'categorias'"
+      (click)="setTab('categorias')"
+    >
+      Categorías
+      <span class="ml-1.5 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 tabular-nums">
+        {{ state.categorias().length }}
+      </span>
+    </button>
+    <button
+      type="button"
+      class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors"
+      [class.border-blue-600]="tab() === 'marcas'"
+      [class.text-blue-600]="tab() === 'marcas'"
+      [class.border-transparent]="tab() !== 'marcas'"
+      [class.text-slate-500]="tab() !== 'marcas'"
+      [class.hover:text-slate-900]="tab() !== 'marcas'"
+      (click)="setTab('marcas')"
+    >
+      Marcas
+      <span class="ml-1.5 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 tabular-nums">
+        {{ state.marcas().length }}
+      </span>
+    </button>
+    <button
+      type="button"
+      class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors"
+      [class.border-blue-600]="tab() === 'atributos'"
+      [class.text-blue-600]="tab() === 'atributos'"
+      [class.border-transparent]="tab() !== 'atributos'"
+      [class.text-slate-500]="tab() !== 'atributos'"
+      [class.hover:text-slate-900]="tab() !== 'atributos'"
+      (click)="setTab('atributos')"
+    >
+      Atributos EAV
+      <span class="ml-1.5 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 tabular-nums">
+        {{ state.atributos().length }}
+      </span>
+    </button>
+  </div>
+
+  <!-- Form + Lista -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <!-- Form de creacion -->
+    <section class="surface-card p-6 lg:col-span-1 self-start">
+      <h3 class="text-[15px] font-semibold text-slate-900 mb-1">
+        Nuevo {{ tituloTab(tab()) | lowercase }}
+      </h3>
+      <p class="text-xs text-slate-500 mb-4">
+        Los nombres son únicos en el sistema.
+      </p>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">
+            Nombre
+          </label>
+          <input
+            type="text"
+            [value]="nuevoNombreValue(tab())"
+            (input)="setNuevoNombre(tab(), $any($event.target).value)"
+            class="input-base"
+            [placeholder]="placeholderFor(tab())"
+            [disabled]="guardandoPara(tab())"
+          />
+        </div>
+        <button
+          type="button"
+          class="btn-primary w-full h-11"
+          (click)="agregar(tab())"
+          [disabled]="guardandoPara(tab()) || nuevoNombreValue(tab()).trim().length < 2"
+        >
+          @if (guardandoPara(tab())) {
+            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+            Guardando...
+          } @else {
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Agregar {{ tituloTab(tab()) | lowercase }}
+          }
+        </button>
+      </div>
+    </section>
+
+    <!-- Lista -->
+    <section class="surface-card p-0 lg:col-span-2 overflow-hidden">
+      <header class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <h3 class="text-[15px] font-semibold text-slate-900">
+          {{ tituloTab(tab()) | titlecase }}s registrados
+        </h3>
+        <span class="text-[11px] uppercase tracking-wider text-slate-500 tabular-nums">
+          {{ items().length }} en total
+        </span>
+      </header>
+
+      <div class="overflow-x-auto scrollbar-thin">
+        <table class="w-full">
+          <thead>
+            <tr class="text-left bg-slate-50/50">
+              <th class="px-6 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 w-16">ID</th>
+              <th class="px-6 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Nombre</th>
+              @if (tab() === 'atributos') {
+                <th class="px-6 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 w-32 text-center">Valores</th>
+              }
+              <th class="px-6 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track trackById($index, item)) {
+              <tr class="border-t border-slate-100 hover:bg-slate-50/50 transition-colors">
+                <td class="px-6 py-3 text-sm text-slate-500 tabular-nums">#{{ item.id }}</td>
+                <td class="px-6 py-3">
+                  @if (editandoId() === item.id) {
+                    <div class="flex items-center gap-2">
+                      <input
+                        type="text"
+                        [value]="editBuffer()"
+                        (input)="editBuffer.set($any($event.target).value)"
+                        (keydown.enter)="guardarEdicion(tab())"
+                        (keydown.escape)="cancelarEdicion()"
+                        class="input-base h-9"
+                        [placeholder]="item.nombre"
+                        autofocus
+                      />
+                      <button
+                        type="button"
+                        class="grid place-items-center w-9 h-9 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
+                        (click)="guardarEdicion(tab())"
+                        title="Guardar"
+                      >
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                      </button>
+                      <button
+                        type="button"
+                        class="grid place-items-center w-9 h-9 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+                        (click)="cancelarEdicion()"
+                        title="Cancelar"
+                      >
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                      </button>
+                    </div>
+                  } @else {
+                    <span class="text-sm font-semibold text-slate-900">{{ item.nombre }}</span>
+                  }
+                </td>
+                @if (tab() === 'atributos') {
+                  <td class="px-6 py-3 text-center">
+                    <button
+                      type="button"
+                      class="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      (click)="abrirValores(atributoPorId(item.id)!)"
+                      [disabled]="editandoId() === item.id || !atributoPorId(item.id)"
+                      [attr.aria-label]="'Ver valores de ' + item.nombre"
+                      title="Gestionar valores"
+                    >
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3z"/></svg>
+                      Valores
+                      <span class="inline-flex items-center justify-center min-w-[1.25rem] h-4 px-1 rounded-full bg-white text-[10px] font-bold tabular-nums">{{ conteoValores(item.id) }}</span>
+                    </button>
+                  </td>
+                }
+                <td class="px-6 py-3">
+                  <div class="flex items-center justify-end gap-1.5">
+                    <button
+                      type="button"
+                      class="grid place-items-center w-8 h-8 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                      title="Editar"
+                      (click)="iniciarEdicion(item)"
+                    >
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="grid place-items-center w-8 h-8 rounded-lg text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                      title="Eliminar"
+                      (click)="confirmarEliminar(item, tab())"
+                    >
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="3" class="px-6 py-12 text-center">
+                  <div class="flex flex-col items-center gap-2 text-slate-500">
+                    <svg class="w-10 h-10 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7 12 3 4 7m16 0v10l-8 4-8-4V7m16 0-8 4m0 0L4 7m8 4v10"/></svg>
+                    <p class="text-sm">No hay {{ tituloTab(tab()) | lowercase }}s registrados.</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</section>
+
+<app-confirm-dialog
+  [visible]="confirmandoEliminar() !== null"
+  [variant]="'danger'"
+  titulo="Eliminar registro"
+  [mensaje]="mensajeEliminar()"
+  textoConfirmar="Eliminar"
+  textoCancelar="Cancelar"
+  [cargando]="eliminando()"
+  (confirmar)="ejecutarEliminar()"
+  (cancelar)="cancelarEliminar()"
+/>
+
+<!-- Modal: Valores del atributo -->
+@if (atributoConValores(); as a) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm anim-fade-in-up" (click)="cerrarValores()">
+    <div class="surface-card w-full max-w-2xl max-h-[85vh] flex flex-col" (click)="$event.stopPropagation()">
+      <header class="px-6 py-4 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
+        <div>
+          <h3 class="text-[15px] font-semibold text-slate-900">Valores de "{{ a.nombre }}"</h3>
+          <p class="text-[11px] text-slate-500 mt-0.5">Estos valores apareceran como opciones en el formulario de productos.</p>
+        </div>
+        <button
+          type="button"
+          class="grid place-items-center w-9 h-9 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+          (click)="cerrarValores()"
+          aria-label="Cerrar"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </header>
+
+      <!-- Form para agregar valor -->
+      <div class="px-6 py-4 border-b border-slate-200 flex items-end gap-2 flex-shrink-0">
+        <div class="flex-1">
+          <label class="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">Nuevo valor</label>
+          <input
+            type="text"
+            [value]="nuevoValorNombre()"
+            (input)="nuevoValorNombre.set($any($event.target).value)"
+            (keydown.enter)="agregarValor()"
+            class="input-base"
+            placeholder='Ej. "Cargador 65W" para el atributo Potencia'
+            [disabled]="guardandoValor()"
+            autofocus
+          />
+        </div>
+        <button
+          type="button"
+          class="btn-primary h-11"
+          (click)="agregarValor()"
+          [disabled]="guardandoValor() || nuevoValorNombre().trim().length < 1"
+        >
+          @if (guardandoValor()) {
+            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+            Agregando
+          } @else {
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Agregar
+          }
+        </button>
+      </div>
+
+      <!-- Lista de valores -->
+      <div class="flex-1 overflow-y-auto scrollbar-thin">
+        @if (cargandoValores()) {
+          <div class="p-6 space-y-2">
+            <div class="h-10 rounded-lg shimmer"></div>
+            <div class="h-10 rounded-lg shimmer"></div>
+            <div class="h-10 rounded-lg shimmer"></div>
+          </div>
+        } @else if (valoresVisibles().length === 0) {
+          <div class="flex flex-col items-center gap-2 px-6 py-12 text-slate-500">
+            <svg class="w-10 h-10 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            <p class="text-sm">Aun no hay valores. Puedes agregarlos arriba.</p>
+            <p class="text-xs text-slate-400">Si el atributo no tiene valores, el formulario de productos permitira texto libre.</p>
+          </div>
+        } @else {
+          <ul class="divide-y divide-slate-100">
+            @for (v of valoresVisibles(); track trackByValorId($index, v)) {
+              <li class="px-6 py-3 flex items-center gap-2">
+                @if (editandoValorId() === v.id) {
+                  <input
+                    type="text"
+                    [value]="editValorBuffer()"
+                    (input)="editValorBuffer.set($any($event.target).value)"
+                    (keydown.enter)="guardarEdicionValor()"
+                    (keydown.escape)="cancelarEdicionValor()"
+                    class="input-base h-9 flex-1"
+                    autofocus
+                  />
+                  <button type="button" class="grid place-items-center w-9 h-9 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors" (click)="guardarEdicionValor()" title="Guardar">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  </button>
+                  <button type="button" class="grid place-items-center w-9 h-9 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors" (click)="cancelarEdicionValor()" title="Cancelar">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  </button>
+                } @else {
+                  <span class="text-sm text-slate-900 flex-1">{{ v.nombre }}</span>
+                  <button type="button" class="grid place-items-center w-8 h-8 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors" (click)="iniciarEdicionValor(v)" title="Editar">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button type="button" class="grid place-items-center w-8 h-8 rounded-lg text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-colors" (click)="confirmarEliminarValor(v)" title="Eliminar">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <footer class="px-6 py-3 border-t border-slate-200 text-[11px] text-slate-500 flex items-center justify-between flex-shrink-0">
+        <span>{{ valoresVisibles().length }} valor(es) registrado(s)</span>
+        <button type="button" class="btn-secondary h-9" (click)="cerrarValores()">Cerrar</button>
+      </footer>
+    </div>
+  </div>
+}
+
+<!-- Confirm eliminar valor -->
+<app-confirm-dialog
+  [visible]="confirmandoEliminarValor() !== null"
+  [variant]="'danger'"
+  titulo="Eliminar valor"
+  [mensaje]="'Vas a eliminar el valor \'' + (confirmandoEliminarValor()?.nombre ?? '') + '\'. Si esta siendo usado por algun producto, la operacion sera rechazada por el backend.'"
+  textoConfirmar="Eliminar"
+  textoCancelar="Cancelar"
+  [cargando]="eliminandoValor()"
+  (confirmar)="ejecutarEliminarValor()"
+  (cancelar)="cancelarEliminarValor()"
+/>

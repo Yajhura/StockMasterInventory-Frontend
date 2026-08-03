@@ -1,0 +1,150 @@
+<section class="anim-fade-in-up space-y-6">
+  <header class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-[0.12em] mb-1">
+        <a routerLink="/reportes" class="hover:text-slate-700">Reportes</a>
+        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        <span class="text-slate-700">Auditoría</span>
+      </div>
+      <h1 class="text-[26px] font-extrabold tracking-tight text-slate-900">Bitácora de Auditoría</h1>
+      <p class="mt-1 text-sm text-slate-500">Quién hizo qué y cuándo sobre productos y movimientos. Solo accesible para Admin.</p>
+    </div>
+  </header>
+
+  <div class="surface-card p-5">
+    <div class="flex flex-col lg:flex-row lg:items-end gap-5">
+      <div class="flex-1 min-w-0">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2">Desde</p>
+        <input type="date" class="input-base" [(ngModel)]="desde" (ngModelChange)="onFiltroChange()" />
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2">Hasta</p>
+        <input type="date" class="input-base" [(ngModel)]="hasta" (ngModelChange)="onFiltroChange()" />
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2">Tipo</p>
+        <select class="input-base appearance-none pr-10 cursor-pointer" [(ngModel)]="tipoFiltro" (ngModelChange)="onFiltroChange()">
+          <option value="">Todos</option>
+          <option value="producto">Productos</option>
+          <option value="movimiento">Movimientos</option>
+        </select>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2">Usuario ID</p>
+        <input type="number" min="1" step="1" class="input-base tabular-nums" [(ngModel)]="usuarioFiltro" (ngModelChange)="onFiltroChange()" placeholder="Todos" />
+      </div>
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 h-11 px-3.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+        (click)="limpiarFiltros()"
+        title="Limpiar filtros"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        Limpiar
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="bg-rose-50 border border-rose-200 rounded-lg px-3 py-2.5 text-xs text-rose-700">
+      {{ error() }}
+    </div>
+  }
+
+  <section class="surface-card p-6">
+    <header class="flex items-center justify-between mb-4">
+      <h3 class="text-[15px] font-semibold text-slate-900">Eventos</h3>
+      <span class="text-xs text-slate-500 tabular-nums">{{ totalEventos() }} eventos en el rango</span>
+    </header>
+
+    @if (cargando()) {
+      <p class="text-sm text-slate-500 py-6 text-center">Cargando bitacora...</p>
+    } @else if (eventos().length === 0) {
+      <p class="text-sm text-slate-500 py-6 text-center">No hay eventos para los filtros aplicados.</p>
+    } @else {
+      <div class="overflow-x-auto scrollbar-thin -mx-2">
+        <table class="w-full">
+          <thead>
+            <tr class="text-left">
+              <th class="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Fecha y Hora</th>
+              <th class="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Tipo</th>
+              <th class="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Acción</th>
+              <th class="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Entidad</th>
+              <th class="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Usuario</th>
+              <th class="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of eventos(); track e.id) {
+              <tr class="border-t border-slate-100 hover:bg-slate-50/50 transition-colors">
+                <td class="px-3 py-3.5 text-xs text-slate-600 tabular-nums whitespace-nowrap">{{ formatearFecha(e.fecha) }}</td>
+                <td class="px-3 py-3.5">
+                  <span [class]="e.tipo === 'PRODUCTO' ? 'chip chip-info' : 'chip chip-warning'">
+                    {{ e.tipo }}
+                  </span>
+                </td>
+                <td class="px-3 py-3.5 text-sm text-slate-800">
+                  {{ e.accion }}
+                </td>
+                <td class="px-3 py-3.5 text-sm text-slate-700">
+                  @if (e.entidadId) {
+                    <span class="font-medium">{{ e.entidadNombre }}</span>
+                    <span class="text-[11px] text-slate-500 font-mono ml-1">#{{ e.entidadId }}</span>
+                  } @else {
+                    —
+                  }
+                </td>
+                <td class="px-3 py-3.5 text-sm text-slate-700">
+                  @if (e.usuarioNombre) {
+                    <div class="flex flex-col">
+                      <span class="font-medium">{{ e.usuarioNombre }}</span>
+                      @if (e.usuarioEmail) {
+                        <span class="text-[11px] text-slate-500">{{ e.usuarioEmail }}</span>
+                      }
+                    </div>
+                  } @else {
+                    <span class="text-slate-400">Sistema / sin FK</span>
+                  }
+                </td>
+                <td class="px-3 py-3.5 text-xs text-slate-500 max-w-[220px] truncate" [title]="e.detalle || ''">
+                  {{ e.detalle || '—' }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (totalPages() > 1) {
+        <div class="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
+          <p class="text-xs text-slate-500">
+            Pagina {{ page() }} de {{ totalPages() }} ({{ totalEventos() }} eventos)
+          </p>
+          <div class="flex items-center gap-1">
+            <button
+              type="button"
+              class="grid place-items-center w-9 h-9 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              [disabled]="page() === 1"
+              (click)="cambiarPagina(page() - 1)"
+              aria-label="Pagina anterior"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <span class="px-3 text-xs font-semibold text-slate-700 tabular-nums">
+              {{ page() }} / {{ totalPages() }}
+            </span>
+            <button
+              type="button"
+              class="grid place-items-center w-9 h-9 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              [disabled]="page() >= totalPages()"
+              (click)="cambiarPagina(page() + 1)"
+              aria-label="Pagina siguiente"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+          </div>
+        </div>
+      }
+    }
+  </section>
+</section>

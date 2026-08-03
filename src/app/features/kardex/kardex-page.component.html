@@ -1,0 +1,392 @@
+<div class="space-y-8 animate-fade-in">
+  <!-- HEADER PRINCIPAL -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+        <svg class="w-7 h-7 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+        Kardex de Inventario
+      </h2>
+      <p class="text-xs text-slate-500 mt-1">Consulta histórica, filtrado detallado y auditoría de movimientos de entradas y salidas.</p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <a
+        routerLink="/reportes/auditoria"
+        class="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Bitácora de Auditoría
+      </a>
+
+      <button
+        type="button"
+        class="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+        (click)="exportarExcel()"
+        [disabled]="cargando()"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Exportar Excel
+      </button>
+    </div>
+  </div>
+
+  <!-- SECCIÓN DE FILTROS AVANZADOS -->
+  <div class="surface-card p-6">
+    <div class="flex flex-col gap-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-[13px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+          <svg class="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          Filtros de Búsqueda Avanzada
+        </h3>
+        <span class="text-[11px] text-slate-400 font-medium">Presiona "Buscar" o Tecla Enter para consultar</span>
+      </div>
+
+      <!-- Primera fila de filtros: Rango de fechas y Búsqueda -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="flex flex-col md:col-span-2">
+          <label class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">Rango de Fechas</label>
+          <app-date-range-picker
+            [(desde)]="desde"
+            [(hasta)]="hasta"
+            (rangeChange)="ejecutarBusqueda()"
+            placeholder="Seleccionar rango de fechas..."
+          />
+        </div>
+
+        <div class="flex flex-col">
+          <label class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">Buscar Producto / Código</label>
+          <div class="relative">
+            <input
+              type="text"
+              class="input-base text-sm h-10 w-full pl-9"
+              placeholder="Buscar por nombre o código..."
+              [(ngModel)]="busqueda"
+              autocomplete="off"
+              (keyup.enter)="ejecutarBusqueda()"
+            />
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Segunda fila de filtros -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 pt-2 border-t border-slate-100">
+        <!-- Selector Producto -->
+        <div class="flex flex-col">
+          <label class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">Producto Específico</label>
+          <app-dropdown
+            [options]="opcionesProductos()"
+            [(ngModel)]="productoFiltro"
+            placeholder="Todos los productos"
+          />
+        </div>
+
+        <!-- Filtro Cliente -->
+        <div class="flex flex-col">
+          <label class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">Cliente</label>
+          <input
+            type="text"
+            class="input-base text-sm h-10 w-full"
+            [(ngModel)]="clienteFiltro"
+            autocomplete="off"
+            (keyup.enter)="ejecutarBusqueda()"
+            placeholder="Nombre de cliente..."
+          />
+        </div>
+
+        <!-- Selector Marca -->
+        <div class="flex flex-col">
+          <label class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">Marca</label>
+          <app-dropdown
+            [options]="opcionesMarcas()"
+            [(ngModel)]="marcaFiltro"
+            placeholder="Todas las marcas"
+          />
+        </div>
+
+        <!-- Selector Categoría -->
+        <div class="flex flex-col">
+          <label class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">Categoría</label>
+          <app-dropdown
+            [options]="opcionesCategorias()"
+            [(ngModel)]="categoriaFiltro"
+            placeholder="Todas las categorías"
+          />
+        </div>
+
+        <!-- Selector Tipo de Movimiento -->
+        <div class="flex flex-col">
+          <label class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">Tipo de Movimiento</label>
+          <app-dropdown
+            [options]="opcionesTipo()"
+            [(ngModel)]="tipoFiltro"
+            placeholder="Todos los tipos"
+          />
+        </div>
+      </div>
+
+      <!-- BOTONES DE ACCION: BUSCAR Y LIMPIAR -->
+      <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 px-4 h-9 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+          (click)="limpiarFiltros()"
+        >
+          <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Limpiar Filtros
+        </button>
+
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 px-5 h-9 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
+          (click)="ejecutarBusqueda()"
+        >
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Buscar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BARRA DE VISTA Y CONMUTADOR (TARJETAS / TABLA) -->
+  <div class="surface-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div>
+      <h3 class="text-[15px] font-bold text-slate-900">Historial de Movimientos Registrados</h3>
+      <p class="text-xs text-slate-500 font-medium tabular-nums mt-0.5">{{ totalMovimientos() }} movimientos encontrados</p>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <!-- Toggle de Vista: Tarjetas / Tabla -->
+      <div class="inline-flex p-1 bg-slate-100 rounded-lg text-xs font-semibold">
+        <button
+          type="button"
+          class="px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
+          [class.bg-white]="vistaModo() === 'cards'"
+          [class.shadow-sm]="vistaModo() === 'cards'"
+          [class.text-blue-600]="vistaModo() === 'cards'"
+          [class.text-slate-500]="vistaModo() !== 'cards'"
+          (click)="vistaModo.set('cards')"
+        >
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          Tarjetas
+        </button>
+        <button
+          type="button"
+          class="px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
+          [class.bg-white]="vistaModo() === 'tabla'"
+          [class.shadow-sm]="vistaModo() === 'tabla'"
+          [class.text-blue-600]="vistaModo() === 'tabla'"
+          [class.text-slate-500]="vistaModo() !== 'tabla'"
+          (click)="vistaModo.set('tabla')"
+        >
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Tabla
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA EN TARJETAS (Móvil / Táctil) -->
+  @if (vistaModo() === 'cards') {
+    @if (cargando()) {
+      <div class="surface-card p-12 text-center text-slate-400">
+        <svg class="w-8 h-8 animate-spin mx-auto mb-2 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+        <p class="text-xs font-semibold">Cargando movimientos de Kardex...</p>
+      </div>
+    } @else if (kardex().length === 0) {
+      <div class="surface-card p-10 text-center text-slate-400">
+        <svg class="w-10 h-10 mx-auto mb-2 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7 12 3 4 7m16 0v10l-8 4-8-4V7m16 0-8 4m0 0L4 7m8 4v10"/></svg>
+        <p class="text-xs">No se encontraron movimientos registrados con los filtros aplicados. Presiona "Buscar" para aplicar los criterios seleccionados.</p>
+      </div>
+    } @else {
+      <div class="space-y-3">
+        @for (k of kardex(); track k.id) {
+          <article class="surface-card p-4 rounded-xl border border-slate-200/80 hover:shadow-md transition-all relative overflow-hidden">
+            <!-- Banda de color lateral según tipo de movimiento -->
+            <div class="absolute left-0 top-0 bottom-0 w-1.5" [class.bg-emerald-500]="k.tipoMovimientoId === 1" [class.bg-rose-500]="k.tipoMovimientoId === 2"></div>
+
+            <div class="pl-1">
+              <!-- Header: Producto, Tipo Badge y Fecha -->
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div>
+                  <h4 class="text-sm font-bold text-slate-900 leading-snug">{{ resolverNombreProducto(k) }}</h4>
+                  <p class="text-[11px] font-mono text-slate-400 mt-0.5 tabular-nums">{{ formatearFecha(k.fecha) }}</p>
+                </div>
+                <span [class]="k.tipoMovimientoId === 1 ? 'chip chip-success text-[10px] font-extrabold flex-shrink-0' : 'chip chip-danger text-[10px] font-extrabold flex-shrink-0'">
+                  {{ k.tipoMovimientoId === 1 ? 'INGRESO' : 'SALIDA' }}
+                </span>
+              </div>
+
+              <!-- Detalle numérico de la operación -->
+              <div class="grid grid-cols-3 gap-2 py-2 px-3 rounded-lg bg-slate-50 border border-slate-100 my-2.5">
+                <div>
+                  <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Cantidad</p>
+                  <p class="text-sm font-extrabold tabular-nums" [class.text-emerald-600]="k.tipoMovimientoId === 1" [class.text-rose-600]="k.tipoMovimientoId === 2">
+                    {{ k.tipoMovimientoId === 1 ? '+' : '-' }}{{ k.cantidad }}
+                  </p>
+                </div>
+
+                <div>
+                  <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">P. Unitario</p>
+                  <p class="text-xs font-bold text-slate-700 tabular-nums">S/. {{ k.precioUnitario | number:'1.2-2' }}</p>
+                </div>
+
+                <div>
+                  <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Monto Total</p>
+                  <p class="text-sm font-extrabold text-slate-900 tabular-nums">S/. {{ (k.cantidad * k.precioUnitario) | number:'1.2-2' }}</p>
+                </div>
+              </div>
+
+              <!-- Footer: Cliente & Usuario & Observación -->
+              <div class="flex items-center justify-between text-xs text-slate-500 pt-0.5">
+                <div class="flex items-center gap-1.5 truncate max-w-[200px]">
+                  <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <span class="font-medium text-slate-700 truncate">{{ k.cliente || 'Sin cliente' }}</span>
+                </div>
+
+                <div class="flex items-center gap-3">
+                  <span class="text-[11px] text-slate-400">Por: {{ k.creadoPorNombre || 'ADMIN' }}</span>
+
+                  @if (k.observacion) {
+                    <button
+                      type="button"
+                      class="inline-flex items-center justify-center p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors cursor-pointer"
+                      (click)="abrirObservacionModal(k.observacion)"
+                      title="Ver observación"
+                    >
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                      </svg>
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          </article>
+        }
+
+        <!-- Paginador reutilizable para vista en tarjetas -->
+        @if (kardexTotalPages() > 1) {
+          <div class="surface-card p-3 mt-4">
+            <app-paginador
+              [page]="kardexPage()"
+              [totalPages]="kardexTotalPages()"
+              [totalItems]="totalMovimientos()"
+              [pageSize]="kardexPageSize()"
+              (pageChange)="cambiarPaginaKardex($event)"
+            />
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- VISTA EN TABLA (Escritorio / Tradicional) -->
+  @if (vistaModo() === 'tabla') {
+    <app-tabla
+      modo="paginado"
+      class="mt-4"
+      [limiteScroll]="10"
+      [itemsCount]="kardex().length"
+      [cargando]="cargando()"
+      [isEmpty]="kardex().length === 0"
+      mensajeVacio="No se encontraron movimientos registrados con los filtros aplicados. Presiona &quot;Buscar&quot; para aplicar los criterios seleccionados."
+      [page]="kardexPage()"
+      [totalPages]="kardexTotalPages()"
+      [totalItems]="totalMovimientos()"
+      [pageSize]="kardexPageSize()"
+      (pageChange)="cambiarPaginaKardex($event)"
+    >
+      <tr table-header class="text-left">
+        <th app-th>Fecha y Hora</th>
+        <th app-th>Producto</th>
+        <th app-th>Tipo</th>
+        <th app-th align="right">Cant.</th>
+        <th app-th align="right">Precio Unit.</th>
+        <th app-th align="right">Total</th>
+        <th app-th>Cliente</th>
+        <th app-th>Usuario</th>
+        <th app-th align="center">Obs.</th>
+      </tr>
+
+      <ng-container table-body>
+        @for (k of kardex(); track k.id) {
+          <tr app-tr>
+            <td app-td extraClass="text-xs text-slate-600 tabular-nums whitespace-nowrap">{{ formatearFecha(k.fecha) }}</td>
+            <td app-td extraClass="text-sm font-medium text-slate-900 whitespace-wrap">{{ resolverNombreProducto(k) }}</td>
+            <td app-td>
+              <span [class]="k.tipoMovimientoId === 1 ? 'chip chip-success' : 'chip chip-danger'">
+                {{ k.tipoMovimientoId === 1 ? 'INGRESO' : 'SALIDA' }}
+              </span>
+            </td>
+            <td app-td align="right" extraClass="text-sm font-bold tabular-nums"
+                [class.text-emerald-600]="k.tipoMovimientoId === 1"
+                [class.text-rose-600]="k.tipoMovimientoId === 2">
+              {{ k.tipoMovimientoId === 1 ? '+' : '-' }}{{ k.cantidad }}
+            </td>
+            <td app-td align="right" extraClass="text-sm text-slate-700 tabular-nums whitespace-nowrap">
+              S/. {{ k.precioUnitario | number:'1.2-2' }}
+            </td>
+            <td app-td align="right" extraClass="text-sm font-semibold text-slate-900 tabular-nums whitespace-nowrap">
+              S/. {{ (k.cantidad * k.precioUnitario) | number:'1.2-2' }}
+            </td>
+            <td app-td extraClass="text-xs text-slate-500 max-w-[150px] truncate" [title]="k.cliente || ''">
+              {{ k.cliente || '—' }}
+            </td>
+            <td app-td extraClass="text-xs text-slate-500 whitespace-nowrap">
+              {{ k.creadoPorNombre || 'ADMIN' }}
+            </td>
+            <td app-td align="center">
+              @if (k.observacion) {
+                <button
+                  type="button"
+                  class="inline-flex items-center justify-center p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors cursor-pointer"
+                  (click)="abrirObservacionModal(k.observacion)"
+                  title="Ver observación"
+                >
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                  </svg>
+                </button>
+              } @else {
+                <span class="text-slate-400 text-xs">—</span>
+              }
+            </td>
+          </tr>
+        }
+      </ng-container>
+    </app-tabla>
+  }
+</div>
+
+@if (isObservacionModalOpen()) {
+  <app-modal-overlay [open]="isObservacionModalOpen()" (close)="cerrarObservacionModal()">
+    <div class="p-6">
+      <h3 class="text-base font-bold text-slate-900 mb-3">Observación del Movimiento</h3>
+      <p class="text-sm text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-200 whitespace-pre-wrap">
+        {{ observacionModal() }}
+      </p>
+      <div class="mt-5 flex justify-end">
+        <button
+          type="button"
+          class="px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800 transition-colors cursor-pointer"
+          (click)="cerrarObservacionModal()"
+        >
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </app-modal-overlay>
+}

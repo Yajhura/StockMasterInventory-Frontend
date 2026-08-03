@@ -1,0 +1,126 @@
+<div class="min-h-screen grid place-items-center bg-gradient-to-br from-slate-50 via-white to-blue-50 px-4 anim-fade-in-up">
+  <div class="w-full max-w-md">
+    <div class="flex flex-col items-center mb-7">
+      <span
+        class="grid place-items-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg shadow-blue-600/30 text-white"
+        aria-hidden="true"
+      >
+        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z" />
+        </svg>
+      </span>
+      <h1 class="mt-4 text-[22px] font-extrabold tracking-tight text-slate-900">StockMaster</h1>
+      <p class="text-sm text-slate-500">Inventory &amp; Cash Flow</p>
+    </div>
+
+    @if (auth.isAuthenticated()) {
+      <div class="surface-card p-7 text-center">
+        <div class="grid place-items-center w-12 h-12 mx-auto rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-inset ring-emerald-100">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <h2 class="mt-4 text-lg font-bold text-slate-900">Ya tienes una sesion activa</h2>
+        <p class="mt-1.5 text-sm text-slate-500">
+          Hola, <span class="font-semibold text-slate-700">{{ auth.currentUser()?.nombreCompleto }}</span>. Inicia sesion como otro usuario o continua con tu cuenta actual.
+        </p>
+
+        <div class="mt-5 space-y-2.5">
+          <button type="button" class="btn-primary w-full h-12" (click)="irAlInicio()">
+            Continuar como {{ auth.currentUser()?.nombreCompleto }}
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+          <button type="button" class="btn-secondary w-full h-12" (click)="cerrarSesion()" [disabled]="auth.cargandoLogout()">
+            @if (auth.cargandoLogout()) {
+              <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+              Cerrando sesion...
+            } @else {
+              Iniciar sesion con otra cuenta
+            }
+          </button>
+        </div>
+      </div>
+    } @else {
+      <div class="surface-card p-7">
+        <header class="mb-5">
+          <h2 class="text-lg font-bold text-slate-900">Iniciar sesion</h2>
+          <p class="mt-1 text-sm text-slate-500">Ingresa tus credenciales para acceder al sistema.</p>
+        </header>
+
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4" autocomplete="on">
+          <div>
+            <label for="email" class="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              formControlName="email"
+              autocomplete="email"
+              class="input-base"
+              placeholder="admin@stockmaster.local"
+              [class.border-rose-300]="campoInvalido('email')"
+            />
+            @if (campoInvalido('email')) {
+              <p class="mt-1 text-[11px] text-rose-600">Email valido requerido.</p>
+            }
+          </div>
+
+          <div>
+            <label for="password" class="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">
+              Contrasena
+            </label>
+            <div class="relative">
+              <input
+                id="password"
+                [type]="mostrarPassword() ? 'text' : 'password'"
+                formControlName="password"
+                autocomplete="current-password"
+                class="input-base pr-11"
+                placeholder="********"
+                [class.border-rose-300]="campoInvalido('password')"
+              />
+              <button
+                type="button"
+                class="absolute right-3 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                (click)="togglePassword()"
+                [attr.aria-label]="mostrarPassword() ? 'Ocultar contrasena' : 'Mostrar contrasena'"
+              >
+                @if (mostrarPassword()) {
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>
+                } @else {
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+                }
+              </button>
+            </div>
+            @if (campoInvalido('password')) {
+              <p class="mt-1 text-[11px] text-rose-600">La contrasena es obligatoria.</p>
+            }
+          </div>
+
+          <button
+            type="submit"
+            class="w-full h-12 rounded-lg bg-blue-600 text-white text-sm font-semibold inline-flex items-center justify-center gap-2 shadow-sm shadow-blue-600/30 hover:bg-blue-700 active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="form.invalid || cargando()"
+          >
+            @if (cargando()) {
+              <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+              Ingresando...
+            } @else {
+              Ingresar
+            }
+          </button>
+        </form>
+
+        <div class="mt-5 pt-5 border-t border-slate-100 text-center">
+          <p class="text-[11px] text-slate-400">
+            Acceso restringido. Problemas para entrar?
+            <a class="text-blue-600 hover:underline font-medium" href="mailto:dev@stockmaster.local">Contacta al administrador</a>
+          </p>
+        </div>
+      </div>
+    }
+
+    <p class="text-center mt-5 text-xs text-slate-400">
+      (c) 2026 StockMaster. Neuralnova Systems.
+    </p>
+  </div>
+</div>
