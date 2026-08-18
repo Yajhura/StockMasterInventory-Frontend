@@ -172,7 +172,7 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 text-sm">
-                @for (item of rentabilidadItems(); track item.productoId) {
+                @for (item of rentabilidadPaginada(); track item.productoId) {
                   <tr class="hover:bg-slate-50/60 transition-colors">
                     <td class="px-4 py-3 font-medium text-slate-900">
                       {{ item.productoNombre }}
@@ -208,6 +208,13 @@
                 }
               </tbody>
             </table>
+            <app-paginador
+              [page]="rentabilidadPage()"
+              [pageSize]="pageSize"
+              [totalItems]="rentabilidadItems().length"
+              [totalPages]="Math.ceil(rentabilidadItems().length / pageSize)"
+              (pageChange)="rentabilidadPage.set($event)"
+            />
           </div>
         } @else {
           <div class="p-8 text-center border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-500">
@@ -231,7 +238,7 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 text-sm">
-                @for (cat of rentabilidadPorCategoria(); track cat.categoriaNombre) {
+                @for (cat of rentabilidadPorCategoriaPaginada(); track cat.categoriaNombre) {
                   <tr class="hover:bg-slate-50/60 transition-colors">
                     <td class="px-4 py-3 font-bold text-slate-900">{{ cat.categoriaNombre }}</td>
                     <td class="px-4 py-3 text-center tabular-nums text-slate-600 font-semibold">{{ cat.productosCount }}</td>
@@ -258,6 +265,13 @@
                 }
               </tbody>
             </table>
+            <app-paginador
+              [page]="rentabilidadCatPage()"
+              [pageSize]="pageSize"
+              [totalItems]="rentabilidadPorCategoria().length"
+              [totalPages]="Math.ceil(rentabilidadPorCategoria().length / pageSize)"
+              (pageChange)="rentabilidadCatPage.set($event)"
+            />
           </div>
         } @else {
           <div class="p-8 text-center border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-500">
@@ -400,9 +414,11 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-sm">
-              @for (c of topClientesList(); track c.clienteNombre; let i = $index) {
-                <tr class="hover:bg-slate-50/60 transition-colors">
-                  <td class="px-4 py-3 font-bold text-slate-400">#{{ i + 1 }}</td>
+              @for (c of topClientesPaginados(); track c.clienteNombre; let i = $index) {
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <td class="px-4 py-3 text-center font-bold text-slate-400 tabular-nums">
+                    #{{ ((topClientesPage() - 1) * pageSize) + i + 1 }}
+                  </td>
                   <td class="px-4 py-3 font-bold text-slate-900 flex items-center gap-2">
                     <span class="w-7 h-7 rounded-full bg-indigo-50 text-indigo-700 text-xs font-black grid place-items-center uppercase">
                       {{ c.clienteNombre.substring(0, 2) }}
@@ -427,6 +443,13 @@
               }
             </tbody>
           </table>
+          <app-paginador
+            [page]="topClientesPage()"
+            [pageSize]="pageSize"
+            [totalItems]="topClientesList().length"
+            [totalPages]="Math.ceil(topClientesList().length / pageSize)"
+            (pageChange)="topClientesPage.set($event)"
+          />
         </div>
       } @else {
         <div class="p-8 text-center border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-500">
@@ -567,7 +590,7 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 text-sm">
-                @for (item of stockCriticoData()?.stockCritico; track item.productoId) {
+                @for (item of stockCriticoPaginado(); track item.productoId) {
                   <tr class="hover:bg-slate-50/60 transition-colors">
                     <td class="px-4 py-3">
                       <span [class]="item.stockActual <= 0 ? 'chip chip-danger' : 'chip chip-warning'">
@@ -594,6 +617,13 @@
                 }
               </tbody>
             </table>
+            <app-paginador
+              [page]="stockCriticoPage()"
+              [pageSize]="pageSize"
+              [totalItems]="stockCriticoData()?.stockCritico?.length ?? 0"
+              [totalPages]="Math.ceil((stockCriticoData()?.stockCritico?.length ?? 0) / pageSize)"
+              (pageChange)="stockCriticoPage.set($event)"
+            />
           </div>
         } @else {
           <div class="p-12 text-center border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-500">
@@ -615,7 +645,7 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 text-sm">
-                @for (item of stockCriticoData()?.productosEstancados; track item.productoId) {
+                @for (item of stockEstancadoPaginado(); track item.productoId) {
                   <tr class="hover:bg-slate-50/60 transition-colors">
                     <td class="px-4 py-3">
                       <span class="px-2.5 py-1 rounded-full text-xs font-extrabold bg-indigo-100 text-indigo-800">
@@ -639,6 +669,13 @@
                 }
               </tbody>
             </table>
+            <app-paginador
+              [page]="stockEstancadoPage()"
+              [pageSize]="pageSize"
+              [totalItems]="stockCriticoData()?.productosEstancados?.length ?? 0"
+              [totalPages]="Math.ceil((stockCriticoData()?.productosEstancados?.length ?? 0) / pageSize)"
+              (pageChange)="stockEstancadoPage.set($event)"
+            />
           </div>
         } @else {
           <div class="p-12 text-center border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-500">

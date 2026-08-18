@@ -16,13 +16,15 @@
     </div>
 
     <div class="flex items-center gap-3">
-      <a
-        routerLink="/reportes/auditoria"
-        class="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm"
-      >
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        Bitácora de Auditoría
-      </a>
+      @if (auth.esAdmin()) {
+        <a
+          routerLink="/reportes/auditoria"
+          class="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Bitácora de Auditoría
+        </a>
+      }
 
       <button
         type="button"
@@ -218,9 +220,16 @@
                   <h4 class="text-sm font-bold text-slate-900 leading-snug">{{ resolverNombreProducto(k) }}</h4>
                   <p class="text-[11px] font-mono text-slate-400 mt-0.5 tabular-nums">{{ formatearFecha(k.fecha) }}</p>
                 </div>
-                <span [class]="k.tipoMovimientoId === 1 ? 'chip chip-success text-[10px] font-extrabold flex-shrink-0' : 'chip chip-danger text-[10px] font-extrabold flex-shrink-0'">
-                  {{ k.tipoMovimientoId === 1 ? 'INGRESO' : 'SALIDA' }}
-                </span>
+                <div class="flex flex-col gap-1 items-end">
+                  <span [class]="k.tipoMovimientoId === 1 ? 'chip chip-success text-[10px] font-extrabold flex-shrink-0' : 'chip chip-danger text-[10px] font-extrabold flex-shrink-0'">
+                    {{ k.tipoMovimientoId === 1 ? 'INGRESO' : 'SALIDA' }}
+                  </span>
+                  @if (k.esStockInicial) {
+                    <span class="chip bg-indigo-50 text-indigo-700 text-[9px] font-extrabold flex-shrink-0 border border-indigo-200">
+                      STOCK INICIAL
+                    </span>
+                  }
+                </div>
               </div>
 
               <!-- Detalle numérico de la operación -->
@@ -243,20 +252,25 @@
                 </div>
               </div>
 
-              <!-- Footer: Cliente & Usuario & Observación -->
-              <div class="flex items-center justify-between text-xs text-slate-500 pt-0.5">
-                <div class="flex items-center gap-1.5 truncate max-w-[200px]">
+              <!-- Acciones (Editar/Eliminar) y Footer: Cliente & Usuario & Observación -->
+              <div class="flex items-center justify-between text-xs text-slate-500 pt-0.5 mt-1 border-t border-slate-100 pt-2">
+                <div class="flex items-center gap-1.5 truncate max-w-[150px]">
                   <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                   <span class="font-medium text-slate-700 truncate">{{ k.cliente || 'Sin cliente' }}</span>
                 </div>
 
-                <div class="flex items-center gap-3">
-                  <span class="text-[11px] text-slate-400">Por: {{ k.creadoPorNombre || 'ADMIN' }}</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-[11px] text-slate-400 hidden sm:inline-block" [title]="'Creado: ' + (k.creadoEn | date:'short')">
+                    Por: {{ k.creadoPorNombre || 'ADMIN' }}
+                    @if (k.modificadoPorNombre) {
+                      <span class="text-[9px] italic" [title]="'Modificado: ' + (k.modificadoEn | date:'short')">(Mod. por {{ k.modificadoPorNombre }})</span>
+                    }
+                  </span>
 
                   @if (k.observacion) {
                     <button
                       type="button"
-                      class="inline-flex items-center justify-center p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors cursor-pointer"
+                      class="inline-flex items-center justify-center p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors cursor-pointer"
                       (click)="abrirObservacionModal(k.observacion)"
                       title="Ver observación"
                     >
@@ -268,6 +282,26 @@
                       </svg>
                     </button>
                   }
+
+                  <!-- Acciones de Edicion/Eliminacion -->
+                  <div class="flex items-center border-l border-slate-200 pl-2 gap-1 ml-1">
+                    <button
+                      type="button"
+                      class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                      title="Editar Movimiento"
+                      (click)="abrirModalEdicion(k)"
+                    >
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                      title="Eliminar Movimiento"
+                      (click)="confirmarEliminar(k)"
+                    >
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -316,6 +350,7 @@
         <th app-th>Cliente</th>
         <th app-th>Usuario</th>
         <th app-th align="center">Obs.</th>
+        <th app-th align="right">Acciones</th>
       </tr>
 
       <ng-container table-body>
@@ -324,9 +359,16 @@
             <td app-td extraClass="text-xs text-slate-600 tabular-nums whitespace-nowrap">{{ formatearFecha(k.fecha) }}</td>
             <td app-td extraClass="text-sm font-medium text-slate-900 whitespace-wrap">{{ resolverNombreProducto(k) }}</td>
             <td app-td>
-              <span [class]="k.tipoMovimientoId === 1 ? 'chip chip-success' : 'chip chip-danger'">
-                {{ k.tipoMovimientoId === 1 ? 'INGRESO' : 'SALIDA' }}
-              </span>
+              <div class="flex flex-col items-start gap-1">
+                <span [class]="k.tipoMovimientoId === 1 ? 'brand-pill bg-emerald-50 text-emerald-700 ring-emerald-200/50' : 'brand-pill bg-rose-50 text-rose-700 ring-rose-200/50'">
+                  {{ k.tipoMovimientoId === 1 ? 'INGRESO' : 'SALIDA' }}
+                </span>
+                @if (k.esStockInicial) {
+                  <span class="brand-pill bg-indigo-50 text-indigo-700 ring-indigo-200/50 text-[9px]">
+                    STOCK INICIAL
+                  </span>
+                }
+              </div>
             </td>
             <td app-td align="right" extraClass="text-sm font-bold tabular-nums"
                 [class.text-emerald-600]="k.tipoMovimientoId === 1"
@@ -342,8 +384,11 @@
             <td app-td extraClass="text-xs text-slate-500 max-w-[150px] truncate" [title]="k.cliente || ''">
               {{ k.cliente || '—' }}
             </td>
-            <td app-td extraClass="text-xs text-slate-500 whitespace-nowrap">
-              {{ k.creadoPorNombre || 'ADMIN' }}
+            <td app-td>
+              <div class="text-xs text-slate-700">{{ k.creadoPorNombre || 'ADMIN' }}</div>
+              @if (k.modificadoPorNombre) {
+                <div class="text-[10px] text-slate-400 italic" [title]="'Modificado: ' + (k.modificadoEn | date:'short')">Mod: {{ k.modificadoPorNombre }}</div>
+              }
             </td>
             <td app-td align="center">
               @if (k.observacion) {
@@ -363,6 +408,26 @@
               } @else {
                 <span class="text-slate-400 text-xs">—</span>
               }
+            </td>
+            <td app-td align="right">
+              <div class="flex items-center justify-end gap-1">
+                <button
+                  type="button"
+                  class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                  title="Editar Movimiento"
+                  (click)="abrirModalEdicion(k)"
+                >
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                </button>
+                <button
+                  type="button"
+                  class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                  title="Eliminar Movimiento"
+                  (click)="confirmarEliminar(k)"
+                >
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+              </div>
             </td>
           </tr>
         }
@@ -385,6 +450,133 @@
           (click)="cerrarObservacionModal()"
         >
           Cerrar
+        </button>
+      </div>
+    </div>
+  </app-modal-overlay>
+}
+
+@if (isEditModalOpen()) {
+  <app-modal-overlay [open]="isEditModalOpen()" (close)="cerrarModalEdicion()">
+    <div class="p-6">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 tracking-tight">Editar Movimiento</h3>
+          <p class="text-[13px] text-slate-500 mt-0.5">Corrige los datos de este movimiento. El stock del producto se recalculará automáticamente.</p>
+        </div>
+        <button type="button" class="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors cursor-pointer" (click)="cerrarModalEdicion()">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Campos en grid -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex flex-col">
+            <label class="text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Cantidad <span class="text-rose-500">*</span></label>
+            <input 
+              type="number" 
+              class="input-base h-10 px-3 w-full"
+              [(ngModel)]="editCantidad"
+              min="1"
+              required
+            />
+          </div>
+
+          <div class="flex flex-col">
+            <label class="text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Precio Unitario <span class="text-rose-500">*</span></label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-semibold">S/</span>
+              <input 
+                type="number" 
+                class="input-base h-10 pl-8 pr-3 w-full"
+                [(ngModel)]="editPrecio"
+                min="0"
+                step="0.01"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col">
+          <label class="text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Cliente Asociado <span class="text-slate-400 font-normal normal-case">(Opcional)</span></label>
+          <input 
+            type="text" 
+            class="input-base h-10 px-3 w-full"
+            [(ngModel)]="editCliente"
+            placeholder="Ej. Juan Pérez"
+          />
+        </div>
+
+        <div class="flex flex-col">
+          <label class="text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Observaciones / Motivo <span class="text-slate-400 font-normal normal-case">(Opcional)</span></label>
+          <textarea 
+            class="input-base p-3 w-full min-h-[80px] resize-y"
+            [(ngModel)]="editObservacion"
+            placeholder="Ingresa un motivo o detalle de la corrección..."
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">
+        <button
+          type="button"
+          class="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-50"
+          (click)="cerrarModalEdicion()"
+          [disabled]="editGuardando"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
+          (click)="guardarEdicion()"
+          [disabled]="editGuardando || editCantidad <= 0 || editPrecio < 0"
+        >
+          @if (editGuardando) {
+            <svg class="w-4 h-4 animate-spin text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+            Guardando...
+          } @else {
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+            Guardar Cambios
+          }
+        </button>
+      </div>
+    </div>
+  </app-modal-overlay>
+}
+
+@if (isDeleteModalOpen()) {
+  <app-modal-overlay [open]="isDeleteModalOpen()" (close)="cerrarModalEliminar()">
+    <div class="p-6 text-center">
+      <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <h3 class="text-lg font-bold text-slate-900 mb-2">¿Eliminar movimiento?</h3>
+      <p class="text-sm text-slate-500 mb-6">Esta acción revertirá el efecto del movimiento en el stock y ocultará el registro de forma permanente en los reportes.</p>
+      
+      <div class="flex items-center justify-center gap-3">
+        <button
+          type="button"
+          class="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-50"
+          (click)="cerrarModalEliminar()"
+          [disabled]="cargando()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="px-5 py-2.5 bg-rose-600 text-white rounded-xl text-sm font-bold hover:bg-rose-700 transition-colors shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-2"
+          (click)="ejecutarEliminacion()"
+          [disabled]="cargando()"
+        >
+          @if (cargando()) {
+            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+            Eliminando...
+          } @else {
+            Eliminar
+          }
         </button>
       </div>
     </div>

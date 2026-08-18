@@ -21,13 +21,13 @@ export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
-      // 401: forzar logout y avisar (el caller normalmente no muestra nada).
+      // 401: forzar logout y avisar al usuario.
       if (err.status === 401) {
         const enLogin = router.url.startsWith('/login');
         if (!enLogin) {
-          notify.warning('Tu sesión expiró. Vuelve a iniciar sesión.');
+          notify.warning('Tu sesión ha expirado. Vuelve a iniciar sesión.');
+          auth.logout(true);
         }
-        auth.logout(!enLogin);
         return throwError(() => err);
       }
 

@@ -362,6 +362,34 @@ export class InventarioState {
     }
   }
 
+  async actualizarMovimiento(id: number, payload: Partial<RegistrarMovimientoPayload>): Promise<Movimiento> {
+    try {
+      const movActualizado = await firstValueFrom(this.apiMovimientos.actualizar(id, payload));
+      // La forma más segura de sincronizar el stock tras modificar o borrar un movimiento
+      // es pedir que se recarguen los productos (o al menos las listas actuales).
+      await this.cargarSelectorProductos(true);
+      await this.recargarProductosPaginados();
+      
+      this.error.set(null);
+      return movActualizado;
+    } catch (e: unknown) {
+      this.error.set(this.toMessage(e));
+      throw e;
+    }
+  }
+
+  async eliminarMovimiento(id: number): Promise<void> {
+    try {
+      await firstValueFrom(this.apiMovimientos.eliminar(id));
+      await this.cargarSelectorProductos(true);
+      await this.recargarProductosPaginados();
+      this.error.set(null);
+    } catch (e: unknown) {
+      this.error.set(this.toMessage(e));
+      throw e;
+    }
+  }
+
   async obtenerKardex(productoId: number): Promise<Movimiento[]> {
     try {
       return await firstValueFrom(this.apiMovimientos.kardex(productoId));

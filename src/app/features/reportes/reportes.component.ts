@@ -18,12 +18,13 @@ import {
 } from '../../core/api/api-reportes.service';
 import { ApiAuthService } from '../../core/api/api-auth.service';
 import { ModalOverlayComponent } from '../../core/components/modal-overlay.component';
+import { PaginadorComponent } from '../../core/components/paginador.component';
 
 @Component({
   selector: 'app-reportes',
   standalone: true,
   templateUrl: './reportes.component.html',
-  imports: [CommonModule, FormsModule, RouterLink, ModalOverlayComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ModalOverlayComponent, PaginadorComponent],
 })
 export class ReportesComponent implements OnInit {
   private readonly state = inject(InventarioState);
@@ -44,7 +45,22 @@ export class ReportesComponent implements OnInit {
   // Top Clientes e Historial
   protected readonly topClientesList = signal<TopClienteItem[]>([]);
   protected readonly cargandoTopClientes = signal<boolean>(false);
-  protected readonly topClientesLimit = signal<number>(10);
+  protected readonly topClientesLimit = signal<number>(100); // We will fetch more to paginate locally
+  protected readonly topClientesPage = signal<number>(1);
+  protected readonly pageSize = 10;
+  
+  protected readonly topClientesPaginados = computed(() => {
+    const arr = this.topClientesList();
+    const p = this.topClientesPage();
+    return arr.slice((p - 1) * this.pageSize, p * this.pageSize);
+  });
+  
+  protected readonly topVendidosPage = signal<number>(1);
+  protected readonly topVendidosPaginados = computed(() => {
+    const arr = this.topVendidos();
+    const p = this.topVendidosPage();
+    return arr.slice((p - 1) * this.pageSize, p * this.pageSize);
+  });
 
   // Modal Historial por Cliente
   protected readonly clienteModal = signal<string | null>(null);
@@ -57,11 +73,34 @@ export class ReportesComponent implements OnInit {
   protected readonly cargandoStockCritico = signal<boolean>(false);
   protected readonly tabStock = signal<'critico' | 'estancado'>('critico');
   protected readonly diasEstancado = signal<number>(30);
+  protected readonly stockCriticoPage = signal<number>(1);
+  protected readonly stockEstancadoPage = signal<number>(1);
+
+  protected readonly stockCriticoPaginado = computed(() => {
+    const data = this.stockCriticoData();
+    if (!data) return [];
+    const p = this.stockCriticoPage();
+    return data.stockCritico.slice((p - 1) * this.pageSize, p * this.pageSize);
+  });
+
+  protected readonly stockEstancadoPaginado = computed(() => {
+    const data = this.stockCriticoData();
+    if (!data) return [];
+    const p = this.stockEstancadoPage();
+    return data.productosEstancados.slice((p - 1) * this.pageSize, p * this.pageSize);
+  });
 
   // Rentabilidad y Margen
   protected readonly rentabilidadItems = signal<RentabilidadItem[]>([]);
   protected readonly cargandoRentabilidad = signal<boolean>(false);
   protected readonly tabRentabilidad = signal<'producto' | 'categoria'>('producto');
+  protected readonly rentabilidadPage = signal<number>(1);
+
+  protected readonly rentabilidadPaginada = computed(() => {
+    const arr = this.rentabilidadItems();
+    const p = this.rentabilidadPage();
+    return arr.slice((p - 1) * this.pageSize, p * this.pageSize);
+  });
 
   // Catálogo Oficial
   protected cargandoCatalogoPdf = signal<boolean>(false);
@@ -110,6 +149,13 @@ export class ReportesComponent implements OnInit {
     });
 
     return result.sort((a, b) => b.gananciaNeta - a.gananciaNeta);
+  });
+
+  protected readonly rentabilidadCatPage = signal<number>(1);
+  protected readonly rentabilidadPorCategoriaPaginada = computed(() => {
+    const arr = this.rentabilidadPorCategoria();
+    const p = this.rentabilidadCatPage();
+    return arr.slice((p - 1) * this.pageSize, p * this.pageSize);
   });
 
   protected readonly rentabilidadKpis = computed(() => {
@@ -187,6 +233,8 @@ export class ReportesComponent implements OnInit {
     try {
       const res = await firstValueFrom(this.apiReportes.stockCriticoEstancados(this.diasEstancado()));
       this.stockCriticoData.set(res);
+      this.stockCriticoPage.set(1);
+      this.stockEstancadoPage.set(1);
     } catch {
       this.stockCriticoData.set(null);
     } finally {
@@ -213,6 +261,7 @@ export class ReportesComponent implements OnInit {
         limit: this.topClientesLimit(),
       }));
       this.topClientesList.set(items);
+      this.topClientesPage.set(1);
     } catch {
       this.topClientesList.set([]);
     } finally {
@@ -263,6 +312,8 @@ export class ReportesComponent implements OnInit {
         categoriaId,
       }));
       this.rentabilidadItems.set(items);
+      this.rentabilidadPage.set(1);
+      this.rentabilidadCatPage.set(1);
     } catch {
       this.rentabilidadItems.set([]);
     } finally {
@@ -288,8 +339,9 @@ export class ReportesComponent implements OnInit {
         const d = new Date(hoy.getFullYear(), 0, 1);
         desdeISO = d.toISOString();
       }
-      const res = await firstValueFrom(this.apiReportes.topVendidos({ limit: this.topLimit(), desde: desdeISO, hasta: hastaISO }));
+      const res = await firstValueFrom(this.apiReportes.topVendidos({ limit: 100, desde: desdeISO, hasta: hastaISO }));
       this.topVendidos.set(res.items);
+      this.topVendidosPage.set(1);
     } catch {
       this.topVendidos.set([]);
     } finally {

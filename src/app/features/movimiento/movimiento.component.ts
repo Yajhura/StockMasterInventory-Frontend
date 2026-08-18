@@ -19,6 +19,7 @@ interface FilaHistorial {
   cliente: string | null;
   usuarioId: number | null;
   usuarioNombre: string | null;
+  esStockInicial: boolean;
 }
 
 @Component({
@@ -26,11 +27,26 @@ interface FilaHistorial {
   standalone: true,
   templateUrl: './movimiento.component.html',
   imports: [CommonModule, ReactiveFormsModule, FormsModule, DropdownComponent, RouterLink, ...TABLA_COMPONENTS],
+  host: {
+    '(window:resize)': 'onResize()'
+  }
 })
 export class MovimientoComponent implements OnInit {
   protected readonly state = inject(InventarioState);
   protected readonly notify = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
+
+  // Parámetros de tabla
+  protected sortCol = signal<string>('fecha');
+  protected sortDir = signal<'asc' | 'desc'>('desc');
+
+  protected onResize(): void {
+    if (window.innerWidth < 768) {
+      this.vistaModo.set('cards');
+    } else {
+      this.vistaModo.set('tabla');
+    }
+  }
 
   protected readonly procesando = signal<boolean>(false);
   protected readonly historialReciente = signal<FilaHistorial[]>([]);
@@ -248,6 +264,7 @@ export class MovimientoComponent implements OnInit {
       cliente: m.cliente ?? null,
       usuarioId: m.creadoPorId ?? null,
       usuarioNombre: m.creadoPorNombre ?? null,
+      esStockInicial: m.esStockInicial,
     };
   }
 

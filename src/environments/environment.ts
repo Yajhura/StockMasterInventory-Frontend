@@ -1,5 +1,6 @@
 /**
- * Environment desarrollo. La variable NG_APP_API_URL se define en Vercel.
+ * Environment base. Para producción crear environment.prod.ts
+ * con apiBaseUrl apuntando a la URL pública del backend.
  */
 export const environment = {
   production: false,

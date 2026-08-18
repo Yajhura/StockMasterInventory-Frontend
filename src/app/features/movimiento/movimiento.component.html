@@ -245,6 +245,11 @@
                       <span [class]="h.tipo === 'INGRESO' ? 'chip chip-success text-[10px] font-extrabold' : 'chip chip-danger text-[10px] font-extrabold'">
                         {{ h.tipo }}
                       </span>
+                      @if (h.esStockInicial) {
+                        <span class="chip bg-indigo-50 text-indigo-700 text-[9px] font-extrabold border border-indigo-200">
+                          STOCK INICIAL
+                        </span>
+                      }
                     </div>
                     <span class="text-[11px] font-mono text-slate-400 tabular-nums">{{ h.fechaHora }}</span>
                   </div>
@@ -307,9 +312,16 @@
               <tr app-tr>
                 <td app-td extraClass="text-xs text-slate-600 tabular-nums whitespace-nowrap">{{ h.fechaHora }}</td>
                 <td app-td>
-                  <span [class]="h.tipo === 'INGRESO' ? 'chip chip-success' : 'chip chip-danger'">
-                    {{ h.tipo }}
-                  </span>
+                  <div class="flex flex-col items-start gap-1">
+                    <span [class]="h.tipo === 'INGRESO' ? 'chip chip-success' : 'chip chip-danger'">
+                      {{ h.tipo }}
+                    </span>
+                    @if (h.esStockInicial) {
+                      <span class="chip bg-indigo-50 text-indigo-700 border border-indigo-200 text-[9px]">
+                        STOCK INICIAL
+                      </span>
+                    }
+                  </div>
                 </td>
                 <td app-td align="right" extraClass="text-sm font-bold tabular-nums" [class.text-emerald-600]="h.cantidad > 0" [class.text-rose-600]="h.cantidad < 0">
                   {{ h.cantidad > 0 ? '+' : '' }}{{ h.cantidad }}

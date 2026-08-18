@@ -141,31 +141,29 @@
           </div>
         </div>
 
-        @if (modo() === 'crear') {
-          <div class="mt-5 p-4 rounded-xl bg-blue-50/50 border border-blue-100">
-            <div class="flex items-center gap-2 mb-3">
-              <svg class="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-              <h4 class="text-sm font-semibold text-blue-900">Stock inicial <span class="text-[11px] font-normal text-blue-700/80">(opcional)</span></h4>
+        <div class="mt-5 p-4 rounded-xl bg-blue-50/50 border border-blue-100">
+          <div class="flex items-center gap-2 mb-3">
+            <svg class="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            <h4 class="text-sm font-semibold text-blue-900">Stock inicial <span class="text-[11px] font-normal text-blue-700/80">(opcional)</span></h4>
+          </div>
+          <p class="text-xs text-blue-800/80 mb-3">
+            Si ya tenés mercadería en estantes, cargala acá para que el Kardex arranque con el stock real desde el primer día. Se registra un INGRESO automático al guardar. En modo edición, modifica el movimiento inicial registrado.
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-medium text-slate-700 mb-1">Cantidad</label>
+              <input type="number" min="0" step="1" formControlName="stockInicial" class="input-base tabular-nums" placeholder="0" />
             </div>
-            <p class="text-xs text-blue-800/80 mb-3">
-              Si ya tenés mercadería en estantes, cargala acá para que el Kardex arranque con el stock real desde el primer día. Se registra un INGRESO automático al guardar.
-            </p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block text-[11px] font-medium text-slate-700 mb-1">Cantidad</label>
-                <input type="number" min="0" step="1" formControlName="stockInicial" class="input-base tabular-nums" placeholder="0" />
-              </div>
-              <div>
-                <label class="block text-[11px] font-medium text-slate-700 mb-1">Costo unitario</label>
-                <input type="number" min="0" step="0.01" formControlName="stockInicialPrecioUnitario" class="input-base tabular-nums" placeholder="0.00" />
-              </div>
-            </div>
-            <div class="mt-3">
-              <label class="block text-[11px] font-medium text-slate-700 mb-1">Observación</label>
-              <textarea formControlName="stockInicialObservacion" class="input-base h-auto min-h-[120px] py-2.5 resize-none w-full" placeholder="Ej: Factura F001-123" rows="4" maxlength="500"></textarea>
+            <div>
+              <label class="block text-[11px] font-medium text-slate-700 mb-1">Costo unitario</label>
+              <input type="number" min="0" step="0.01" formControlName="stockInicialPrecioUnitario" class="input-base tabular-nums" placeholder="0.00" />
             </div>
           </div>
-        }
+          <div class="mt-3">
+            <label class="block text-[11px] font-medium text-slate-700 mb-1">Observación</label>
+            <textarea formControlName="stockInicialObservacion" class="input-base h-auto min-h-[120px] py-2.5 resize-none w-full" placeholder="Ej: Factura F001-123" rows="4" maxlength="500"></textarea>
+          </div>
+        </div>
       </section>
 
       <section>

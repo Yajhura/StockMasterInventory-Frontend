@@ -65,4 +65,12 @@ export class ApiMovimientosService {
   registrar(payload: RegistrarMovimientoPayload): Observable<Movimiento> {
     return this.http.post<Movimiento>(this.base, payload);
   }
+
+  actualizar(id: number, payload: Partial<RegistrarMovimientoPayload>): Observable<Movimiento> {
+    return this.http.put<Movimiento>(`${this.base}/${id}`, payload);
+  }
+
+  eliminar(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}`);
+  }
 }

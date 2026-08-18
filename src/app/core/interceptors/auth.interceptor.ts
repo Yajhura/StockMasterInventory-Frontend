@@ -13,12 +13,15 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = auth.accessToken();
 
   const esApiNuestra = req.url.startsWith(environment.apiBaseUrl);
-  if (!token || !esApiNuestra) {
+  if (!esApiNuestra) {
     return next(req);
   }
 
-  const cloned = req.clone({
-    setHeaders: { Authorization: `Bearer ${token}` }
-  });
+  let headers = req.headers.set('TimeZone', '(GMT-05:00) Bogota, Lima, Quito, Rio Branco');
+  if (token) {
+    headers = headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const cloned = req.clone({ headers });
   return next(cloned);
 };

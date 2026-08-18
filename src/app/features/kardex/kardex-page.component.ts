@@ -9,9 +9,11 @@ import {
   Movimiento,
   PaginatedResponse,
   Usuario,
+  RegistrarMovimientoPayload
 } from '../../core/models/inventario.models';
 import { ApiAuthService } from '../../core/api/api-auth.service';
 import { ModalOverlayComponent } from '../../core/components/modal-overlay.component';
+import { NotificationService } from '../../core/services/notification.service';
 import { PaginadorComponent } from '../../core/components/paginador.component';
 import { DropdownComponent, DropdownOption } from '../../core/components/dropdown.component';
 import { DatePickerComponent } from '../../core/components/date-picker.component';
@@ -19,6 +21,8 @@ import { DateRangePickerComponent } from '../../core/components/date-range-picke
 import { TABLA_COMPONENTS } from '../../core/components/tabla.component';
 
 import { RouterLink } from '@angular/router';
+
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-kardex-page',
@@ -35,10 +39,15 @@ import { RouterLink } from '@angular/router';
     DateRangePickerComponent,
     ...TABLA_COMPONENTS,
   ],
+  host: {
+    '(window:resize)': 'onResize()'
+  }
 })
 export class KardexPageComponent implements OnInit {
   private readonly state = inject(InventarioState);
   private readonly apiAuth = inject(ApiAuthService);
+  private readonly notify = inject(NotificationService);
+  protected readonly auth = inject(AuthService);
 
   protected readonly productos = this.state.productos;
   protected readonly marcas = this.state.marcas;
@@ -112,7 +121,31 @@ export class KardexPageComponent implements OnInit {
   protected readonly observacionModal = signal<string | null>(null);
   protected readonly isObservacionModalOpen = computed(() => this.observacionModal() !== null);
 
+  // Modal de Edición
+  protected readonly movimientoAEditar = signal<Movimiento | null>(null);
+  protected readonly isEditModalOpen = computed(() => this.movimientoAEditar() !== null);
+  protected editGuardando = false;
+  
+  // Formulario de edición
+  protected editCantidad = 1;
+  protected editPrecio = 0;
+  protected editObservacion = '';
+  protected editCliente = '';
+
+  // Modal de Confirmación de Eliminación
+  protected readonly movimientoAEliminar = signal<Movimiento | null>(null);
+  protected readonly isDeleteModalOpen = computed(() => this.movimientoAEliminar() !== null);
+
+  protected onResize(): void {
+    if (window.innerWidth < 768) {
+      this.vistaModo.set('cards');
+    } else {
+      this.vistaModo.set('tabla');
+    }
+  }
+
   async ngOnInit(): Promise<void> {
+    this.onResize();
     await Promise.all([
       this.state.cargarCatalogos(),
       this.state.cargarSelectorProductos(),
@@ -214,6 +247,69 @@ export class KardexPageComponent implements OnInit {
 
   protected cerrarObservacionModal(): void {
     this.observacionModal.set(null);
+  }
+
+  // --- Lógica de Edición y Eliminación ---
+
+  protected abrirModalEdicion(m: Movimiento): void {
+    this.movimientoAEditar.set(m);
+    this.editCantidad = m.cantidad;
+    this.editPrecio = m.precioUnitario;
+    this.editObservacion = m.observacion || '';
+    this.editCliente = m.cliente || '';
+  }
+
+  protected cerrarModalEdicion(): void {
+    this.movimientoAEditar.set(null);
+  }
+
+  protected async guardarEdicion(): Promise<void> {
+    const mov = this.movimientoAEditar();
+    if (!mov || this.editCantidad <= 0 || this.editPrecio < 0) return;
+
+    this.editGuardando = true;
+    try {
+      const payload: Partial<RegistrarMovimientoPayload> = {
+        tipoMovimientoId: mov.tipoMovimientoId as 1 | 2,
+        cantidad: this.editCantidad,
+        precioUnitario: this.editPrecio,
+        observacion: this.editObservacion.trim() || undefined,
+        cliente: this.editCliente.trim() || undefined
+      };
+      
+      await this.state.actualizarMovimiento(mov.id, payload);
+      this.cerrarModalEdicion();
+      this.recargarKardex();
+      this.notify.success('Movimiento actualizado y Kardex recalculado correctamente.');
+    } catch (e: any) {
+      this.notify.error(e.message || 'Error al actualizar el movimiento');
+    } finally {
+      this.editGuardando = false;
+    }
+  }
+
+  protected confirmarEliminar(m: Movimiento): void {
+    this.movimientoAEliminar.set(m);
+  }
+
+  protected cerrarModalEliminar(): void {
+    this.movimientoAEliminar.set(null);
+  }
+
+  protected async ejecutarEliminacion(): Promise<void> {
+    const mov = this.movimientoAEliminar();
+    if (!mov) return;
+    
+    this.cargando.set(true);
+    try {
+      await this.state.eliminarMovimiento(mov.id);
+      this.cerrarModalEliminar();
+      this.recargarKardex();
+      this.notify.success('Movimiento eliminado y Kardex recalculado correctamente.');
+    } catch (e: any) {
+      this.notify.error(e.message || 'Error al eliminar el movimiento');
+      this.cargando.set(false);
+    }
   }
 
   protected resolverNombreProducto(m: { productoNombre?: string | null; productoId: number }): string {

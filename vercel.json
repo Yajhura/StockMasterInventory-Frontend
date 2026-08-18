@@ -1,7 +1,6 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "dist/stockmaster",
-  "framework": null,
+  "outputDirectory": "dist/stockmaster/browser",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

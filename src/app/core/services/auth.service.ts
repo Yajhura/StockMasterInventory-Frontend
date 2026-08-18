@@ -20,6 +20,7 @@ export class AuthService {
   readonly accessToken     = this._accessToken.asReadonly();
   readonly isAuthenticated = computed(() => this._currentUser() !== null);
   readonly rol             = computed(() => this._currentUser()?.rol ?? null);
+  readonly esAdmin         = computed(() => this._currentUser()?.rol === 'Admin');
   readonly cargandoLogout  = this._cargandoLogout.asReadonly();
 
   /**
@@ -42,7 +43,7 @@ export class AuthService {
       this._currentUser.set(fresh);
     } catch {
       // Token invalido o expirado. Forzamos logout silencioso.
-      this.logout(false);
+      this.logout(true);
     }
   }
 
@@ -60,10 +61,6 @@ export class AuthService {
    * El delay es de 350ms; no bloquea la red porque ya estamos en cliente.
    */
   async logout(navigateToLogin: boolean = true): Promise<void> {
-    this._cargandoLogout.set(true);
-    // Da tiempo a que se vea el spinner y a que termine cualquier peticion en vuelo.
-    await new Promise((r) => setTimeout(r, 350));
-
     this._currentUser.set(null);
     this._accessToken.set(null);
     this._refreshToken.set(null);
@@ -71,8 +68,6 @@ export class AuthService {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem(STORAGE_KEY);
     }
-
-    this._cargandoLogout.set(false);
 
     if (navigateToLogin) {
       this.router.navigateByUrl('/login');

@@ -227,6 +227,9 @@ export class NuevoProductoComponent implements OnInit {
       marcaId: p.marcaId,
       precioVentaSugerido: p.precioVentaSugerido,
       stockMinimo: p.stockMinimo ?? 10,
+      stockInicial: p.stockInicial ?? 0,
+      stockInicialPrecioUnitario: p.stockInicialPrecioUnitario ?? 0,
+      stockInicialObservacion: p.stockInicialObservacion ?? '',
     });
     this.prepararImagenYAtributosDe(p);
   }
@@ -360,9 +363,8 @@ export class NuevoProductoComponent implements OnInit {
         // o si pidio quitarla. Si no, conservamos la del backend.
         imagenBase64: this.imagenBase64() ?? undefined,
         imagenMime: this.imagenMime() ?? undefined,
-        // Stock inicial: solo aplica al ALTA. En edicion lo ignoramos
-        // (los movimientos se manejan desde "Registrar Movimiento").
-        stockInicial: this.modo() === 'editar' ? 0 : Math.max(0, Number(v.stockInicial ?? 0)),
+        // Stock inicial: se aplica al ALTA o a la EDICIÓN.
+        stockInicial: Math.max(0, Number(v.stockInicial ?? 0)),
         stockInicialPrecioUnitario: Math.max(0, Number(v.stockInicialPrecioUnitario ?? 0)),
         stockInicialObservacion: (v.stockInicialObservacion ?? '').toString().trim() || undefined,
       };

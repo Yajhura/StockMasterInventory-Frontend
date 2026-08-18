@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, publicOnlyGuard } from './core/guards/auth.guard';
+import { authGuard, publicOnlyGuard, adminGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   // Rutas publicas (sin header)
@@ -44,6 +44,7 @@ export const routes: Routes = [
       },
       {
         path: 'reportes/auditoria',
+        canActivate: [adminGuard],
         loadComponent: () =>
           import('./features/auditoria/auditoria.component').then((m) => m.AuditoriaComponent),
       },

@@ -71,6 +71,9 @@ export interface Producto {
   modificadoPorId: number | null;
   /** Nombre del usuario (join). */
   modificadoPorNombre: string | null;
+  stockInicial?: number;
+  stockInicialPrecioUnitario?: number;
+  stockInicialObservacion?: string;
 }
 
 export interface CrearProductoPayload {
@@ -117,10 +120,13 @@ export interface Movimiento {
   cliente: string | null;
   observacion: string | null;
   creadoEn: string;
-  /** Id del usuario (FK) que registro el movimiento. */
   creadoPorId: number | null;
   /** Nombre del usuario (join server-side). */
   creadoPorNombre: string | null;
+  modificadoEn?: string | null;
+  modificadoPorId?: number | null;
+  modificadoPorNombre?: string | null;
+  esStockInicial: boolean;
 }
 
 export interface RegistrarMovimientoPayload {

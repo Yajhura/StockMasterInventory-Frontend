@@ -45,10 +45,9 @@ export class LoginComponent {
       const v = this.form.value;
       await this.auth.login(v.email!, v.password!);
       this.notify.success('Sesion iniciada.');
-      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/inventario';
-      this.router.navigateByUrl(returnUrl);
-    } catch {
-      // El httpErrorInterceptor ya mostro el toast de "Credenciales invalidas"
+      this.router.navigateByUrl('/inventario');
+    } catch (err: any) {
+      this.notify.error(err?.error?.detail || err?.error?.message || 'Credenciales inválidas. Verifica tu correo y contraseña.');
     } finally {
       this.cargando.set(false);
     }

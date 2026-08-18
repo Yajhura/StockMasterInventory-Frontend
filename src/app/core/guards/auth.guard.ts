@@ -26,3 +26,12 @@ export const publicOnlyGuard: CanActivateFn = () => {
   const router = inject(Router);
   return auth.isAuthenticated() ? router.createUrlTree(['/']) : true;
 };
+
+/**
+ * Guard de Admin: permite acceso solo si el usuario tiene rol Admin.
+ */
+export const adminGuard: CanActivateFn = () => {
+  const auth   = inject(AuthService);
+  const router = inject(Router);
+  return auth.esAdmin() ? true : router.createUrlTree(['/']);
+};
