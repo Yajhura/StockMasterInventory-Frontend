@@ -1,0 +1,597 @@
+﻿<!-- Main List View -->
+<div class="p-6 max-w-7xl mx-auto anim-fade-in-up">
+  <header class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Ventas Realizadas</h1>
+      <p class="text-sm text-slate-500 mt-1">Consulta y gestiona el historial de ventas</p>
+    </div>
+    <button (click)="abrirPOS()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all shadow-md flex items-center gap-2">
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      Procesar Venta
+    </button>
+  </header>
+
+  <!-- KPIs del período filtrado — candy simple -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="surface-card p-5 hover:border-slate-300 transition-all">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Ingresos</p>
+        <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7-7 7 7"/></svg>
+      </div>
+      <p class="text-2xl font-bold text-slate-900 tabular-nums">S/ {{ kpis().totalVendido | number:'1.2-2' }}</p>
+      <p class="text-xs text-slate-500 mt-1">en el período seleccionado</p>
+      <div class="mt-3 pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex justify-between">
+        <span>Monto bruto</span><span>Vista actual</span>
+      </div>
+    </div>
+
+    <div class="surface-card p-5 hover:border-slate-300 transition-all">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Transacciones</p>
+        <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+      </div>
+      <p class="text-2xl font-bold text-slate-900 tabular-nums">{{ kpis().cantidadVentas }}</p>
+      <p class="text-xs text-slate-500 mt-1">ventas registradas</p>
+      <div class="mt-3 pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex justify-between">
+        <span>Conteo total</span><span>Período actual</span>
+      </div>
+    </div>
+
+    <div class="surface-card p-5 hover:border-slate-300 transition-all">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Promedio</p>
+        <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V9Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
+      </div>
+      <p class="text-2xl font-bold text-slate-900 tabular-nums">S/ {{ kpis().ticketPromedio | number:'1.2-2' }}</p>
+      <p class="text-xs text-slate-500 mt-1">por venta</p>
+      <div class="mt-3 pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex justify-between">
+        <span>Valor medio</span><span>Ticket típico</span>
+      </div>
+    </div>
+
+    <div class="surface-card p-5 hover:border-slate-300 transition-all">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">A crédito</p>
+        <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <p class="text-2xl font-bold text-slate-900 tabular-nums">{{ kpis().ventasCreditoPorcentaje }}%</p>
+      <p class="text-xs text-slate-500 mt-1">{{ kpis().ventasCreditoCount }} de {{ kpis().cantidadVentas }} ventas</p>
+      <div class="mt-3 pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex justify-between">
+        <span>Ventas a crédito</span><span>Período actual</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Barra de filtros — candy simple -->
+  <section class="surface-card p-4 mb-4 flex flex-wrap gap-4 items-end">
+    <div>
+      <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Desde</label>
+      <input type="date"
+        [value]="filtros().desde ?? ''"
+        (change)="onFiltroFechaChange('desde', $event)"
+        class="px-3 py-2 bg-white border-2 border-slate-400 rounded-md text-sm font-medium text-slate-900 hover:border-slate-600 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20 transition-all tabular-nums">
+    </div>
+    <div>
+      <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Hasta</label>
+      <input type="date"
+        [value]="filtros().hasta ?? ''"
+        (change)="onFiltroFechaChange('hasta', $event)"
+        class="px-3 py-2 bg-white border-2 border-slate-400 rounded-md text-sm font-medium text-slate-900 hover:border-slate-600 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20 transition-all tabular-nums">
+    </div>
+    <div>
+      <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Estado</label>
+      <div class="w-44">
+        <app-dropdown
+          [options]="opcionesEstadoPago"
+          placeholder="Todos"
+          (selectionChange)="onFiltroEstadoChange($event)"
+        />
+      </div>
+    </div>
+    <div>
+      <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Cliente</label>
+      <div class="w-56">
+        <app-dropdown
+          [options]="opcionesFiltroCliente()"
+          placeholder="Todos los clientes"
+          [searchable]="true"
+          (selectionChange)="onFiltroClienteChange($event)"
+        />
+      </div>
+    </div>
+    <button type="button" (click)="limpiarFiltros()"
+      class="ml-auto px-4 py-2 text-slate-700 bg-white border border-slate-300 hover:border-slate-900 hover:text-slate-900 rounded-md text-sm font-semibold transition-colors">
+      Limpiar filtros
+    </button>
+  </section>
+
+  <div class="bg-white p-0 overflow-hidden shadow-sm border border-slate-200 rounded-2xl">
+     <table class="w-full text-left border-collapse whitespace-nowrap">
+        <thead class="bg-slate-50 border-b border-slate-200">
+           <tr>
+              <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">ID</th>
+              <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha</th>
+              <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Cliente</th>
+              <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Monto Total</th>
+              <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Saldo Pend.</th>
+              <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Estado</th>
+           </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+           @for (v of ventas(); track v.id) {
+             <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="px-6 py-4 text-sm font-semibold text-slate-700">#{{ v.id | number:'3.0-0' }}</td>
+                <td class="px-6 py-4 text-sm text-slate-500">{{ v.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="px-6 py-4 text-sm font-medium text-slate-800">{{ v.clienteNombre }}</td>
+                <td class="px-6 py-4 text-sm font-bold text-slate-900 text-right">S/ {{ v.montoTotal | number:'1.2-2' }}</td>
+                <td class="px-6 py-4 text-sm font-bold text-rose-500 text-right">S/ {{ v.saldoPendiente | number:'1.2-2' }}</td>
+                <td class="px-6 py-4 text-center">
+                   <span class="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider"
+                         [ngClass]="{
+                            'bg-emerald-100 text-emerald-600': v.estadoPago === 'Pagado',
+                            'bg-amber-100 text-amber-700': v.estadoPago === 'Parcial',
+                            'bg-rose-100 text-rose-600': v.estadoPago === 'Pendiente'
+                         }">
+                     {{ v.estadoPago }}
+                   </span>
+                </td>
+             </tr>
+           }
+           @if (ventas().length === 0 && !cargandoVentas()) {
+             <tr>
+                <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                   No hay ventas registradas.
+                </td>
+             </tr>
+           }
+           @if (cargandoVentas()) {
+             <tr>
+                <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                   Cargando ventas...
+                </td>
+             </tr>
+           }
+        </tbody>
+     </table>
+  </div>
+</div>
+
+<!--
+  ============================================================================
+  POS MODAL — Diseño candy
+  ============================================================================
+  Estructura en 2 columnas:
+    · Izquierda (3/5) → Cliente + Productos (la operación)
+    · Derecha   (2/5) → Modo de cobro + Plan/Pagos + Totales (la liquidación)
+  El "saldo pendiente" es el elemento tipográfico más fuerte del modal.
+  ============================================================================
+-->
+@if (isPosOpen()) {
+  <div class="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 anim-fade-in">
+
+    <div class="bg-white w-full max-w-[940px] rounded-2xl shadow-[0_24px_48px_-12px_rgba(15,23,42,0.25)] flex flex-col overflow-hidden anim-fade-in-up ring-1 ring-slate-900/5">
+
+      <form [formGroup]="formVenta" (ngSubmit)="procesarVenta()" class="flex flex-col max-h-[92vh]">
+
+        <!-- ============ HEADER ============ -->
+        <header class="px-8 pt-7 pb-6 flex justify-between items-start shrink-0 border-b border-slate-200/70">
+          <div class="flex items-start gap-4">
+            <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 grid place-items-center shrink-0">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </div>
+            <div class="space-y-1">
+              <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Operación en curso</p>
+              <h2 class="text-[26px] font-semibold text-slate-900 leading-tight tracking-tight">Nueva venta</h2>
+              <p class="text-sm text-slate-500">Detalle de los productos y cobro</p>
+            </div>
+          </div>
+          <button type="button" (click)="cerrarPOS()"
+            class="text-slate-400 hover:text-slate-900 transition-colors p-2 -m-2 rounded-full hover:bg-slate-100">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </header>
+
+        <!-- ============ BODY (2 columnas) ============ -->
+        <div class="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-5">
+
+          <!-- ============ COLUMNA IZQUIERDA: Cliente + Productos ============ -->
+          <section class="lg:col-span-3 px-8 py-7 border-r border-slate-200/70 space-y-6">
+
+            <!-- Cliente -->
+            <div class="surface-card p-5 hover:border-slate-300 transition-all">
+              <div class="flex items-center justify-between mb-4">
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Cliente</p>
+                <span class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Requerido</span>
+              </div>
+
+              <div class="flex gap-2">
+                <div class="flex-1">
+                  <app-dropdown
+                    formControlName="clienteId"
+                    [options]="opcionesCliente()"
+                    placeholder="Seleccione un cliente"
+                    [searchable]="true"
+                  />
+                </div>
+                <button type="button" (click)="abrirModalCliente()"
+                  class="px-4 py-2 text-slate-700 bg-white border-2 border-slate-300 hover:border-slate-900 hover:text-slate-900 rounded-md text-sm font-semibold transition-all whitespace-nowrap flex items-center gap-1.5">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 5v14M5 12h14"/></svg>
+                  Nuevo
+                </button>
+              </div>
+
+              @if (clienteSeleccionado()?.limiteCredito != null) {
+                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2 text-[11px] text-slate-500">
+                  <span class="inline-block w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                  Límite de crédito configurado: <strong class="text-slate-700 tabular-nums">S/ {{ clienteSeleccionado()!.limiteCredito! | number:'1.2-2' }}</strong>
+                </div>
+              }
+            </div>
+
+            <!-- Productos -->
+            <div class="surface-card p-5 hover:border-slate-300 transition-all">
+              <div class="flex items-center justify-between mb-4">
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Productos</p>
+                @if (detallesArray.length > 0) {
+                  <span class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold tabular-nums">{{ detallesArray.length }} {{ detallesArray.length === 1 ? 'ítem' : 'ítems' }}</span>
+                }
+              </div>
+
+              <app-dropdown
+                [options]="opcionesProducto()"
+                placeholder="Buscar por nombre o código de barras"
+                [searchable]="true"
+                (selectionChange)="onProductoSeleccionado($event)"
+              />
+
+              <!-- Headers de la tabla -->
+              @if (detallesArray.length > 0) {
+                <div class="grid grid-cols-12 gap-3 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 mt-5 mb-1 px-1">
+                  <div class="col-span-6">Producto</div>
+                  <div class="col-span-2 text-center">Cant.</div>
+                  <div class="col-span-2 text-center">Precio</div>
+                  <div class="col-span-2 text-right pr-1">Subtotal</div>
+                </div>
+              }
+
+              <div formArrayName="detalles">
+                @for (ctrl of detallesArray.controls; track ctrl; let i = $index) {
+                  <div [formGroupName]="i"
+                    class="grid grid-cols-12 gap-3 items-center py-3 px-1 group transition-colors border-b border-slate-100 last:border-0">
+                    <div class="col-span-6 font-medium text-[15px] text-slate-800 truncate pr-2 leading-tight">
+                      {{ ctrl.get('nombre')?.value }}
+                    </div>
+                    <div class="col-span-2 flex justify-center">
+                      <input type="number" min="1" formControlName="cantidad" max="2147483647"
+                        class="w-16 text-center text-base font-bold text-slate-900 bg-white border-2 border-slate-400 rounded-md hover:border-slate-600 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20 py-1.5 tabular-nums transition-colors"
+                        [ngClass]="{ 'text-rose-600 border-rose-500 focus:border-rose-700 focus:ring-rose-700/20': (ctrl.get('cantidad')?.value || 0) > (ctrl.get('stockActual')?.value || 0) }">
+                    </div>
+                    <div class="col-span-2 text-center text-[15px] text-slate-700 tabular-nums">
+                      {{ ctrl.get('precioUnitario')?.value | number:'1.2-2' }}
+                    </div>
+                    <div class="col-span-2 flex justify-end items-center gap-2">
+                      <div class="text-[15px] font-bold text-slate-900 text-right tabular-nums">
+                        {{ ((ctrl.get('cantidad')?.value || 0) * (ctrl.get('precioUnitario')?.value || 0)) | number:'1.2-2' }}
+                      </div>
+                      <button type="button" (click)="removerDetalle(i)"
+                        class="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded transition-all opacity-0 group-hover:opacity-100">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                }
+                @if (detallesArray.length === 0) {
+                  <div class="py-12 text-center border-2 border-dashed border-slate-200 rounded-xl mt-3">
+                    <p class="text-sm text-slate-500 font-medium">Aún no agregaste productos.</p>
+                    <p class="text-xs text-slate-400 mt-1">Usá el buscador de arriba para empezar.</p>
+                  </div>
+                }
+              </div>
+            </div>
+
+          </section>
+
+          <!-- ============ COLUMNA DERECHA: Liquidación ============ -->
+          <section class="lg:col-span-2 bg-slate-50/60 px-6 py-7 lg:px-7 space-y-5 border-t lg:border-t-0 border-slate-200/70">
+
+            <!-- Modo de venta: segmented control -->
+            <div class="surface-card p-5 hover:border-slate-300 transition-all">
+              <div class="flex items-center justify-between mb-4">
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Modo de venta</p>
+              </div>
+
+              <div class="grid grid-cols-2 gap-0 p-1 bg-slate-100 border border-slate-200 rounded-lg">
+                <button type="button" (click)="toggleEsCredito(false)"
+                  [ngClass]="!esCredito() ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'"
+                  class="py-2.5 text-sm font-semibold rounded-md transition-all">
+                  Contado
+                </button>
+                <button type="button" (click)="toggleEsCredito(true)"
+                  [ngClass]="esCredito() ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'"
+                  class="py-2.5 text-sm font-semibold rounded-md transition-all">
+                  Crédito
+                </button>
+              </div>
+              <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                {{ esCredito() ? 'Se generará un plan de cuotas mensuales automático.' : 'Cobro completo en este momento.' }}
+              </p>
+            </div>
+
+            <!-- PLAN DE CRÉDITO (solo si esCredito) -->
+            @if (esCredito()) {
+              <div class="surface-card p-5 hover:border-slate-300 transition-all">
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-4">Plan de crédito</p>
+
+                <div class="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <input type="number" min="1" max="36" step="1"
+                      [value]="cantidadCuotas() ?? ''"
+                      (input)="onCantidadCuotasChange($any($event.target).value)"
+                      class="w-full px-3.5 py-2.5 bg-white border-2 border-slate-400 rounded-md text-base font-bold text-slate-900 hover:border-slate-600 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20 transition-all tabular-nums"
+                      placeholder="1 a 36">
+                    <p class="text-[10px] text-slate-400 mt-1.5 uppercase tracking-wider font-medium">Cuotas mensuales</p>
+                  </div>
+                  <div>
+                    <input type="date"
+                      [value]="fechaInicioCredito()"
+                      (input)="onFechaInicioChange($any($event.target).value)"
+                      class="w-full px-3.5 py-2.5 bg-white border-2 border-slate-400 rounded-md text-base font-bold text-slate-900 hover:border-slate-600 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20 transition-all">
+                    <p class="text-[10px] text-slate-400 mt-1.5 uppercase tracking-wider font-medium">Fecha 1ª cuota</p>
+                  </div>
+                </div>
+                @if (cantidadCuotasInvalida()) {
+                  <p class="text-[11px] text-rose-600 mt-2 font-semibold">Ingresá un número entero entre 1 y 36.</p>
+                }
+
+                @if (excedeLimiteCredito()) {
+                  <div class="mt-4 p-3 bg-rose-50 border border-rose-200 rounded-md">
+                    <p class="text-xs font-bold text-rose-700 uppercase tracking-wider">Excede el límite</p>
+                    <p class="text-[11px] text-rose-600 mt-1 leading-relaxed">Deuda actual del cliente: S/ {{ saldoActualCliente() | number:'1.2-2' }}</p>
+                  </div>
+                }
+
+                @if (planCuotas().length > 0) {
+                  <div class="mt-4 pt-3 border-t border-slate-100">
+                    <div class="flex items-baseline justify-between mb-2">
+                      <p class="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">Cronograma</p>
+                      <p class="text-[10px] text-slate-500 tabular-nums font-semibold">{{ planCuotas().length }} cuotas</p>
+                    </div>
+                    <div class="max-h-[160px] overflow-y-auto bg-slate-50 border border-slate-200 rounded-md divide-y divide-slate-100">
+                      @for (c of planCuotas(); track c.numero) {
+                        <div class="grid grid-cols-12 text-[13px] py-2 px-3 tabular-nums items-baseline">
+                          <span class="col-span-2 text-slate-400 font-semibold">#{{ c.numero }}</span>
+                          <span class="col-span-5 text-right text-slate-900 font-bold">S/ {{ c.monto | number:'1.2-2' }}</span>
+                          <span class="col-span-5 text-right text-slate-500">{{ c.fechaVencimiento | date:'dd/MM/yy' }}</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                } @else if (cantidadCuotas() && cantidadCuotas()! > 0 && totalVenta() <= 0) {
+                  <p class="mt-3 text-[11px] text-slate-600 bg-slate-50 border border-slate-200 rounded-md p-2.5 leading-relaxed">
+                    Agregá productos a la venta para ver el plan de cuotas.
+                  </p>
+                }
+              </div>
+            }
+
+            <!-- PAGOS (solo si NO es crédito) -->
+            @if (!esCredito()) {
+              <div formArrayName="pagos" class="surface-card p-5 hover:border-slate-300 transition-all">
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-4">Pagos recibidos</p>
+
+                <div class="space-y-3">
+                  @for (ctrl of pagosArray.controls; track ctrl; let i = $index) {
+                    <div [formGroupName]="i" class="space-y-2 p-3 bg-white border border-slate-200 rounded-md">
+                      <div class="relative z-[5]">
+                        <app-dropdown
+                          formControlName="metodoPagoId"
+                          [options]="opcionesMetodosPago"
+                          placeholder="Método"
+                        />
+                      </div>
+                      <div class="relative border-2 border-slate-400 rounded-md hover:border-slate-600 focus-within:border-slate-900 focus-within:ring-2 focus-within:ring-slate-900/20 transition-colors bg-white">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500 text-sm font-bold">S/</div>
+                        <input type="number" min="0" step="0.01" formControlName="monto" max="99999999999999.99"
+                          class="w-full pl-9 pr-3 py-2.5 bg-transparent border-none text-slate-900 font-bold text-base focus:ring-0 tabular-nums">
+                      </div>
+                      @if (pagosArray.length > 1) {
+                        <button type="button" (click)="removerPago(i)"
+                          class="w-full py-1 text-slate-400 hover:text-rose-600 rounded text-[11px] font-medium transition-colors flex items-center justify-center gap-1 uppercase tracking-wider">
+                          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                          Quitar
+                        </button>
+                      }
+                    </div>
+                  }
+                  <button type="button" (click)="agregarPagoVacio()"
+                    class="w-full py-2.5 border border-dashed border-slate-300 rounded-md text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-400 text-[13px] font-semibold flex items-center justify-center gap-1.5 transition-colors">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 5v14M5 12h14"/></svg>
+                    Agregar otro pago
+                  </button>
+                </div>
+              </div>
+            }
+
+            <!-- TOTALES — El elemento tipográfico más fuerte del modal -->
+            <div class="surface-card p-5 hover:border-slate-300 transition-all">
+              <div class="flex items-center justify-between mb-4">
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Resumen</p>
+              </div>
+
+              <div class="space-y-3">
+                <div class="flex justify-between items-baseline">
+                  <span class="text-[13px] text-slate-500 font-medium">Subtotal</span>
+                  <span class="text-base font-semibold text-slate-700 tabular-nums">S/ {{ totalVenta() | number:'1.2-2' }}</span>
+                </div>
+                <div class="flex justify-between items-baseline">
+                  <span class="text-[13px] text-slate-500 font-medium">
+                    {{ esCredito() ? 'Pago inicial' : 'A cuenta' }}
+                  </span>
+                  <span class="text-base font-semibold tabular-nums"
+                    [ngClass]="totalPagado() > 0 ? 'text-emerald-700' : 'text-slate-400'">
+                    S/ {{ totalPagado() | number:'1.2-2' }}
+                  </span>
+                </div>
+
+                <!-- SALDO PENDIENTE — el dato más importante -->
+                <div class="pt-5 mt-3 border-t border-slate-100">
+                  <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Saldo pendiente</p>
+                  <p class="text-5xl font-black text-slate-900 tabular-nums tracking-tighter leading-none"
+                    [ngClass]="pagoExcedido() ? 'text-rose-600' : ''">
+                    S/ {{ saldoPendiente() | number:'1.2-2' }}
+                  </p>
+                  @if (pagoExcedido()) {
+                    <p class="text-[11px] text-rose-600 mt-2 font-bold uppercase tracking-wider">Excede el total</p>
+                  } @else if (esCredito() && saldoPendiente() > 0) {
+                    <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                      Se distribuirá en <strong class="text-slate-700">{{ cantidadCuotas() }}</strong> cuotas mensuales.
+                    </p>
+                  } @else if (!esCredito() && saldoPendiente() === 0 && totalVenta() > 0) {
+                    <p class="text-[11px] text-emerald-700 mt-2 font-bold uppercase tracking-wider">Pagado completo</p>
+                  }
+                </div>
+              </div>
+            </div>
+
+          </section>
+        </div>
+
+        <!-- ============ FOOTER ============ -->
+        <footer class="px-8 py-5 border-t border-slate-200/70 flex gap-3 shrink-0 bg-white">
+          <button type="button" (click)="cerrarPOS()"
+            class="px-6 py-3 bg-white border-2 border-slate-300 text-slate-700 rounded-lg font-semibold text-sm hover:bg-slate-50 hover:border-slate-500 transition-colors">
+            Cancelar
+          </button>
+          <button type="submit"
+            [disabled]="formVenta.invalid || procesando() || detallesArray.length === 0 || pagoExcedido() || stockExcedido() || pagoInvalido() || detalleInvalido() || (esCredito() && (cantidadCuotasInvalida() || excedeLimiteCredito()))"
+            class="flex-1 py-3 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
+            @if (procesando()) {
+              <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.22-8.56"/></svg>
+              Procesando...
+            } @else {
+              <span>Confirmar venta</span>
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
+            }
+          </button>
+        </footer>
+
+      </form>
+    </div>
+  </div>
+}
+
+<!-- Modal Cliente Rapido (candy) -->
+@if (modalClienteAbierto()) {
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] anim-fade-in">
+    <div class="bg-white rounded-[16px] shadow-2xl w-full max-w-[500px] overflow-hidden flex flex-col anim-scale-in relative">
+
+      @if (confirmarDuplicadosAbierto()) {
+        <div class="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm flex items-center justify-center p-8 flex-col text-center">
+           <div class="bg-amber-100 text-amber-600 p-4 rounded-full mb-4">
+             <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>
+           </div>
+           <h4 class="text-lg font-bold text-slate-900 mb-2">Posible cliente duplicado</h4>
+           <p class="text-[13.5px] text-slate-600 mb-4 leading-relaxed">Hemos encontrado clientes existentes con el mismo nombre o documento. ¿Estás seguro de registrar uno nuevo?</p>
+
+           <div class="w-full max-h-[160px] overflow-auto bg-slate-50 border border-slate-200 rounded-xl text-left p-4 mb-6 space-y-3">
+             @for (dup of clientesDuplicados(); track dup.id) {
+               <div class="text-[13.5px]">
+                 <p class="font-bold text-slate-800">{{ dup.nombre }}</p>
+                 <p class="text-slate-500 text-[12px] flex gap-3">
+                   @if (dup.documento) { <span>Doc: {{ dup.documento }}</span> }
+                   @if (dup.telefono) { <span>Tel: {{ dup.telefono }}</span> }
+                 </p>
+               </div>
+             }
+           </div>
+
+           <div class="flex gap-3 w-full mt-auto">
+             <button type="button" (click)="cancelarGuardarDuplicado()" class="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-medium text-[14px] hover:bg-slate-50 transition-colors">
+               No guardar
+             </button>
+             <button type="button" (click)="ejecutarGuardarClienteRapido()" class="flex-1 py-2.5 bg-slate-900 text-white rounded-xl font-medium text-[14px] hover:bg-slate-800 transition-colors shadow-lg shadow-black/10">
+               Sí, guardar nuevo
+             </button>
+           </div>
+        </div>
+      }
+
+      <header class="px-6 py-5 border-b border-slate-100 flex items-start justify-between">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 grid place-items-center shrink-0">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M16 11h6M19 8v6"/></svg>
+          </div>
+          <div class="space-y-1">
+            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Nuevo cliente</p>
+            <h3 class="text-lg font-bold text-slate-900 leading-tight">Alta rápida</h3>
+            <p class="text-[13px] text-slate-500">Se agrega y queda seleccionado en la venta</p>
+          </div>
+        </div>
+        <button type="button" (click)="cerrarModalCliente()" class="text-slate-400 hover:text-slate-900 bg-white border border-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </header>
+
+      <div class="p-6 overflow-y-auto max-h-[75vh]">
+        <form [formGroup]="formCliente" (ngSubmit)="intentarGuardarClienteRapido()" class="flex flex-col gap-5">
+
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-violet-700 mb-1.5">Tipo de documento</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" (click)="setTipoDocumento(1)" [ngClass]="formCliente.get('tipoDocumentoId')?.value === 1 ? 'bg-slate-800 text-white border-transparent' : 'bg-white border-slate-400 text-slate-700 hover:border-slate-600'" class="py-2.5 border-2 rounded-md text-[13px] font-semibold transition-colors">DNI</button>
+              <button type="button" (click)="setTipoDocumento(2)" [ngClass]="formCliente.get('tipoDocumentoId')?.value === 2 ? 'bg-slate-800 text-white border-transparent' : 'bg-white border-slate-400 text-slate-700 hover:border-slate-600'" class="py-2.5 border-2 rounded-md text-[13px] font-semibold transition-colors">RUC</button>
+              <button type="button" (click)="setTipoDocumento(3)" [ngClass]="formCliente.get('tipoDocumentoId')?.value === 3 ? 'bg-slate-800 text-white border-transparent' : 'bg-white border-slate-400 text-slate-700 hover:border-slate-600'" class="py-2.5 border-2 rounded-md text-[13px] font-semibold transition-colors">Sin doc.</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-blue-700 mb-1.5">Numero de documento</label>
+            <input type="text" formControlName="documento" appOnlyNumbers maxlength="50" class="w-full px-3 py-2.5 bg-white border-2 border-slate-400 rounded-md text-[14px] text-slate-900 hover:border-slate-600 focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900/20 disabled:bg-slate-50 disabled:text-slate-400 transition-colors" placeholder="Ej. 45678912">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-blue-700 mb-1.5">Nombre completo / Razon social</label>
+            <input type="text" formControlName="nombre" maxlength="150" class="w-full px-3 py-2.5 bg-white border-2 border-slate-400 rounded-md text-[14px] text-slate-900 hover:border-slate-600 focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900/20 transition-colors" placeholder="Ej. Pedro Chiroque Vasquez">
+            @if (formCliente.get('nombre')?.invalid && formCliente.get('nombre')?.touched) {
+              <p class="text-[11px] text-rose-600 mt-1.5 font-semibold">El nombre es requerido.</p>
+            }
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-blue-700 mb-1.5">Telefono</label>
+              <input type="text" formControlName="telefono" appOnlyNumbers maxlength="50" class="w-full px-3 py-2.5 bg-white border-2 border-slate-400 rounded-md text-[14px] text-slate-900 hover:border-slate-600 focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900/20 transition-colors" placeholder="Ej. 987 654 321">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-blue-700 mb-1.5">Correo (opcional)</label>
+              <input type="email" formControlName="email" maxlength="100" class="w-full px-3 py-2.5 bg-white border-2 border-slate-400 rounded-md text-[14px] text-slate-900 hover:border-slate-600 focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900/20 transition-colors" placeholder="correo@ejemplo.com">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-blue-700 mb-1.5">Direccion (opcional)</label>
+            <input type="text" formControlName="direccion" maxlength="250" class="w-full px-3 py-2.5 bg-white border-2 border-slate-400 rounded-md text-[14px] text-slate-900 hover:border-slate-600 focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900/20 transition-colors" placeholder="Ej. Av. Los Proceres 123">
+          </div>
+
+          <div class="mt-3 flex gap-4 pt-3 border-t border-slate-100">
+            <button type="button" (click)="cerrarModalCliente()" class="flex-[0.8] py-3 bg-white border-2 border-slate-300 text-slate-800 rounded-xl font-semibold text-[14px] hover:bg-slate-50 hover:border-slate-500 transition-colors">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              [disabled]="formCliente.invalid || guardandoCliente()"
+              class="flex-[1.2] py-3 bg-blue-600 text-white rounded-xl font-bold text-[14px] hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            >
+              @if (guardandoCliente()) {
+                <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.22-8.56"/></svg>
+              } @else {
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
+              }
+              Guardar y usar en la venta
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}
