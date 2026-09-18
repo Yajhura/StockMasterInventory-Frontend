@@ -81,6 +81,11 @@
               Salida
             </button>
           </div>
+          @if (formMovimiento.get('tipoMovimientoId')?.value === 2) {
+            <p class="text-[11px] text-amber-600 mt-1.5 leading-tight">
+              <b>Nota:</b> Para registrar ventas a clientes (contado o crédito), usa el módulo de <a routerLink="/punto-venta" class="underline">Punto de Venta</a>. Utiliza esta opción solo para ajustes o mermas de inventario.
+            </p>
+          }
         </div>
 
         <div class="grid grid-cols-2 gap-3">
@@ -111,17 +116,6 @@
               <p class="text-[11px] text-rose-600 mt-1 font-semibold">El precio unitario debe ser mayor a 0.</p>
             }
           </div>
-        </div>
-
-        <div>
-          <label class="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">Cliente (Opcional)</label>
-          <input
-            type="text"
-            formControlName="cliente"
-            class="input-base"
-            placeholder="Ej. Juan Perez"
-            maxlength="250"
-          />
         </div>
 
         <div>
