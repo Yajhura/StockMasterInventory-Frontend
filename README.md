@@ -105,4 +105,38 @@ Centraliza todas las llamadas HTTP. Funciones:
 2. Reemplazar `of(...).pipe(delay(150))` por `this.http.get<Producto[]>(...)`.
 3. Mapear los DTOs del backend a las interfaces locales (en caso de nombres diferentes).
 4. Añadir `HttpInterceptor` para JWT cuando exista autenticación.
+
+## Cómo correr los tests (Karma + Jasmine)
+
+### Prerrequisitos
+
+- **Chrome** instalado (Karma usa `ChromeHeadlessNoSandbox` por defecto; Windows lo encuentra automáticamente en `C:\Program Files\Google\Chrome\Application\chrome.exe`).
+- **Dependencias de dev** instaladas (`npm install` ya las baja).
+
+### Comandos
+
+```bash
+# Suite completa (1 corrida + coverage + exit non-zero si hay specs fallando)
+npm test
+
+# Modo watch para desarrollo
+npm run test:watch
+
+# CI (alias explícito de test, mismo comportamiento)
+npm run test:ci
+```
+
+### Estado actual
+
+- **7 specs pasando**:
+  - `auth.service.spec.ts` (3): init desde localStorage, refresh on success, refresh on 401 → silent logout
+  - `auth.guard.spec.ts` (2): redirect a `/login` sin sesión, allow con sesión
+  - `api-ventas.service.spec.ts` (2): POST happy path, 401 → logout via interceptor real
+- **1 spec RED por diseño**:
+  - `inventario.state.spec.ts` — REQ-TEST-003. Falla porque `kpiInventario` calcula sobre la página actual en vez de totales del server. **Esto es intencional** — es regression guard hasta que el cambio `split-inventario-state` lo arregle. El exit code de `npm test` es **non-zero** por este spec; es el contrato del PR.
+
+### Coverage
+
+Se emite en `frontend/coverage/stockmaster/` (formato `html` + `text-summary` + `lcovonly`). Abrí `coverage/stockmaster/index.html` en el browser.
+
 # StockMasterInventory-Frontend
