@@ -1,36 +1,24 @@
 /**
  * InventarioState KPI spec — REQ-TEST-003.
  *
- * INTENTIONAL RED BY DESIGN
- * -------------------------
- * This spec asserts the contract from spec REQ-TEST-003: KPI dashboard
- * totals (`totalItems`, `totalUnidades`, `productosBajos`) MUST be
- * computed from server-side totals across ALL matching productos, not
- * from the current paginated page slice.
+ * Originally RED by design (intentional page-slice bug captured in
+ * PR-F1 of the test scaffolding change). Turned GREEN by PR-F2 of
+ * the `kpi-inventario-server-totals` change, which refactored
+ * `InventarioState.kpiInventario` from a `computed` over
+ * `_productosPaginados()` to a server-fetched signal that hits
+ * `GET /api/reportes/kpis-inventario`.
  *
- * Current behaviour (see `inventario.state.ts` line ~124, the
- * `kpiInventario` computed signal):
+ * The contract asserted here is unchanged across the fix:
  *
- *     totalUnidades: ps.reduce((acc, p) => acc + p.stockActual, 0),
- *     productosBajos: ps.filter((p) => p.stockActual < (p.stockMinimo ?? 10)).length,
+ *   totalItems       = 5   (server-side count over the WHOLE Productos table,
+ *                            excluding soft-deleted via the global EF filter)
+ *   productosBajos   = 3   (A, B, C all have StockActual <= StockMinimo)
+ *   totalUnidades    = 35  (sum over all 5 matching productos: 3+2+5+10+15)
  *
- * `ps` is the page slice (`_productosPaginados()`), so both
- * `totalUnidades` and `productosBajos` are wrong whenever the result
- * spans more than one page.
- *
- * The fix lives in the follow-up `split-inventario-state` change
- * (the state will be decomposed and the KPI signal will be fed by a
- * dedicated `/api/reportes/kpis` endpoint or by aggregating the
- * server-side `totalItems` already returned by `/api/productos/buscar`).
- *
- * We deliberately keep this spec as `it(...)` (not `xit(...)`) so it
- * RUNS and FAILS. That fail is the regression-guard value: until the
- * fix lands, any contributor who changes `kpiInventario` will see
- * the red bar and remember why the page-slice approach is wrong.
- *
- * The 4-passing + 1-RED-by-design outcome is the explicit acceptance
- * signal for PR-F1 of `scaffold-tests-karma-xunit`. `npm test` exits
- * non-zero — that is the contract, not a defect.
+ * Before the fix the page-slice implementation returned
+ * `productosBajos = 0, totalUnidades = 25` (only saw page 2). After
+ * the fix the values match the asserted contract because the signal
+ * is hydrated from the server aggregate, not derived from a page.
  */
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
@@ -40,7 +28,8 @@ import { InventarioState } from './inventario.state';
 import { ProductoListItem } from '../models/inventario.models';
 import { environment } from '../../../environments/environment';
 
-const BUSCAR_URL = `${environment.apiBaseUrl}/api/productos/buscar`;
+const BUSCAR_URL        = `${environment.apiBaseUrl}/api/productos/buscar`;
+const KPIS_INVENTARIO   = `${environment.apiBaseUrl}/api/reportes/kpis-inventario`;
 
 /**
  * Build a `ProductoListItem` shaped exactly like the server response
@@ -135,8 +124,17 @@ describe('InventarioState.kpiInventario (REQ-TEST-003)', () => {
     });
     await page2Promise;
 
-    // WHEN: the dashboard observes `kpiInventario()`.
-    const kpis = state.kpiInventario();
+    // WHEN: the dashboard requests the server-side aggregate KPIs
+    // (this is what `DashboardComponent.ngOnInit` and the 5 mutation
+    // reload sites now call).
+    const kpisPromise = state.cargarKpisInventario();
+    const kpiReq = httpTesting.expectOne(KPIS_INVENTARIO);
+    kpiReq.flush({ totalItems: 5, totalUnidades: 35, productosBajos: 3 });
+    await kpisPromise;
+
+    // THEN: `kpiInventario()` reflects the server aggregate, not the
+    // current page slice.
+    const kpis = state.kpiInventario()!;
 
     // THEN: `totalItems` matches the server (5); `productosBajos` and
     // `totalUnidades` reflect the WHOLE 5-product set, not just the

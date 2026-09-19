@@ -350,6 +350,13 @@ export class DashboardComponent implements OnInit {
     // escala bien a miles de productos.
     this.state.cargarSelectorProductos();
 
+    // Carga los KPIs agregados del server (totalItems, totalUnidades,
+    // productosBajos). Antes se calculaban sobre la página actual (bug
+    // REQ-TEST-003); ahora vienen del endpoint
+    // /api/reportes/kpis-inventario y reflejan la tabla Productos
+    // completa (soft-deleted excluidos).
+    this.state.cargarKpisInventario();
+
     // Carga inicial: pagina 1, sin filtro.
     this.state.setPageSize(10);
     await this.refrescar(1);

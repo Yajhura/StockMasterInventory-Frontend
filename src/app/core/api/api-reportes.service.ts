@@ -14,6 +14,12 @@ export interface KpiResumenResult {
   cantidadSalidas: number;
 }
 
+export interface KpiInventarioResult {
+  totalItems: number;
+  totalUnidades: number;
+  productosBajos: number;
+}
+
 export interface TopVendidoParams {
   desde?: string;     // ISO
   hasta?: string;     // ISO
@@ -135,6 +141,20 @@ export class ApiReportesService {
 
   kpiResumen(): Observable<KpiResumenResult> {
     return this.http.get<KpiResumenResult>(`${this.base}/kpi-resumen`);
+  }
+
+  /**
+   * Server-side aggregate inventory KPIs. Replaces the buggy page-slice
+   * computation that InventarioState used to do client-side. Now totals
+   * are computed over the entire Productos table (excluding soft-deleted
+   * via the backend's global EF query filter), so the dashboard never
+   * sees misleading numbers from the current pagination slice.
+   *
+   * Returns the response shape `{ totalItems, totalUnidades, productosBajos }`
+   * from `GET /api/reportes/kpis-inventario`.
+   */
+  kpisInventario(): Observable<KpiInventarioResult> {
+    return this.http.get<KpiInventarioResult>(`${this.base}/kpis-inventario`);
   }
 
   stockCriticoEstancados(diasMinimosEstancado = 30): Observable<StockCriticoEstancadosResult> {

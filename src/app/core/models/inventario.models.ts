@@ -251,7 +251,7 @@ export interface ProductoSearchParams {
 export interface KpiInventario {
   totalItems: number;
   totalUnidades: number;
-  productosBajos: number;          // stockActual < 10
+  productosBajos: number;          // productos with StockActual <= StockMinimo (inclusive, server-side)
 }
 
 export interface KpiFinanciero {

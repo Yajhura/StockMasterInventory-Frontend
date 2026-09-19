@@ -148,7 +148,12 @@ export class CatalogoComponent implements OnInit {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          const ts = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '');
+          // NOTE: do NOT use a JS bracket character class with letters here —
+          // Tailwind's content scanner reads regex literals and treats any
+          // bracketed sequence as a candidate utility class, generating
+          // invalid CSS. The alternation form below is semantically
+          // identical but escapes the scanner's pattern.
+          const ts = new Date().toISOString().slice(0, 16).replace(/-|:|T/g, '');
           a.download = `catalogo-${agrupacion}-stockmaster-${ts}.pdf`;
           document.body.appendChild(a);
           a.click();
