@@ -128,12 +128,11 @@ npm run test:ci
 
 ### Estado actual
 
-- **7 specs pasando**:
+- **8 specs pasando**:
   - `auth.service.spec.ts` (3): init desde localStorage, refresh on success, refresh on 401 → silent logout
   - `auth.guard.spec.ts` (2): redirect a `/login` sin sesión, allow con sesión
   - `api-ventas.service.spec.ts` (2): POST happy path, 401 → logout via interceptor real
-- **1 spec RED por diseño**:
-  - `inventario.state.spec.ts` — REQ-TEST-003. Falla porque `kpiInventario` calcula sobre la página actual en vez de totales del server. **Esto es intencional** — es regression guard hasta que el cambio `split-inventario-state` lo arregle. El exit code de `npm test` es **non-zero** por este spec; es el contrato del PR.
+  - `inventario.state.spec.ts` (1) — REQ-TEST-003. **`InventarioState.kpiInventario`** ahora viene del server: `GET /api/reportes/kpis-inventario` devuelve los agregados sobre TODA la tabla Productos (soft-deleted excluidos por el global EF query filter). El refactor turn el spec **GREEN** sin cambiar las assertions (`5 / 35 / 3`). El exit code de `npm test` es ahora **zero**.
 
 ### Coverage
 
