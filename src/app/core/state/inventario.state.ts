@@ -6,6 +6,7 @@ import { ApiAtributosService } from '../api/api-atributos.service';
 import { ApiAtributoValoresService } from '../api/api-atributo-valores.service';
 import { ApiProductosService } from '../api/api-productos.service';
 import { ApiMovimientosService } from '../api/api-movimientos.service';
+import { ApiReportesService, KpiInventarioResult } from '../api/api-reportes.service';
 import { ErrorTranslator } from '../errors/error-translator';
 import {
   Categoria,
@@ -45,6 +46,7 @@ export class InventarioState {
   private readonly apiAtributoValores  = inject(ApiAtributoValoresService);
   private readonly apiProductos        = inject(ApiProductosService);
   private readonly apiMovimientos      = inject(ApiMovimientosService);
+  private readonly apiReportes         = inject(ApiReportesService);
 
   // --- Signals de catalogos ---
   private readonly _categorias = signal<Categoria[]>([]);
@@ -118,22 +120,70 @@ export class InventarioState {
    */
   readonly productosRev = signal<number>(0);
 
-  // --- KPIs calculados en el cliente ---
-  // Se calculan sobre la lista paginada + totalItems del server.
-  // Asi no necesitamos una segunda query "full" para los KPIs.
-  readonly kpiInventario = computed<KpiInventario>(() => {
-    const ps = this._productosPaginados();
-    return {
-      // totalItems viene del server, no de la pagina actual
-      totalItems: this._totalItems(),
-      // Unidades: sumamos lo que esta en la pagina actual
-      // (es exacto en el caso comun de paginas chicas; para
-      // volumenes grandes el server deberia exponer un endpoint
-      // /api/reportes/kpis que devuelva los totales reales).
-      totalUnidades: ps.reduce((acc, p) => acc + p.stockActual, 0),
-      productosBajos: ps.filter((p) => p.stockActual < (p.stockMinimo ?? 10)).length,
-    };
-  });
+  // --- KPIs del servidor ---
+  // Antes: kpiInventario era un computed sobre _productosPaginados()
+  // (BUG: solo veia la pagina actual, ej. productosBajos=0 cuando el
+  // server tenia 3 stock-bajo en otra pagina). Ahora se hidrata via
+  // cargarKpisInventario() que pega contra /api/reportes/kpis-inventario
+  // y devuelve los totales REALES sobre toda la tabla Productos
+  // (excluyendo soft-deleted por el global query filter del backend).
+  // Devuelve null mientras se hace el primer fetch — los consumidores
+  // deben chequear `kpiInventario() === null` antes de leer.
+  private readonly _kpiInventario  = signal<KpiInventario | null>(null);
+  private readonly _kpisCargando    = signal<boolean>(false);
+  /** In-flight promise cache to coalesce concurrent reload requests. */
+  private kpisInflight: Promise<void> | null = null;
+  /** Set true after the first successful load so we can avoid an extra fetch on every state init. */
+  private kpisLoadedOnce = false;
+  readonly kpiInventario = this._kpiInventario.asReadonly();
+  readonly kpisCargando  = this._kpisCargando.asReadonly();
+
+  /**
+   * Fetch server-side aggregate KPIs.
+   *
+   * @param force when true, bypasses the in-flight cache and the
+   *              already-loaded guard so a reload always re-hits the
+   *              network. Use after mutations (crear/actualizar/
+   *              eliminar/restaurar producto + registrarMovimiento).
+   *              When false, returns the existing in-flight promise if
+   *              one is active, and skips the fetch if we already have
+   *              data and no force.
+   */
+  async cargarKpisInventario(force = false): Promise<void> {
+    if (!force && this.kpisLoadedOnce && this._kpiInventario() !== null) {
+      return;
+    }
+    if (!force && this.kpisInflight) {
+      return this.kpisInflight;
+    }
+    this._kpisCargando.set(true);
+    const p = (async () => {
+      try {
+        const result = await firstValueFrom(this.apiReportes.kpisInventario());
+        // ApiReportesService returns `KpiInventarioResult` which has the
+        // same shape as the local `KpiInventario` interface; map through
+        // explicitly so future drift is caught at compile time.
+        const mapped: KpiInventario = {
+          totalItems: result.totalItems,
+          totalUnidades: result.totalUnidades,
+          productosBajos: result.productosBajos,
+        };
+        this._kpiInventario.set(mapped);
+        this.kpisLoadedOnce = true;
+        this.error.set(null);
+      } catch (e: unknown) {
+        this.error.set(this.toMessage(e));
+        // Don't reset kpisLoadedOnce on transient errors — keep the last
+        // known-good KPI values so the dashboard doesn't flicker to null.
+        throw e;
+      } finally {
+        this._kpisCargando.set(false);
+        this.kpisInflight = null;
+      }
+    })();
+    this.kpisInflight = p;
+    return p;
+  }
 
   // ========================
   //   Carga / inicializacion
@@ -249,6 +299,7 @@ export class InventarioState {
       this.error.set(null);
       await this.cargarSelectorProductos(true);
       await this.recargarProductosPaginados();
+      await this.cargarKpisInventario(true);
       return nuevo;
     } catch (e: unknown) {
       this.error.set(this.toMessage(e));
@@ -264,6 +315,7 @@ export class InventarioState {
       this.error.set(null);
       await this.cargarSelectorProductos(true);
       await this.recargarProductosPaginados();
+      await this.cargarKpisInventario(true);
       return actualizado;
     } catch (e: unknown) {
       this.error.set(this.toMessage(e));
@@ -300,6 +352,7 @@ export class InventarioState {
       await this.cargarSelectorProductos(true);
       // Recargar lista paginada para reflejar el cambio de pagina si es necesario
       await this.recargarProductosPaginados();
+      await this.cargarKpisInventario(true);
     } catch (e: unknown) {
       this.error.set(this.toMessage(e));
       throw e;
@@ -329,6 +382,7 @@ export class InventarioState {
       );
       this.productosRev.update((n) => n + 1);
       this.error.set(null);
+      await this.cargarKpisInventario(true);
       return producto;
     } catch (e: unknown) {
       this.error.set(this.toMessage(e));
@@ -355,6 +409,7 @@ export class InventarioState {
         })
       );
       this.error.set(null);
+      await this.cargarKpisInventario(true);
       return mov;
     } catch (e: unknown) {
       this.error.set(this.toMessage(e));
