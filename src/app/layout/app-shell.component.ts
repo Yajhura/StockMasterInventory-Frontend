@@ -68,6 +68,36 @@ import { KardexModalComponent } from '../core/components/kardex-modal.component'
               type="button"
               role="tab"
               [class.nav-tab]="true"
+              [class.nav-tab-active]="tabVentasActivo()"
+              [attr.aria-selected]="tabVentasActivo()"
+              (click)="irAPuntoVenta()"
+            >
+              Ventas
+            </button>
+            <button
+              type="button"
+              role="tab"
+              [class.nav-tab]="true"
+              [class.nav-tab-active]="tabCuentasActivo()"
+              [attr.aria-selected]="tabCuentasActivo()"
+              (click)="irACuentasCorrientes()"
+            >
+              Cobranzas
+            </button>
+            <button
+              type="button"
+              role="tab"
+              [class.nav-tab]="true"
+              [class.nav-tab-active]="tabClientesActivo()"
+              [attr.aria-selected]="tabClientesActivo()"
+              (click)="irAClientes()"
+            >
+              Clientes
+            </button>
+            <button
+              type="button"
+              role="tab"
+              [class.nav-tab]="true"
               [class.nav-tab-active]="tabKardexActivo()"
               [attr.aria-selected]="tabKardexActivo()"
               (click)="irAKardex()"
@@ -372,6 +402,18 @@ export class AppShellComponent implements OnInit {
     this.rutaActiva().startsWith('/movimiento') && !this.enCatalogos()
   );
 
+  protected readonly tabVentasActivo = computed<boolean>(() =>
+    this.rutaActiva().startsWith('/punto-venta') && !this.enCatalogos()
+  );
+
+  protected readonly tabCuentasActivo = computed<boolean>(() =>
+    this.rutaActiva().startsWith('/cuentas-corrientes') && !this.enCatalogos()
+  );
+
+  protected readonly tabClientesActivo = computed<boolean>(() =>
+    this.rutaActiva().startsWith('/clientes') && !this.enCatalogos()
+  );
+
   protected readonly tabKardexActivo = computed<boolean>(() =>
     this.rutaActiva().startsWith('/kardex') && !this.enCatalogos()
   );
@@ -416,6 +458,21 @@ export class AppShellComponent implements OnInit {
   protected irACatalogo(): void {
     this.menuAbierto.set(false);
     this.router.navigateByUrl('/catalogo');
+  }
+
+  protected irAClientes(): void {
+    this.menuAbierto.set(false);
+    this.router.navigateByUrl('/clientes');
+  }
+
+  protected irAPuntoVenta(): void {
+    this.menuAbierto.set(false);
+    this.router.navigateByUrl('/punto-venta');
+  }
+
+  protected irACuentasCorrientes(): void {
+    this.menuAbierto.set(false);
+    this.router.navigateByUrl('/cuentas-corrientes');
   }
 
   protected cerrarSesion(): void {

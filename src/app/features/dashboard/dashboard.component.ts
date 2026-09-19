@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, signal, computed, effect, untracked } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, effect, untracked, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -39,6 +40,7 @@ export class DashboardComponent implements OnInit {
   protected readonly notify = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly Math = Math;
 
   // --- Lista paginada (server-side) ---
@@ -332,7 +334,9 @@ export class DashboardComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     // Sincronizar el form reactivo con los signals usados en computed.
-    this.formMovimiento.valueChanges.subscribe(() => this.onFormChange());
+    this.formMovimiento.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.onFormChange());
 
     // Carga catalogos (marcas/categorias/atributos) si no estan ya.
     // Es idempotente: si otra pantalla los cargo antes, no hace nada.
@@ -350,7 +354,7 @@ export class DashboardComponent implements OnInit {
     this.state.setPageSize(10);
     await this.refrescar(1);
     this.onFormChange();
-    this.refrescarHistorial();
+    await this.refrescarHistorial();
   }
 
   protected async refrescar(page: number): Promise<void> {

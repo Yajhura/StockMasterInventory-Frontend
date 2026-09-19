@@ -53,6 +53,21 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/catalogos/catalogos-page.component').then((m) => m.CatalogosPageComponent),
       },
+      {
+        path: 'clientes',
+        loadComponent: () =>
+          import('./features/clientes/clientes-list/clientes-list.component').then((m) => m.ClientesListComponent),
+      },
+      {
+        path: 'punto-venta',
+        loadComponent: () =>
+          import('./features/ventas/punto-venta/punto-venta.component').then((m) => m.PuntoVentaComponent),
+      },
+      {
+        path: 'cuentas-corrientes',
+        loadComponent: () =>
+          import('./features/ventas/cuentas-corrientes/cuentas-corrientes.component').then((m) => m.CuentasCorrientesComponent),
+      },
     ],
   },
 

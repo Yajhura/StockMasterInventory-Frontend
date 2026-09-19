@@ -1,0 +1,170 @@
+/**
+ * ApiVentasService specs — REQ-TEST-004.
+ *
+ * Verifies:
+ *   - `registrarVenta(payload)` POSTs the payload to
+ *     `${environment.apiBaseUrl}/api/ventas` and emits the parsed
+ *     `Venta` returned by the server.
+ *   - When the response is 401, the `httpErrorInterceptor` fires the
+ *     logout chain (calls `AuthService.logout(true)` and navigates to
+ *     `/login`).
+ *
+ * Implementation detail:
+ *   - The success path uses `provideHttpClient()` with no
+ *     interceptors — we only care about the request shape and the
+ *     emitted response.
+ *   - The 401 path uses the real `httpErrorInterceptor` +
+ *     `authInterceptor` chain. We use a Jasmine spy for `Router`
+ *     because the interceptor calls `router.url.startsWith('/login')`
+ *     to decide whether to emit the toast — a synthetic URL works.
+ */
+import { TestBed } from '@angular/core/testing';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import {
+  provideHttpClientTesting,
+  HttpTestingController,
+} from '@angular/common/http/testing';
+import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+
+import { ApiVentasService } from './api-ventas.service';
+import { AuthService } from '../services/auth.service';
+import { authInterceptor } from '../interceptors/auth.interceptor';
+import { httpErrorInterceptor } from '../interceptors/http-error.interceptor';
+import { NotificationService } from '../services/notification.service';
+import { CrearVentaPayload, Venta } from '../models/venta.models';
+import { environment } from '../../../environments/environment';
+
+const API_VENTAS = `${environment.apiBaseUrl}/api/ventas`;
+const ME_URL = `${environment.apiBaseUrl}/api/auth/me`;
+
+const payload: CrearVentaPayload = {
+  clienteId: 7,
+  detalles: [
+    { productoId: 1, cantidad: 2, precioUnitario: 100 },
+  ],
+  pagos: [{ monto: 200, metodoPagoId: 1 }],
+  observacion: 'Test venta',
+  cantidadCuotas: 3,
+  frecuencia: 'Mensual',
+  fechaInicioCredito: '2026-09-18',
+};
+
+const mockVenta: Venta = {
+  id: 99,
+  clienteId: 7,
+  clienteNombre: 'Cliente Test',
+  fecha: '2026-09-18T12:00:00Z',
+  montoTotal: 200,
+  saldoPendiente: 200,
+  estadoPago: 'Pendiente',
+  esCredito: true,
+  cantidadCuotas: 3,
+  frecuencia: 'Mensual',
+  fechaInicioCredito: '2026-09-18',
+};
+
+describe('ApiVentasService (REQ-TEST-004)', () => {
+  let httpTesting: HttpTestingController;
+  let service: ApiVentasService;
+  let authService: AuthService;
+  let routerSpy: jasmine.SpyObj<Router>;
+
+  beforeEach(() => {
+    localStorage.clear();
+
+    routerSpy = jasmine.createSpyObj<Router>('Router', ['navigateByUrl', 'createUrlTree']);
+    routerSpy.navigateByUrl.and.returnValue(Promise.resolve(true));
+    routerSpy.createUrlTree.and.returnValue({} as ReturnType<Router['createUrlTree']>);
+    // router.url is read by httpErrorInterceptor to decide whether to
+    // show a toast; default to /ventas so the interceptor proceeds.
+    Object.defineProperty(routerSpy, 'url', {
+      get: () => '/ventas',
+      configurable: true,
+    });
+
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([authInterceptor, httpErrorInterceptor])),
+        provideHttpClientTesting(),
+        // NotificationService is injected by httpErrorInterceptor; we
+        // provide a real instance — it only writes to its own toasts
+        // signal which we don't observe here.
+        NotificationService,
+        { provide: Router, useValue: routerSpy },
+        AuthService,
+        ApiVentasService,
+      ],
+    });
+
+    httpTesting = TestBed.inject(HttpTestingController);
+    service = TestBed.inject(ApiVentasService);
+    authService = TestBed.inject(AuthService);
+  });
+
+  afterEach(() => {
+    httpTesting.verify();
+  });
+
+  it('post_ventas_returns_response_on_success', async () => {
+    // GIVEN: a `CrearVentaPayload` with one detalle and three cuotas.
+    // WHEN: registrarVenta(payload) is called.
+    const ventaPromise = firstValueFrom(service.registrarVenta(payload));
+
+    // THEN: one POST /api/ventas carries the JSON payload.
+    const req = httpTesting.expectOne(API_VENTAS);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(payload);
+
+    // AND: when the server replies 201 with a Venta, the observable
+    // emits that Venta.
+    req.flush(mockVenta, { status: 201, statusText: 'Created' });
+    const venta = await ventaPromise;
+    expect(venta).toEqual(mockVenta);
+  });
+
+  it('post_ventas_on_401_triggers_logout', async () => {
+    // GIVEN: a logged-in user so the interceptor has a session to
+    // tear down. The httpErrorInterceptor only emits the logout path
+    // when status === 401 AND we are not already on /login (see
+    // http-error.interceptor.ts).
+    localStorage.setItem('stockmaster.auth', JSON.stringify({
+      accessToken: 'stale',
+      accessTokenExpira: '2020-01-01T00:00:00Z',
+      refreshToken: 'stale-r',
+      refreshTokenExpira: '2020-02-01T00:00:00Z',
+      usuario: { id: 1, email: 'u@test', nombreCompleto: 'U', rol: 'Operador' },
+    }));
+
+    // Start init() — it fires /api/auth/me in the background.
+    const initPromise = authService.init();
+
+    // Sanity: synchronous signals from storage are populated.
+    expect(authService.isAuthenticated()).toBeTrue();
+
+    // Drain /api/auth/me so init() resolves without firing the
+    // 401-logout path.
+    const meReq = httpTesting.expectOne(ME_URL);
+    meReq.flush({ id: 1, email: 'u@test', nombreCompleto: 'U', rol: 'Operador' });
+    await initPromise;
+
+    // WHEN: registrarVenta(payload) is called and the server replies 401.
+    const ventaPromise = firstValueFrom(service.registrarVenta(payload));
+
+    const req = httpTesting.expectOne(API_VENTAS);
+    expect(req.request.method).toBe('POST');
+    req.flush({ message: 'Token expired' }, { status: 401, statusText: 'Unauthorized' });
+
+    // The interceptor re-emits the error to the caller; the observable
+    // errors out — we await the rejection so the test does not appear
+    // as an uncaught-error failure.
+    await expectAsync(ventaPromise).toBeRejected();
+
+    // THEN: the auth chain cleared the session and navigated to /login.
+    expect(authService.currentUser()).toBeNull();
+    expect(authService.accessToken()).toBeNull();
+    expect(authService.isAuthenticated()).toBeFalse();
+    expect(localStorage.getItem('stockmaster.auth')).toBeNull();
+    expect(routerSpy.navigateByUrl).toHaveBeenCalledWith('/login');
+  });
+});

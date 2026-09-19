@@ -13,8 +13,10 @@ export interface ListarMovimientosParams {
   hasta?: string;
   tipo?: 1 | 2;
   productoId?: number;
-  marcaId?: number | string;
-  categoriaId?: number | string;
+  /** null = "sin asignar"; number = filtra por id; string 'all' = sin filtro. */
+  marcaId?: number | string | null;
+  /** null = "sin asignar"; number = filtra por id; string 'all' = sin filtro. */
+  categoriaId?: number | string | null;
   creadoPorId?: number;
   cliente?: string;
   q?: string;
@@ -47,9 +49,11 @@ export class ApiMovimientosService {
     if (params.tipo)      httpParams = httpParams.set('tipo', String(params.tipo));
     if (params.productoId !== undefined && params.productoId !== null)
                           httpParams = httpParams.set('productoId', String(params.productoId));
-    if (params.marcaId !== undefined && params.marcaId !== null && params.marcaId !== 'all')
+    if (params.marcaId === null) httpParams = httpParams.set('marcaId', 'null');
+    else if (params.marcaId !== undefined && params.marcaId !== 'all')
                           httpParams = httpParams.set('marcaId', String(params.marcaId));
-    if (params.categoriaId !== undefined && params.categoriaId !== null && params.categoriaId !== 'all')
+    if (params.categoriaId === null) httpParams = httpParams.set('categoriaId', 'null');
+    else if (params.categoriaId !== undefined && params.categoriaId !== 'all')
                           httpParams = httpParams.set('categoriaId', String(params.categoriaId));
     if (params.creadoPorId !== undefined && params.creadoPorId !== null)
                           httpParams = httpParams.set('creadoPorId', String(params.creadoPorId));

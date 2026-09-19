@@ -134,7 +134,12 @@ export interface RegistrarMovimientoPayload {
   tipoMovimientoId: 1 | 2;
   cantidad: number;
   precioUnitario: number;
-  cliente?: string;
+  /**
+   * Deprecated. El endpoint /api/movimientos ya no acepta cliente string.
+   * Las ventas con cliente van por /api/ventas. Se conserva la propiedad
+   * para evitar enviar este campo al backend (se envia siempre como null).
+   */
+  cliente?: string | null;
   observacion?: string;
 }
 

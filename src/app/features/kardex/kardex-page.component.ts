@@ -176,11 +176,15 @@ export class KardexPageComponent implements OnInit {
       }
       if (this.tipoFiltro !== 0) params.tipo = this.tipoFiltro as 1 | 2;
       if (this.productoFiltro !== null) params.productoId = this.productoFiltro;
-      if (this.marcaFiltro !== 'all') {
+      if (this.marcaFiltro !== 'all' && this.marcaFiltro !== 'null') {
         params.marcaId = this.marcaFiltro;
+      } else if (this.marcaFiltro === 'null') {
+        params.marcaId = null;
       }
-      if (this.categoriaFiltro !== 'all') {
+      if (this.categoriaFiltro !== 'all' && this.categoriaFiltro !== 'null') {
         params.categoriaId = this.categoriaFiltro;
+      } else if (this.categoriaFiltro === 'null') {
+        params.categoriaId = null;
       }
       if (this.usuarioFiltro !== null) params.creadoPorId = this.usuarioFiltro;
       if (this.clienteFiltro.trim()) params.cliente = this.clienteFiltro.trim();
@@ -362,11 +366,15 @@ export class KardexPageComponent implements OnInit {
         }
         if (this.tipoFiltro !== 0) params.tipo = this.tipoFiltro as 1 | 2;
         if (this.productoFiltro !== null) params.productoId = this.productoFiltro;
-        if (this.marcaFiltro !== 'all') {
-          params.marcaId = String(this.marcaFiltro) as any;
+        if (this.marcaFiltro !== 'all' && this.marcaFiltro !== 'null') {
+          params.marcaId = this.marcaFiltro;
+        } else if (this.marcaFiltro === 'null') {
+          params.marcaId = null;
         }
-        if (this.categoriaFiltro !== 'all') {
-          params.categoriaId = String(this.categoriaFiltro) as any;
+        if (this.categoriaFiltro !== 'all' && this.categoriaFiltro !== 'null') {
+          params.categoriaId = this.categoriaFiltro;
+        } else if (this.categoriaFiltro === 'null') {
+          params.categoriaId = null;
         }
         if (this.usuarioFiltro !== null) params.creadoPorId = this.usuarioFiltro;
         if (this.clienteFiltro.trim()) params.cliente = this.clienteFiltro.trim();

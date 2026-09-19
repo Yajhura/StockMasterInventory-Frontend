@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -35,6 +36,7 @@ export class MovimientoComponent implements OnInit {
   protected readonly state = inject(InventarioState);
   protected readonly notify = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
 
   // Parámetros de tabla
   protected sortCol = signal<string>('fecha');
@@ -59,7 +61,6 @@ export class MovimientoComponent implements OnInit {
     tipoMovimientoId: [1, [Validators.required]],
     cantidad: [1, [Validators.required, Validators.min(1)]],
     precioUnitario: [null, [Validators.required, Validators.min(0.01)]],
-    cliente: [''],
     observacion: [''],
   });
 
@@ -146,21 +147,25 @@ export class MovimientoComponent implements OnInit {
     }
 
     // Al seleccionar o cambiar de producto, asigna por defecto el precioVentaSugerido
-    this.formMovimiento.get('productoId')?.valueChanges.subscribe((id) => {
-      if (id != null) {
-        const idNum = Number(id);
-        const prod = this.state.productosSelector().find((x) => x.id === idNum)
-                  ?? this.state.productos().find((x) => x.id === idNum);
-        if (prod && prod.precioVentaSugerido != null && prod.precioVentaSugerido > 0) {
-          this.formMovimiento.patchValue({ precioUnitario: prod.precioVentaSugerido }, { emitEvent: false });
+    this.formMovimiento.get('productoId')?.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((id) => {
+        if (id != null) {
+          const idNum = Number(id);
+          const prod = this.state.productosSelector().find((x) => x.id === idNum)
+                    ?? this.state.productos().find((x) => x.id === idNum);
+          if (prod && prod.precioVentaSugerido != null && prod.precioVentaSugerido > 0) {
+            this.formMovimiento.patchValue({ precioUnitario: prod.precioVentaSugerido }, { emitEvent: false });
+          }
         }
-      }
-    });
+      });
 
-    this.formMovimiento.valueChanges.subscribe(() => {
-      this.onFormChange();
-      this.refrescarHistorial();
-    });
+    this.formMovimiento.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.onFormChange();
+        this.refrescarHistorial();
+      });
     this.onFormChange();
     this.refrescarHistorial();
   }
@@ -208,7 +213,9 @@ export class MovimientoComponent implements OnInit {
         tipoMovimientoId: Number(v.tipoMovimientoId) as 1 | 2,
         cantidad: cantNum,
         precioUnitario: precioNum,
-        cliente: v.cliente ? v.cliente.toString().trim() : undefined,
+        // cliente explicito null: este endpoint no maneja clientes.
+        // Para ventas con cliente (contado o crédito), usar Punto de Venta.
+        cliente: null,
         observacion: v.observacion ? v.observacion.toString().trim() : undefined,
       });
       await this.state.cargarSelectorProductos(true);
@@ -222,7 +229,6 @@ export class MovimientoComponent implements OnInit {
         tipoMovimientoId: 1,
         cantidad: 1,
         precioUnitario: null,
-        cliente: '',
         observacion: ''
       });
       this.onFormChange();
