@@ -166,6 +166,11 @@ describe('ApiVentasService (REQ-TEST-004)', () => {
     expect(logoutReq.request.method).toBe('POST');
     logoutReq.flush(null, { status: 204, statusText: 'No Content' });
 
+    // Flush microtasks so the logout() async continuation runs:
+    // firstValueFrom resolves, then _currentUser.set(null) +
+    // router.navigateByUrl('/login') execute.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
     // AND: the auth chain cleared the session and navigated to /login.
     expect(authService.currentUser()).toBeNull();
     expect(authService.isAuthenticated()).toBeFalse();
