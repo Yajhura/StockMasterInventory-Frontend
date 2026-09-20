@@ -1,5 +1,5 @@
 /**
- * InventarioState KPI spec — REQ-TEST-003 (post-PR #2 wiring).
+ * KpisState integration spec — REQ-TEST-003.
  *
  * Originally RED by design (intentional page-slice bug captured in
  * PR-F1 of the test scaffolding change). Turned GREEN by PR-F2 of
@@ -8,20 +8,14 @@
  * `_productosPaginados()` to a server-fetched signal that hits
  * `GET /api/reportes/kpis-inventario`.
  *
- * The contract asserted here is unchanged across the PR #2 split:
+ * After `split-inventario-state` (PR #2 + PR #3), this spec drives
+ * `ProductosState` for the search/pagination and `KpisState` for the
+ * aggregate KPI fetch. The asserted contract `(5, 35, 3)` stays
+ * verbatim — only the wiring changed.
  *
- *   totalItems       = 5   (server-side count over the WHOLE Productos table,
- *                            excluding soft-deleted via the global EF filter)
- *   productosBajos   = 3   (A, B, C all have StockActual <= StockMinimo)
- *   totalUnidades    = 35  (sum over all 5 matching productos: 3+2+5+10+15)
- *
- * PR #2 changed the wiring: instead of going through the now-deleted
- * `InventarioState` facade, this spec drives `ProductosState` for the
- * search/pagination and `KpisState` for the aggregate KPI fetch. The
- * `(5, 35, 3)` contract stays verbatim — only the wiring changed.
- *
- * PR #3 will rename this file to `kpis-integration.spec.ts` and drop
- * the page-slice setup (which was only needed to prove the old bug).
+ * For the BEHAVIORAL test of the cross-store effect (KpisState
+ * reactively refetching on ProductosState mutation), see
+ * `cross-store-kpi-effect.spec.ts`.
  */
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
