@@ -10,7 +10,9 @@ import {
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { InventarioState } from '../core/state/inventario.state';
+import { KardexState } from '../core/state/kardex.state';
+import { ProductosState } from '../core/state/productos.state';
+import { ShellState } from '../core/state/shell.state';
 import { AuthService } from '../core/services/auth.service';
 import { NuevoProductoComponent } from '../features/nuevo-producto/nuevo-producto.component';
 import { KardexModalComponent } from '../core/components/kardex-modal.component';
@@ -345,15 +347,17 @@ import { KardexModalComponent } from '../core/components/kardex-modal.component'
       </footer>
     </div>
 
-    @if (state.modalNuevoProductoAbierto()) {
-      <app-nuevo-producto [productoId]="state.productoEditandoId()" />
+    @if (shell.modalNuevoProductoAbierto()) {
+      <app-nuevo-producto [productoId]="shell.productoEditandoId()" />
     }
 
     <app-kardex-modal />
   `,
 })
 export class AppShellComponent implements OnInit {
-  protected readonly state = inject(InventarioState);
+  protected readonly shell = inject(ShellState);
+  protected readonly kardex = inject(KardexState);
+  protected readonly productos = inject(ProductosState);
   protected readonly auth = inject(AuthService);
   protected readonly router = inject(Router);
   protected readonly menuAbierto = signal<boolean>(false);
@@ -383,7 +387,7 @@ export class AppShellComponent implements OnInit {
 
   protected readonly searchPlaceholder = computed(() => {
     if (this.enCatalogos()) return 'Buscar en catalogos...';
-    return this.state.activeView() === 'inventario' ? 'Buscar (Ctrl+K)' : 'Buscar...';
+    return this.shell.activeView() === 'inventario' ? 'Buscar (Ctrl+K)' : 'Buscar...';
   });
 
   protected readonly iniciales = computed(() => {
@@ -437,7 +441,7 @@ export class AppShellComponent implements OnInit {
   }
 
   protected irAInventario(): void {
-    this.state.setActiveView('inventario');
+    this.shell.setActiveView('inventario');
     this.router.navigateByUrl('/inventario');
   }
 
@@ -446,12 +450,12 @@ export class AppShellComponent implements OnInit {
   }
 
   protected irAKardex(): void {
-    this.state.setActiveView('kardex' as any);
+    this.shell.setActiveView('kardex' as any);
     this.router.navigateByUrl('/kardex');
   }
 
   protected irAReportes(): void {
-    this.state.setActiveView('reportes');
+    this.shell.setActiveView('reportes');
     this.router.navigateByUrl('/reportes');
   }
 

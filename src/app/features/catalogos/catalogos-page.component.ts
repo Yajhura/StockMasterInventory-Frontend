@@ -9,7 +9,8 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { InventarioState } from '../../core/state/inventario.state';
+import { CatalogosState } from '../../core/state/catalogos.state';
+import { ShellState } from '../../core/state/shell.state';
 import { NotificationService } from '../../core/services/notification.service';
 import { ConfirmDialogComponent } from '../../core/components/confirm-dialog.component';
 import { Categoria, Marca, Atributo, AtributoValor } from '../../core/models/inventario.models';
@@ -30,7 +31,8 @@ interface ItemCatalogo {
   templateUrl: './catalogos-page.component.html',
 })
 export class CatalogosPageComponent implements OnInit {
-  protected readonly state = inject(InventarioState);
+  protected readonly catalogos = inject(CatalogosState);
+  private readonly shell = inject(ShellState);
   private readonly notify = inject(NotificationService);
 
   protected readonly tab = signal<Tab>('categorias');
@@ -38,11 +40,11 @@ export class CatalogosPageComponent implements OnInit {
   protected readonly items = computed<ItemCatalogo[]>(() => {
     switch (this.tab()) {
       case 'categorias':
-        return this.state.categorias().map((c) => ({ id: c.id, nombre: c.nombre, uso: 0 }));
+        return this.catalogos.categorias().map((c) => ({ id: c.id, nombre: c.nombre, uso: 0 }));
       case 'marcas':
-        return this.state.marcas().map((m) => ({ id: m.id, nombre: m.nombre, uso: 0 }));
+        return this.catalogos.marcas().map((m) => ({ id: m.id, nombre: m.nombre, uso: 0 }));
       case 'atributos':
-        return this.state.atributos().map((a) => ({ id: a.id, nombre: a.nombre, uso: 0 }));
+        return this.catalogos.atributos().map((a) => ({ id: a.id, nombre: a.nombre, uso: 0 }));
     }
   });
 
@@ -83,7 +85,7 @@ export class CatalogosPageComponent implements OnInit {
    * "Valores (N)" para mostrar el contador sin abrir el modal.
    */
   protected readonly conteoValoresPorAtributo = computed<Map<number, number>>(() => {
-    const map = this.state.atributoValoresPorAtributo();
+    const map = this.catalogos.atributoValoresPorAtributo();
     const out = new Map<number, number>();
     for (const [k, v] of map.entries()) out.set(k, v.length);
     return out;
@@ -93,9 +95,9 @@ export class CatalogosPageComponent implements OnInit {
     // Carga lazy de valores al cambiar al tab atributos (solo la primera vez).
     effect(() => {
       if (this.tab() === 'atributos') {
-        for (const a of this.state.atributos()) {
-          if (!this.state.atributoValoresPorAtributo().has(a.id)) {
-            this.state.obtenerValoresDeAtributo(a.id).catch(() => {});
+        for (const a of this.catalogos.atributos()) {
+          if (!this.catalogos.atributoValoresPorAtributo().has(a.id)) {
+            this.catalogos.obtenerValoresDeAtributo(a.id).catch(() => {});
           }
         }
       }
@@ -112,11 +114,11 @@ export class CatalogosPageComponent implements OnInit {
     // no estan cargados. Cargarlos aca. Es idempotente: si ya estaban
     // cargados por otra pantalla, el state no hace nada.
     if (
-      this.state.categorias().length === 0 ||
-      this.state.marcas().length === 0 ||
-      this.state.atributos().length === 0
+      this.catalogos.categorias().length === 0 ||
+      this.catalogos.marcas().length === 0 ||
+      this.catalogos.atributos().length === 0
     ) {
-      await this.state.cargarCatalogos();
+      await this.catalogos.cargarCatalogos();
     }
   }
 
@@ -156,13 +158,13 @@ export class CatalogosPageComponent implements OnInit {
     }
     this.setGuardando(tab, true);
     try {
-      if (tab === 'categorias')      await this.state.crearCategoria(nombre);
-      else if (tab === 'marcas')    await this.state.crearMarca(nombre);
-      else                          await this.state.crearAtributo(nombre);
+      if (tab === 'categorias')      await this.catalogos.crearCategoria(nombre);
+      else if (tab === 'marcas')    await this.catalogos.crearMarca(nombre);
+      else                          await this.catalogos.crearAtributo(nombre);
       this.notify.success(`${this.tituloTab(tab)} creado.`);
       this.setNuevoNombre(tab, '');
     } catch {
-      this.notify.error(this.state.error() ?? 'No se pudo crear el item.');
+      this.notify.error(this.shell.error() ?? 'No se pudo crear el item.');
     } finally {
       this.setGuardando(tab, false);
     }
@@ -187,13 +189,13 @@ export class CatalogosPageComponent implements OnInit {
       return;
     }
     try {
-      if (tab === 'categorias')      await this.state.actualizarCategoria(id, nombre);
-      else if (tab === 'marcas')    await this.state.actualizarMarca(id, nombre);
-      else                          await this.state.actualizarAtributo(id, nombre);
+      if (tab === 'categorias')      await this.catalogos.actualizarCategoria(id, nombre);
+      else if (tab === 'marcas')    await this.catalogos.actualizarMarca(id, nombre);
+      else                          await this.catalogos.actualizarAtributo(id, nombre);
       this.notify.success(`${this.tituloTab(tab)} actualizado.`);
       this.cancelarEdicion();
     } catch {
-      this.notify.error(this.state.error() ?? 'No se pudo actualizar.');
+      this.notify.error(this.shell.error() ?? 'No se pudo actualizar.');
     }
   }
 
@@ -210,13 +212,13 @@ export class CatalogosPageComponent implements OnInit {
     if (!target) return;
     this.eliminando.set(true);
     try {
-      if (target.tab === 'categorias')      await this.state.eliminarCategoria(target.id);
-      else if (target.tab === 'marcas')    await this.state.eliminarMarca(target.id);
-      else                                 await this.state.eliminarAtributo(target.id);
+      if (target.tab === 'categorias')      await this.catalogos.eliminarCategoria(target.id);
+      else if (target.tab === 'marcas')    await this.catalogos.eliminarMarca(target.id);
+      else                                 await this.catalogos.eliminarAtributo(target.id);
       this.notify.success(`${target.nombre} eliminado.`);
       this.confirmandoEliminar.set(null);
     } catch {
-      this.notify.error(this.state.error() ?? 'No se pudo eliminar.');
+      this.notify.error(this.shell.error() ?? 'No se pudo eliminar.');
     } finally {
       this.eliminando.set(false);
     }
@@ -234,7 +236,7 @@ export class CatalogosPageComponent implements OnInit {
     this.editandoValorId.set(null);
     this.confirmandoEliminarValor.set(null);
     this.cargandoValores.set(true);
-    const lista = await this.state.obtenerValoresDeAtributo(atributo.id, true);
+    const lista = await this.catalogos.obtenerValoresDeAtributo(atributo.id, true);
     this.valoresVisibles.set(lista);
     this.cargandoValores.set(false);
   }
@@ -254,13 +256,13 @@ export class CatalogosPageComponent implements OnInit {
     }
     this.guardandoValor.set(true);
     try {
-      await this.state.crearAtributoValor(a.id, nombre);
+      await this.catalogos.crearAtributoValor(a.id, nombre);
       // Refrescar la lista visible desde el cache del state.
-      this.valoresVisibles.set(this.state.valoresDeAtributo(a.id));
+      this.valoresVisibles.set(this.catalogos.valoresDeAtributo(a.id));
       this.nuevoValorNombre.set('');
       this.notify.success('Valor agregado.');
     } catch {
-      this.notify.error(this.state.error() ?? 'No se pudo crear el valor.');
+      this.notify.error(this.shell.error() ?? 'No se pudo crear el valor.');
     } finally {
       this.guardandoValor.set(false);
     }
@@ -286,12 +288,12 @@ export class CatalogosPageComponent implements OnInit {
       return;
     }
     try {
-      await this.state.actualizarAtributoValor(id, a.id, nombre);
-      this.valoresVisibles.set(this.state.valoresDeAtributo(a.id));
+      await this.catalogos.actualizarAtributoValor(id, a.id, nombre);
+      this.valoresVisibles.set(this.catalogos.valoresDeAtributo(a.id));
       this.cancelarEdicionValor();
       this.notify.success('Valor actualizado.');
     } catch {
-      this.notify.error(this.state.error() ?? 'No se pudo actualizar.');
+      this.notify.error(this.shell.error() ?? 'No se pudo actualizar.');
     }
   }
 
@@ -309,12 +311,12 @@ export class CatalogosPageComponent implements OnInit {
     if (!a || !v) return;
     this.eliminandoValor.set(true);
     try {
-      await this.state.eliminarAtributoValor(v.id, a.id);
-      this.valoresVisibles.set(this.state.valoresDeAtributo(a.id));
+      await this.catalogos.eliminarAtributoValor(v.id, a.id);
+      this.valoresVisibles.set(this.catalogos.valoresDeAtributo(a.id));
       this.confirmandoEliminarValor.set(null);
       this.notify.success('Valor eliminado.');
     } catch {
-      this.notify.error(this.state.error() ?? 'No se pudo eliminar (puede estar usado por productos).');
+      this.notify.error(this.shell.error() ?? 'No se pudo eliminar (puede estar usado por productos).');
     } finally {
       this.eliminandoValor.set(false);
     }
@@ -337,6 +339,6 @@ export class CatalogosPageComponent implements OnInit {
    * para pasar el objeto entero al modal de valores.
    */
   protected atributoPorId(id: number): Atributo | null {
-    return this.state.atributos().find((a) => a.id === id) ?? null;
+    return this.catalogos.atributos().find((a) => a.id === id) ?? null;
   }
 }

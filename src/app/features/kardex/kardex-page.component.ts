@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as ExcelJS from 'exceljs';
 import { firstValueFrom } from 'rxjs';
-import { InventarioState } from '../../core/state/inventario.state';
+import { CatalogosState } from '../../core/state/catalogos.state';
+import { KardexState } from '../../core/state/kardex.state';
+import { ProductosState } from '../../core/state/productos.state';
 import { ListarMovimientosParams } from '../../core/api/api-movimientos.service';
 import {
   Movimiento,
@@ -44,14 +46,16 @@ import { AuthService } from '../../core/services/auth.service';
   }
 })
 export class KardexPageComponent implements OnInit {
-  private readonly state = inject(InventarioState);
+  private readonly kardexState = inject(KardexState);
+  private readonly productosState = inject(ProductosState);
+  private readonly catalogos = inject(CatalogosState);
   private readonly apiAuth = inject(ApiAuthService);
   private readonly notify = inject(NotificationService);
   protected readonly auth = inject(AuthService);
 
-  protected readonly productos = this.state.productos;
-  protected readonly marcas = this.state.marcas;
-  protected readonly categorias = this.state.categorias;
+  protected readonly productos = this.productosState.productos;
+  protected readonly marcas = this.catalogos.marcas;
+  protected readonly categorias = this.catalogos.categorias;
   protected readonly usuarios = signal<Usuario[]>([]);
 
   protected readonly kardex = signal<Movimiento[]>([]);
@@ -63,8 +67,8 @@ export class KardexPageComponent implements OnInit {
 
   // Computeds para los selectores personalizados
   protected readonly opcionesProductos = computed<DropdownOption[]>(() => {
-    const selector = this.state.productosSelector();
-    const full = this.state.productos();
+    const selector = this.productosState.productosSelector();
+    const full = this.productosState.productos();
     const lista = selector.length > 0 ? selector : full;
 
     return [
@@ -147,8 +151,8 @@ export class KardexPageComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     this.onResize();
     await Promise.all([
-      this.state.cargarCatalogos(),
-      this.state.cargarSelectorProductos(),
+      this.catalogos.cargarCatalogos(),
+      this.productosState.cargarSelectorProductos(),
     ]);
     try {
       const u = await firstValueFrom(this.apiAuth.usuarios());
@@ -190,7 +194,7 @@ export class KardexPageComponent implements OnInit {
       if (this.clienteFiltro.trim()) params.cliente = this.clienteFiltro.trim();
       if (this.busqueda.trim()) params.q = this.busqueda.trim();
 
-      const r: PaginatedResponse<Movimiento> = await this.state.listarMovimientos(params);
+      const r: PaginatedResponse<Movimiento> = await this.kardexState.listarMovimientos(params);
       this.kardex.set(r.items);
       this.totalMovimientos.set(r.totalItems);
       this.kardexTotalPages.set(r.totalPages);
@@ -281,7 +285,7 @@ export class KardexPageComponent implements OnInit {
         cliente: this.editCliente.trim() || undefined
       };
       
-      await this.state.actualizarMovimiento(mov.id, payload);
+      await this.productosState.actualizarMovimiento(mov.id, payload);
       this.cerrarModalEdicion();
       this.recargarKardex();
       this.notify.success('Movimiento actualizado y Kardex recalculado correctamente.');
@@ -306,7 +310,7 @@ export class KardexPageComponent implements OnInit {
     
     this.cargando.set(true);
     try {
-      await this.state.eliminarMovimiento(mov.id);
+      await this.productosState.eliminarMovimiento(mov.id);
       this.cerrarModalEliminar();
       this.recargarKardex();
       this.notify.success('Movimiento eliminado y Kardex recalculado correctamente.');
@@ -320,7 +324,7 @@ export class KardexPageComponent implements OnInit {
     if (m.productoNombre) return m.productoNombre;
     const p = this.productos().find((x) => x.id === m.productoId);
     if (p?.nombre) return p.nombre;
-    const sel = this.state.productosSelector().find((x) => x.id === m.productoId);
+    const sel = this.productosState.productosSelector().find((x) => x.id === m.productoId);
     if (sel?.nombre) return sel.nombre;
     return `Producto #${m.productoId}`;
   }
@@ -328,7 +332,7 @@ export class KardexPageComponent implements OnInit {
   protected nombreProducto(id: number): string {
     const p = this.productos().find((x) => x.id === id);
     if (p?.nombre) return p.nombre;
-    const sel = this.state.productosSelector().find((x) => x.id === id);
+    const sel = this.productosState.productosSelector().find((x) => x.id === id);
     if (sel?.nombre) return sel.nombre;
     return `Producto #${id}`;
   }
@@ -380,7 +384,7 @@ export class KardexPageComponent implements OnInit {
         if (this.clienteFiltro.trim()) params.cliente = this.clienteFiltro.trim();
         if (this.busqueda.trim()) params.q = this.busqueda.trim();
 
-        const r: PaginatedResponse<Movimiento> = await this.state.listarMovimientos(params);
+        const r: PaginatedResponse<Movimiento> = await this.kardexState.listarMovimientos(params);
         all.push(...r.items);
         if (!r.hasNext) break;
         page++;

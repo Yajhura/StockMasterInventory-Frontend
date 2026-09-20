@@ -4,7 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import * as ExcelJS from 'exceljs';
 import { firstValueFrom } from 'rxjs';
-import { InventarioState } from '../../core/state/inventario.state';
+import { CatalogosState } from '../../core/state/catalogos.state';
+import { KardexState } from '../../core/state/kardex.state';
+import { KpisState } from '../../core/state/kpis.state';
+import { ProductosState } from '../../core/state/productos.state';
 import {
   Usuario,
   Movimiento,
@@ -27,13 +30,16 @@ import { PaginadorComponent } from '../../core/components/paginador.component';
   imports: [CommonModule, FormsModule, RouterLink, ModalOverlayComponent, PaginadorComponent],
 })
 export class ReportesComponent implements OnInit {
-  private readonly state = inject(InventarioState);
+  private readonly productosState = inject(ProductosState);
+  private readonly catalogos = inject(CatalogosState);
+  private readonly kardex = inject(KardexState);
+  private readonly kpis = inject(KpisState);
   private readonly apiReportes = inject(ApiReportesService);
   private readonly apiAuth = inject(ApiAuthService);
 
-  protected readonly productos = this.state.productos;
-  protected readonly marcas = this.state.marcas;
-  protected readonly categorias = this.state.categorias;
+  protected readonly productos = this.productosState.productos;
+  protected readonly marcas = this.catalogos.marcas;
+  protected readonly categorias = this.catalogos.categorias;
   protected readonly usuarios = signal<Usuario[]>([]);
 
   // Top Vendidos
@@ -205,7 +211,7 @@ export class ReportesComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
-    await this.state.cargarCatalogos();
+    await this.catalogos.cargarCatalogos();
     try {
       const u = await firstValueFrom(this.apiAuth.usuarios());
       this.usuarios.set(u);
@@ -273,7 +279,7 @@ export class ReportesComponent implements OnInit {
     this.clienteModal.set(clienteNombre);
     this.cargandoHistorialCliente.set(true);
     try {
-      const res = await this.state.listarMovimientos({
+      const res = await this.kardex.listarMovimientos({
         page: 1,
         size: 200,
         cliente: clienteNombre,
@@ -372,7 +378,7 @@ export class ReportesComponent implements OnInit {
     if (m.productoNombre) return m.productoNombre;
     const p = this.productos().find((x) => x.id === m.productoId);
     if (p?.nombre) return p.nombre;
-    const sel = this.state.productosSelector().find((x) => x.id === m.productoId);
+    const sel = this.productosState.productosSelector().find((x) => x.id === m.productoId);
     if (sel?.nombre) return sel.nombre;
     return `Producto #${m.productoId}`;
   }

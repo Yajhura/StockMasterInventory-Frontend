@@ -3,7 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { InventarioState } from '../../core/state/inventario.state';
+import { CatalogosState } from '../../core/state/catalogos.state';
+import { KardexState } from '../../core/state/kardex.state';
+import { ProductosState } from '../../core/state/productos.state';
+import { ShellState } from '../../core/state/shell.state';
 import { NotificationService } from '../../core/services/notification.service';
 import { DropdownComponent } from '../../core/components/dropdown.component';
 import { TABLA_COMPONENTS } from '../../core/components/tabla.component';
@@ -33,7 +36,10 @@ interface FilaHistorial {
   }
 })
 export class MovimientoComponent implements OnInit {
-  protected readonly state = inject(InventarioState);
+  protected readonly productosState = inject(ProductosState);
+  protected readonly kardex = inject(KardexState);
+  protected readonly shell = inject(ShellState);
+  private readonly catalogos = inject(CatalogosState);
   protected readonly notify = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
@@ -68,7 +74,7 @@ export class MovimientoComponent implements OnInit {
   private readonly tipoValue = signal<1 | 2>(1);
 
   protected readonly opcionesProducto = computed(() =>
-    this.state.productosSelector().map((p) => ({
+    this.productosState.productosSelector().map((p) => ({
       value: p.id,
       label: p.nombre,
       sublabel: p.codigoBarra ?? undefined,
@@ -82,7 +88,7 @@ export class MovimientoComponent implements OnInit {
   protected readonly productoDelForm = computed<{ id: number; nombre: string; codigoBarra: string | null; stockActual: number; stockMinimo: number; precioVentaSugerido: number } | null>(() => {
     const id = this.formMovimiento.get('productoId')?.value;
     if (id == null) return null;
-    const cached = this.state.productos().find((p) => p.id === Number(id));
+    const cached = this.productosState.productos().find((p) => p.id === Number(id));
     if (cached) {
       return {
         id: cached.id,
@@ -93,7 +99,7 @@ export class MovimientoComponent implements OnInit {
         precioVentaSugerido: cached.precioVentaSugerido,
       };
     }
-    const selector = this.state.productosSelector().find((p) => p.id === Number(id));
+    const selector = this.productosState.productosSelector().find((p) => p.id === Number(id));
     if (selector) {
       return {
         id: selector.id,
@@ -133,17 +139,17 @@ export class MovimientoComponent implements OnInit {
   protected onProductoSeleccionado(id: unknown): void {
     if (id == null) return;
     const idNum = Number(id);
-    const prod = this.state.productosSelector().find((x) => x.id === idNum)
-              ?? this.state.productos().find((x) => x.id === idNum);
+    const prod = this.productosState.productosSelector().find((x) => x.id === idNum)
+              ?? this.productosState.productos().find((x) => x.id === idNum);
     if (prod && prod.precioVentaSugerido != null && prod.precioVentaSugerido > 0) {
       this.formMovimiento.patchValue({ precioUnitario: prod.precioVentaSugerido });
     }
   }
 
   async ngOnInit(): Promise<void> {
-    await this.state.cargarSelectorProductos(true);
-    if (this.state.productos().length === 0) {
-      await this.state.cargarCatalogos();
+    await this.productosState.cargarSelectorProductos(true);
+    if (this.productosState.productos().length === 0) {
+      await this.catalogos.cargarCatalogos();
     }
 
     // Al seleccionar o cambiar de producto, asigna por defecto el precioVentaSugerido
@@ -152,8 +158,8 @@ export class MovimientoComponent implements OnInit {
       .subscribe((id) => {
         if (id != null) {
           const idNum = Number(id);
-          const prod = this.state.productosSelector().find((x) => x.id === idNum)
-                    ?? this.state.productos().find((x) => x.id === idNum);
+          const prod = this.productosState.productosSelector().find((x) => x.id === idNum)
+                    ?? this.productosState.productos().find((x) => x.id === idNum);
           if (prod && prod.precioVentaSugerido != null && prod.precioVentaSugerido > 0) {
             this.formMovimiento.patchValue({ precioUnitario: prod.precioVentaSugerido }, { emitEvent: false });
           }
@@ -208,7 +214,7 @@ export class MovimientoComponent implements OnInit {
     }
     this.procesando.set(true);
     try {
-      const mov = await this.state.registrarMovimiento({
+      const mov = await this.productosState.registrarMovimiento({
         productoId: Number(v.productoId),
         tipoMovimientoId: Number(v.tipoMovimientoId) as 1 | 2,
         cantidad: cantNum,
@@ -218,7 +224,7 @@ export class MovimientoComponent implements OnInit {
         cliente: null,
         observacion: v.observacion ? v.observacion.toString().trim() : undefined,
       });
-      await this.state.cargarSelectorProductos(true);
+      await this.productosState.cargarSelectorProductos(true);
       this.notify.success(
         mov.tipoMovimientoId === 1
           ? `Ingreso registrado: +${mov.cantidad} unidades.`
@@ -234,7 +240,7 @@ export class MovimientoComponent implements OnInit {
       this.onFormChange();
       this.refrescarHistorial();
     } catch {
-      this.notify.error(this.state.error() ?? 'No se pudo registrar el movimiento.');
+      this.notify.error(this.shell.error() ?? 'No se pudo registrar el movimiento.');
     } finally {
       this.procesando.set(false);
     }
@@ -249,7 +255,7 @@ export class MovimientoComponent implements OnInit {
       return;
     }
     this.sinProductoSeleccionado.set(false);
-    const movs = await this.state.obtenerKardex(Number(productoId));
+    const movs = await this.kardex.obtenerKardex(Number(productoId));
     this.productoSinMovimientos.set(movs.length === 0);
     this.historialReciente.set(movs.slice(0, 5).map((m) => this.mapFila(m)));
   }
@@ -257,7 +263,7 @@ export class MovimientoComponent implements OnInit {
   private mapFila(m: Movimiento): FilaHistorial {
     const esIngreso = m.tipoMovimientoId === 1;
     const tipo: 'INGRESO' | 'SALIDA' = esIngreso ? 'INGRESO' : 'SALIDA';
-    const producto = this.state.productos().find((p) => p.id === m.productoId);
+    const producto = this.productosState.productos().find((p) => p.id === m.productoId);
     const nombre = producto?.nombre ?? `Producto #${m.productoId}`;
     return {
       id: Number(m.id),

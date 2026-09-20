@@ -1,8 +1,8 @@
 import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as ExcelJS from 'exceljs';
-import { InventarioState } from '../state/inventario.state';
 import { KardexState } from '../state/kardex.state';
+import { ProductosState } from '../state/productos.state';
 import { ModalOverlayComponent } from './modal-overlay.component';
 import { TABLA_COMPONENTS } from './tabla.component';
 
@@ -108,19 +108,17 @@ import { TABLA_COMPONENTS } from './tabla.component';
   `,
 })
 export class KardexModalComponent {
-  // PR #1 PoC: inject KardexState directly. `InventarioState` is still
-  // needed for the producto read path (`productos`, `productosSelector`).
-  // Those will move to `ProductosState` in PR #2, at which point this
-  // component will drop the `InventarioState` inject entirely.
-  protected readonly state = inject(InventarioState);
+  // PR #2: drop `InventarioState` inject entirely. The producto read
+  // path moves to `ProductosState`; kardex state stays in `KardexState`.
+  protected readonly productos = inject(ProductosState);
   protected readonly kardex = inject(KardexState);
 
   protected readonly nombreProducto = computed(() => {
     const id = this.kardex.kardexProductoId();
     if (id === null) return '';
-    const p = this.state.productos().find(x => x.id === id);
+    const p = this.productos.productos().find(x => x.id === id);
     if (p) return p.nombre ?? p.codigoBarra ?? `Producto #${id}`;
-    const sel = this.state.productosSelector().find(x => x.id === id);
+    const sel = this.productos.productosSelector().find(x => x.id === id);
     if (sel) return sel.nombre ?? sel.codigoBarra ?? `Producto #${id}`;
     return `Producto #${id}`;
   });
