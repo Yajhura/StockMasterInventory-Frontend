@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Venta, VentaDetallada, CrearVentaPayload, CrearAbonoPayload, Abono, VentaFiltros, KpiCobranza, MetodoPago } from '../models/venta.models';
+import { Venta, VentaDetallada, CrearVentaPayload, CrearAbonoPayload, Abono, VentaFiltros, KpiCobranza, MetodoPago, CuotaPreview } from '../models/venta.models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiVentasService {
@@ -51,6 +51,21 @@ export class ApiVentasService {
    */
   listarMetodosPago(): Observable<MetodoPago[]> {
     return this.http.get<MetodoPago[]>(`${environment.apiBaseUrl}/api/metodos-pago`);
+  }
+
+  /**
+   * Preview del plan de cuotas calculado server-side. Usa exactamente la
+   * misma logica que persiste las cuotas (PlanCreditoCalculator en
+   * backend), asi que el preview coincide byte-a-byte con lo que se
+   * persiste. Reemplaza el calculo local que `punto-venta.component.ts`
+   * tenia (con bugs de month-end overflow).
+   */
+  previewPlan(total: number, cantidadCuotas: number, fechaInicio: string): Observable<CuotaPreview[]> {
+    const params = new HttpParams()
+      .set('total', String(total))
+      .set('cantidadCuotas', String(cantidadCuotas))
+      .set('fechaInicio', fechaInicio);
+    return this.http.get<CuotaPreview[]>(`${this.url}/preview-plan`, { params });
   }
 }
 

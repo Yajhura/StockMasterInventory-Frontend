@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, inject, signal, computed } from '@angular/core';
+﻿import { Component, OnInit, inject, signal, computed, effect } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
@@ -9,15 +9,8 @@ import { ApiProductosService } from '../../../core/api/api-productos.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ProductoSelectorItem } from '../../../core/models/inventario.models';
 import { Cliente, CrearClientePayload } from '../../../core/models/cliente.models';
-import { CrearVentaPayload, PagoInicial, Venta, VentaFiltros, KpiVentas, EstadoPago, MetodoPago } from '../../../core/models/venta.models';
+import { CrearVentaPayload, PagoInicial, Venta, VentaFiltros, KpiVentas, EstadoPago, MetodoPago, CuotaPreview } from '../../../core/models/venta.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
-
-interface CuotaPreview {
-  numero: number;
-  monto: number;
-  fechaVencimiento: string;
-}
-
 @Component({
   selector: 'app-punto-venta',
   standalone: true,
@@ -208,41 +201,18 @@ export class PuntoVentaComponent implements OnInit {
       .filter(v => v.clienteId === cli.id && v.estadoPago !== 'Pagado')
       .reduce((acc, v) => acc + (Number(v.saldoPendiente) || 0), 0);
   });
+  // --- Preview del plan de cuotas (server-side via /preview-plan) ---
+  // Antes era un `computed` con math en JS — tenia un bug de month-end
+  // overflow (31/01 → 03/03 en lugar de 28/02) porque `Date.setMonth` no
+  // maneja overflow como .NET AddMonths. Ahora el backend calcula el
+  // plan y lo expone via `previewPlan()`. El effect dispara el fetch
+  // cada vez que cambian los inputs; el `onCleanup` cancela el request
+  // in-flight del input anterior (switchMap-like).
+  private readonly _planCuotas = signal<CuotaPreview[]>([]);
+  protected readonly planCuotas = this._planCuotas.asReadonly();
 
-  // --- Computed: preview del plan de cuotas ---
-  protected readonly planCuotas = computed<CuotaPreview[]>(() => {
-    if (!this.esCredito()) return [];
-    const n = this.cantidadCuotas();
-    if (!n || n < 1 || n > 36) return [];
-    const total = this.totalVenta();
-    if (total <= 0) return [];
+  // Effect definido en el constructor abajo (necesita `inject()` despues del field init).
 
-    const inicio = this.fechaInicioCredito();
-    const fechaBase = inicio ? new Date(inicio + 'T00:00:00') : new Date();
-
-    const cuotaBase = Math.floor((total / n) * 100) / 100;
-    const result: CuotaPreview[] = [];
-    for (let i = 1; i <= n; i++) {
-      const monto = (i === n)
-        ? Math.round((total - cuotaBase * (n - 1)) * 100) / 100
-        : cuotaBase;
-      // Replicar el comportamiento de .NET DateTime.AddMonths:
-      // si el dia "overflow" (ej. 31/01 -> 03/03), ajustar al ultimo dia del mes deseado.
-      const fecha = new Date(fechaBase);
-      const diaOriginal = fecha.getDate();
-      fecha.setMonth(fecha.getMonth() + (i - 1));
-      if (fecha.getDate() !== diaOriginal) {
-        // setDate(0) -> ultimo dia del mes anterior (que es el mes que queriamos)
-        fecha.setDate(0);
-      }
-      result.push({
-        numero: i,
-        monto,
-        fechaVencimiento: fecha.toISOString().split('T')[0]
-      });
-    }
-    return result;
-  });
 
   // --- Computed: excede limite de credito? ---
   protected readonly excedeLimiteCredito = computed<boolean>(() => {
@@ -258,6 +228,30 @@ export class PuntoVentaComponent implements OnInit {
     const n = this.cantidadCuotas();
     return n == null || n < 1 || n > 36 || !Number.isInteger(n);
   });
+
+  constructor() {
+    // Effect: cada vez que cambian los inputs del plan, dispara un
+    // preview-plan al backend. El `onCleanup` cancela el request
+    // pendiente del input anterior (efecto = switchMap manual).
+    effect((onCleanup) => {
+      const esCredito = this.esCredito();
+      const n = this.cantidadCuotas();
+      const total = this.totalVenta();
+      const inicio = this.fechaInicioCredito();
+
+      if (!esCredito || !n || n < 1 || n > 36 || total <= 0 || !inicio) {
+        this._planCuotas.set([]);
+        return;
+      }
+
+      const sub = this.apiVentas.previewPlan(total, n, inicio).subscribe({
+        next: (cuotas) => this._planCuotas.set(cuotas),
+        error: () => this._planCuotas.set([])
+      });
+
+      onCleanup(() => sub.unsubscribe());
+    });
+  }
 
   ngOnInit(): void {
     this.cargarVentas();

@@ -80,6 +80,19 @@ export interface MetodoPago {
   nombre: string;
 }
 
+/**
+ * Preview de una cuota individual en el plan de credito.
+ * Shape retornada por `GET /api/ventas/preview-plan` (calculada server-side
+ * por `PlanCreditoCalculator` en el backend). El frontend usa esta shape
+ * para el preview en tiempo real del POS — coincide byte-a-byte con lo
+ * que persiste el endpoint de registro.
+ */
+export interface CuotaPreview {
+  numero: number;
+  monto: number;
+  fechaVencimiento: string;   // 'YYYY-MM-DD'
+}
+
 export interface VentaFiltros {
   desde: string | null;        // 'YYYY-MM-DD'
   hasta: string | null;
