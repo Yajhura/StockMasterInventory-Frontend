@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiCategoriasService } from '../api/api-categorias.service';
 import { ApiMarcasService } from '../api/api-marcas.service';
@@ -6,7 +6,6 @@ import { ApiAtributosService } from '../api/api-atributos.service';
 import { ApiAtributoValoresService } from '../api/api-atributo-valores.service';
 import { ApiProductosService } from '../api/api-productos.service';
 import { ApiMovimientosService } from '../api/api-movimientos.service';
-import { ApiReportesService, KpiInventarioResult } from '../api/api-reportes.service';
 import { ErrorTranslator } from '../errors/error-translator';
 import {
   Categoria,
@@ -15,50 +14,109 @@ import {
   AtributoValor,
   Producto,
   Movimiento,
-  KpiInventario,
   CrearProductoPayload,
   ActualizarProductoPayload,
   RegistrarMovimientoPayload,
   ProductoListItem,
   ProductoSearchParams,
 } from '../models/inventario.models';
+import { KardexState } from './kardex.state';
+import { KpisState } from './kpis.state';
+import { ShellState } from './shell.state';
 
 /**
- * InventarioState: estado global reactivo (Signals) que reemplaza
- * al antiguo InventarioService basado en mocks.
+ * InventarioState (PR #1 facade).
  *
- * Expone:
- *   - Catalogos: categorias, marcas, atributos.
- *   - Productos.
- *   - Producto seleccionado, modal de "Nuevo Producto".
- *   - KPIs de inventario calculados en el cliente.
- *   - Ultimo error HTTP capturado.
+ * Originally a 732-line god store mixing 5 domains (catalogos, productos,
+ * kardex, KPIs, shell UI). PR #1 of the `split-inventario-state` change
+ * extracts `KpisState`, `KardexState`, and `ShellState` as focused,
+ * independently testable stores. The remaining `ProductosState` and
+ * `CatalogosState` extractions land in PR #2.
  *
- * Cada catalogo se carga una sola vez (cached) y se invalida manualmente
- * con `recargar()` o despues de crear/registrar.
+ * This class now serves as a THIN FACADE: the public API is preserved
+ * by delegating the 3 extracted domains to their focused stores while
+ * the producto and catalogos domains remain INLINE here for PR #1.
+ *
+ * The facade exists only to keep all 9 consumer components working
+ * without a coordinated migration. PR #2 will delete this file and
+ * migrate every consumer to inject the focused stores directly.
+ *
+ * `providedIn: 'root'` — MUST stay root scope so consumers keep working.
  */
 @Injectable({ providedIn: 'root' })
 export class InventarioState {
-  // --- Servicios API ---
+  // =========================================================
+  //   Focused stores (PR #1 extraction)
+  // =========================================================
+  private readonly kpis   = inject(KpisState);
+  private readonly kardex = inject(KardexState);
+  private readonly shell  = inject(ShellState);
+
+  // --- Servicios API (move to CatalogosState / ProductosState in PR #2) ---
   private readonly apiCategorias       = inject(ApiCategoriasService);
   private readonly apiMarcas           = inject(ApiMarcasService);
   private readonly apiAtributos        = inject(ApiAtributosService);
   private readonly apiAtributoValores  = inject(ApiAtributoValoresService);
   private readonly apiProductos        = inject(ApiProductosService);
   private readonly apiMovimientos      = inject(ApiMovimientosService);
-  private readonly apiReportes         = inject(ApiReportesService);
 
-  // --- Signals de catalogos ---
-  private readonly _categorias = signal<Categoria[]>([]);
-  private readonly _marcas     = signal<Marca[]>([]);
-  private readonly _atributos  = signal<Atributo[]>([]);
-  /**
-   * Cache de AtributoValores agrupados por atributoId.
-   * Clave = atributoId, valor = lista de valores.
-   * Se hidrata lazily: la primera vez que se piden valores de un
-   * atributo, se hace GET /api/atributo-valores?atributoId=X.
-   */
-  private readonly _atributoValoresPorAtributo = signal<Map<number, AtributoValor[]>>(new Map());
+  // =========================================================
+  //   FACADE — KPIs (KpisState)
+  // =========================================================
+  // PR #2 will delete these delegations and migrate consumers to
+  // inject `KpisState` directly.
+
+  get kpiInventario() { return this.kpis.kpiInventario; }
+  get kpisCargando()  { return this.kpis.kpisCargando; }
+  cargarKpisInventario(force = false) {
+    return this.kpis.cargarKpisInventario(force);
+  }
+
+  // =========================================================
+  //   FACADE — Kardex modal + movimientos (KardexState)
+  // =========================================================
+  // PR #2 will delete these delegations and migrate consumers to
+  // inject `KardexState` directly.
+
+  get kardexProductoId()   { return this.kardex.kardexProductoId; }
+  get kardexMovimientos()  { return this.kardex.kardexMovimientos; }
+  get kardexCargando()     { return this.kardex.kardexCargando; }
+  abrirKardexModal(productoId: number): Promise<void> {
+    return this.kardex.abrirKardexModal(productoId);
+  }
+  cerrarKardexModal(): void { this.kardex.cerrarKardexModal(); }
+  obtenerKardex(productoId: number): Promise<Movimiento[]> {
+    return this.kardex.obtenerKardex(productoId);
+  }
+  listarMovimientos(
+    params: import('../api/api-movimientos.service').ListarMovimientosParams = {},
+  ): Promise<import('../models/inventario.models').PaginatedResponse<Movimiento>> {
+    return this.kardex.listarMovimientos(params);
+  }
+
+  // =========================================================
+  //   FACADE — Shell UI (ShellState)
+  // =========================================================
+  // PR #2 will delete these delegations and migrate consumers to
+  // inject `ShellState` directly.
+
+  get error()                        { return this.shell.error; }
+  get activeView()                   { return this.shell.activeView; }
+  get modalNuevoProductoAbierto()    { return this.shell.modalNuevoProductoAbierto; }
+  get productoSeleccionado()         { return this.shell.productoSeleccionado; }
+  get productoEditandoId()           { return this.shell.productoEditandoId; }
+  setActiveView(v: 'inventario' | 'reportes'): void { this.shell.setActiveView(v); }
+  abrirModalNuevoProducto(): void  { this.shell.abrirModalNuevoProducto(); }
+  cerrarModalNuevoProducto(): void { this.shell.cerrarModalNuevoProducto(); }
+  abrirEdicionProducto(id: number): void { this.shell.abrirEdicionProducto(id); }
+  cerrarEdicionProducto(): void    { this.shell.cerrarEdicionProducto(); }
+  seleccionarProducto(p: Producto | null): void { this.shell.seleccionarProducto(p); }
+
+  // =========================================================
+  //   INLINE — Productos (move to ProductosState in PR #2)
+  // =========================================================
+
+  // --- Signals de productos ---
   private readonly _productos  = signal<Producto[]>([]);
   /**
    * Lista liviana para alimentar dropdowns. La carga es perezosa:
@@ -78,16 +136,10 @@ export class InventarioState {
   /** Si true, /buscar envia incluirEliminados=true (solo Admin). */
   private readonly _mostrarPapelera = signal<boolean>(false);
 
-  private cargandoCatalogos = false;
   private cargandoProductos = false;
 
-  readonly categorias = this._categorias.asReadonly();
-  readonly marcas     = this._marcas.asReadonly();
-  readonly atributos  = this._atributos.asReadonly();
   readonly productos  = this._productos.asReadonly();
   readonly productosSelector = this._productosSelector.asReadonly();
-  readonly atributoValoresPorAtributo = this._atributoValoresPorAtributo.asReadonly();
-
   readonly productosPaginados = this._productosPaginados.asReadonly();
   readonly totalItems = this._totalItems.asReadonly();
   readonly totalPages = this._totalPages.asReadonly();
@@ -96,21 +148,6 @@ export class InventarioState {
   readonly buscando   = this._buscando.asReadonly();
   readonly mostrarPapelera = this._mostrarPapelera.asReadonly();
 
-  // --- Signals de UI ---
-  readonly activeView              = signal<'inventario' | 'reportes'>('inventario');
-  readonly modalNuevoProductoAbierto = signal<boolean>(false);
-  readonly productoSeleccionado    = signal<Producto | null>(null);
-  readonly productoEditandoId      = signal<number | null>(null);
-
-  // --- Kardex modal (nivel shell) ---
-  private readonly _kardexProductoId   = signal<number | null>(null);
-  private readonly _kardexMovimientos    = signal<Movimiento[]>([]);
-  private readonly _kardexCargando     = signal<boolean>(false);
-  readonly kardexProductoId   = this._kardexProductoId.asReadonly();
-  readonly kardexMovimientos = this._kardexMovimientos.asReadonly();
-  readonly kardexCargando    = this._kardexCargando.asReadonly();
-
-  readonly error                   = signal<string | null>(null);
   /**
    * Counter que se incrementa cada vez que la lista de productos
    * cambia en el server (alta, edicion, soft delete, restore). El
@@ -119,94 +156,6 @@ export class InventarioState {
    * acoplar el modal con el dashboard.
    */
   readonly productosRev = signal<number>(0);
-
-  // --- KPIs del servidor ---
-  // Antes: kpiInventario era un computed sobre _productosPaginados()
-  // (BUG: solo veia la pagina actual, ej. productosBajos=0 cuando el
-  // server tenia 3 stock-bajo en otra pagina). Ahora se hidrata via
-  // cargarKpisInventario() que pega contra /api/reportes/kpis-inventario
-  // y devuelve los totales REALES sobre toda la tabla Productos
-  // (excluyendo soft-deleted por el global query filter del backend).
-  // Devuelve null mientras se hace el primer fetch — los consumidores
-  // deben chequear `kpiInventario() === null` antes de leer.
-  private readonly _kpiInventario  = signal<KpiInventario | null>(null);
-  private readonly _kpisCargando    = signal<boolean>(false);
-  /** In-flight promise cache to coalesce concurrent reload requests. */
-  private kpisInflight: Promise<void> | null = null;
-  /** Set true after the first successful load so we can avoid an extra fetch on every state init. */
-  private kpisLoadedOnce = false;
-  readonly kpiInventario = this._kpiInventario.asReadonly();
-  readonly kpisCargando  = this._kpisCargando.asReadonly();
-
-  /**
-   * Fetch server-side aggregate KPIs.
-   *
-   * @param force when true, bypasses the in-flight cache and the
-   *              already-loaded guard so a reload always re-hits the
-   *              network. Use after mutations (crear/actualizar/
-   *              eliminar/restaurar producto + registrarMovimiento).
-   *              When false, returns the existing in-flight promise if
-   *              one is active, and skips the fetch if we already have
-   *              data and no force.
-   */
-  async cargarKpisInventario(force = false): Promise<void> {
-    if (!force && this.kpisLoadedOnce && this._kpiInventario() !== null) {
-      return;
-    }
-    if (!force && this.kpisInflight) {
-      return this.kpisInflight;
-    }
-    this._kpisCargando.set(true);
-    const p = (async () => {
-      try {
-        const result = await firstValueFrom(this.apiReportes.kpisInventario());
-        // ApiReportesService returns `KpiInventarioResult` which has the
-        // same shape as the local `KpiInventario` interface; map through
-        // explicitly so future drift is caught at compile time.
-        const mapped: KpiInventario = {
-          totalItems: result.totalItems,
-          totalUnidades: result.totalUnidades,
-          productosBajos: result.productosBajos,
-        };
-        this._kpiInventario.set(mapped);
-        this.kpisLoadedOnce = true;
-        this.error.set(null);
-      } catch (e: unknown) {
-        this.error.set(this.toMessage(e));
-        // Don't reset kpisLoadedOnce on transient errors — keep the last
-        // known-good KPI values so the dashboard doesn't flicker to null.
-        throw e;
-      } finally {
-        this._kpisCargando.set(false);
-        this.kpisInflight = null;
-      }
-    })();
-    this.kpisInflight = p;
-    return p;
-  }
-
-  // ========================
-  //   Carga / inicializacion
-  // ========================
-
-  async cargarCatalogos(): Promise<void> {
-    if (this.cargandoCatalogos) return;
-    this.cargandoCatalogos = true;
-    try {
-      const [cats, mars, attrs] = await Promise.all([
-        firstValueFrom(this.apiCategorias.listar()),
-        firstValueFrom(this.apiMarcas.listar()),
-        firstValueFrom(this.apiAtributos.listar()),
-      ]);
-      this._categorias.set(cats);
-      this._marcas.set(mars);
-      this._atributos.set(attrs);
-    } catch (e: unknown) {
-      this.error.set(this.toMessage(e));
-    } finally {
-      this.cargandoCatalogos = false;
-    }
-  }
 
   async cargarProductos(): Promise<void> {
     if (this.cargandoProductos) return;
@@ -219,10 +168,6 @@ export class InventarioState {
     } finally {
       this.cargandoProductos = false;
     }
-  }
-
-  async cargarTodo(): Promise<void> {
-    await Promise.all([this.cargarCatalogos(), this.cargarProductos()]);
   }
 
   /**
@@ -287,9 +232,9 @@ export class InventarioState {
     this._page.set(1);
   }
 
-  // ========================
-  //   Acciones de dominio
-  // ========================
+  // =====================================================
+  //   Acciones de dominio — Productos
+  // =====================================================
 
   async crearProducto(payload: CrearProductoPayload): Promise<Producto> {
     try {
@@ -424,7 +369,7 @@ export class InventarioState {
       // es pedir que se recarguen los productos (o al menos las listas actuales).
       await this.cargarSelectorProductos(true);
       await this.recargarProductosPaginados();
-      
+
       this.error.set(null);
       return movActualizado;
     } catch (e: unknown) {
@@ -445,24 +390,54 @@ export class InventarioState {
     }
   }
 
-  async obtenerKardex(productoId: number): Promise<Movimiento[]> {
+  // =========================================================
+  //   INLINE — Catalogos (move to CatalogosState in PR #2)
+  // =========================================================
+
+  // --- Signals de catalogos ---
+  private readonly _categorias = signal<Categoria[]>([]);
+  private readonly _marcas     = signal<Marca[]>([]);
+  private readonly _atributos  = signal<Atributo[]>([]);
+  /**
+   * Cache de AtributoValores agrupados por atributoId.
+   * Clave = atributoId, valor = lista de valores.
+   * Se hidrata lazily: la primera vez que se piden valores de un
+   * atributo, se hace GET /api/atributo-valores?atributoId=X.
+   */
+  private readonly _atributoValoresPorAtributo = signal<Map<number, AtributoValor[]>>(new Map());
+
+  private cargandoCatalogos = false;
+
+  readonly categorias = this._categorias.asReadonly();
+  readonly marcas     = this._marcas.asReadonly();
+  readonly atributos  = this._atributos.asReadonly();
+  readonly atributoValoresPorAtributo = this._atributoValoresPorAtributo.asReadonly();
+
+  // ========================
+  //   Carga / inicializacion
+  // ========================
+
+  async cargarCatalogos(): Promise<void> {
+    if (this.cargandoCatalogos) return;
+    this.cargandoCatalogos = true;
     try {
-      return await firstValueFrom(this.apiMovimientos.kardex(productoId));
+      const [cats, mars, attrs] = await Promise.all([
+        firstValueFrom(this.apiCategorias.listar()),
+        firstValueFrom(this.apiMarcas.listar()),
+        firstValueFrom(this.apiAtributos.listar()),
+      ]);
+      this._categorias.set(cats);
+      this._marcas.set(mars);
+      this._atributos.set(attrs);
     } catch (e: unknown) {
       this.error.set(this.toMessage(e));
-      return [];
+    } finally {
+      this.cargandoCatalogos = false;
     }
   }
 
-  async listarMovimientos(params: import('../api/api-movimientos.service').ListarMovimientosParams = {}): Promise<import('../models/inventario.models').PaginatedResponse<Movimiento>> {
-    try {
-      const result = await firstValueFrom(this.apiMovimientos.listar(params));
-      this.error.set(null);
-      return result;
-    } catch (e: unknown) {
-      this.error.set(this.toMessage(e));
-      return { items: [], page: 1, size: 0, totalItems: 0, totalPages: 0, hasNext: false, hasPrevious: false };
-    }
+  async cargarTodo(): Promise<void> {
+    await Promise.all([this.cargarCatalogos(), this.cargarProductos()]);
   }
 
   // =====================================================
@@ -586,52 +561,6 @@ export class InventarioState {
       this.error.set(this.toMessage(e));
       throw e;
     }
-  }
-
-  // ========================
-  //   Acciones de UI
-  // ========================
-
-  setActiveView(v: 'inventario' | 'reportes'): void {
-    this.activeView.set(v);
-  }
-
-  abrirModalNuevoProducto(): void  { this.modalNuevoProductoAbierto.set(true); }
-  cerrarModalNuevoProducto(): void {
-    this.modalNuevoProductoAbierto.set(false);
-  }
-
-  abrirEdicionProducto(id: number): void {
-    this.productoEditandoId.set(id);
-    this.modalNuevoProductoAbierto.set(true);
-  }
-
-  cerrarEdicionProducto(): void {
-    this.productoEditandoId.set(null);
-    this.modalNuevoProductoAbierto.set(false);
-  }
-
-  async abrirKardexModal(productoId: number): Promise<void> {
-    this._kardexProductoId.set(productoId);
-    this._kardexCargando.set(true);
-    this._kardexMovimientos.set([]);
-    try {
-      const movs = await this.obtenerKardex(productoId);
-      this._kardexMovimientos.set(movs);
-    } catch {
-      this.error.set('No se pudo cargar el Kardex.');
-    } finally {
-      this._kardexCargando.set(false);
-    }
-  }
-
-  cerrarKardexModal(): void {
-    this._kardexProductoId.set(null);
-    this._kardexMovimientos.set([]);
-  }
-
-  seleccionarProducto(p: Producto | null): void {
-    this.productoSeleccionado.set(p);
   }
 
   // =====================================================
