@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Venta, VentaDetallada, CrearVentaPayload, CrearAbonoPayload, Abono, VentaFiltros, KpiCobranza } from '../models/venta.models';
+import { Venta, VentaDetallada, CrearVentaPayload, CrearAbonoPayload, Abono, VentaFiltros, KpiCobranza, MetodoPago } from '../models/venta.models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiVentasService {
@@ -40,6 +40,17 @@ export class ApiVentasService {
 
   registrarAbono(ventaId: number, payload: CrearAbonoPayload): Observable<Abono> {
     return this.http.post<Abono>(`${this.url}/${ventaId}/abonos`, payload);
+  }
+
+  /**
+   * Lista los métodos de pago activos desde el endpoint
+   * `GET /api/metodos-pago` (no bajo `/api/ventas/...` porque es un
+   * catálogo compartido). Ordenados alfabéticamente según el contrato
+   * del backend. Reemplaza el array hardcoded que tenía
+   * `punto-venta.component.ts` antes del fix.
+   */
+  listarMetodosPago(): Observable<MetodoPago[]> {
+    return this.http.get<MetodoPago[]>(`${environment.apiBaseUrl}/api/metodos-pago`);
   }
 }
 
