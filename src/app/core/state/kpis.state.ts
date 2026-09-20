@@ -1,8 +1,9 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, effect, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiReportesService, KpiInventarioResult } from '../api/api-reportes.service';
 import { ErrorTranslator } from '../errors/error-translator';
 import { KpiInventario } from '../models/inventario.models';
+import { ProductosState } from './productos.state';
 import { ShellState } from './shell.state';
 
 /**
@@ -20,16 +21,52 @@ import { ShellState } from './shell.state';
  * the cross-cutting error fallback). KpisState does NOT own an error
  * signal — it borrows ShellState's.
  *
- * In PR #2, the KpisState constructor will register an `effect` on
- * `ProductosState.productosRev` (with `allowSignalWrites: true`) so the
- * 5 hard-coded `cargarKpisInventario(true)` call sites collapse to one
- * reactive refetch. For PR #1, the effect is NOT present — PR #1 only
- * extracts the state and method.
+ * Cross-store effect (REQ-DECOMP-003): the constructor registers an
+ * `effect(() => { ... }, { allowSignalWrites: true })` that listens to
+ * `ProductosState.productosRev` and refetches the aggregate KPIs when
+ * the counter changes — but ONLY after `kpisLoadedOnce` is true.
+ *
+ * The `allowSignalWrites: true` opt-in is required because
+ * `cargarKpisInventario(true)` writes to `_kpisCargando` and
+ * `_kpiInventario` inside an async pipeline; the same opt-in is used
+ * by `DashboardComponent.effect(...)` at line 318 (pre-PR #1).
+ *
+ * The `kpisLoadedOnce` guard avoids an extra fetch at construction
+ * time (the dashboard calls `cargarKpisInventario()` explicitly from
+ * `ngOnInit`, which sets `kpisLoadedOnce = true`). Without the guard,
+ * the first `productosRev` bump from `cargarProductos()` or similar
+ * would race with the dashboard's first load.
+ *
+ * `actualizarMovimiento` / `eliminarMovimiento` MUST NOT bump
+ * `productosRev`; they therefore MUST NOT trigger a refetch. This
+ * preserves the pre-PR #2 behavior where those two methods never
+ * touched KPI state at all.
  */
 @Injectable({ providedIn: 'root' })
 export class KpisState {
   private readonly apiReportes = inject(ApiReportesService);
   private readonly shell = inject(ShellState);
+  private readonly productosState = inject(ProductosState);
+
+  constructor() {
+    // REQ-DECOMP-003 cross-store effect: any successful producto
+    // mutation bumps `productosRev`, and that bump triggers a forced
+    // KPI refetch here. Pre-PR #2 this was done with 5 hard-coded
+    // `await this.cargarKpisInventario(true)` call sites inside
+    // `crearProducto` / `actualizarProducto` / `eliminarProducto` /
+    // `restaurarProducto` / `registrarMovimiento`. PR #2 collapses
+    // all 5 sites into this single reactive effect.
+    effect(() => {
+      const rev = this.productosState.productosRev();
+      // Skip the initial state (rev === 0) and pre-first-load.
+      // The dashboard's ngOnInit calls cargarKpisInventario() and
+      // sets kpisLoadedOnce = true; only then do bumps trigger a
+      // refetch.
+      if (rev === 0) return;
+      if (!this.kpisLoadedOnce) return;
+      void this.cargarKpisInventario(true);
+    }, { allowSignalWrites: true });
+  }
 
   // --- KPIs del servidor ---
   // Devuelve null mientras se hace el primer fetch — los consumidores

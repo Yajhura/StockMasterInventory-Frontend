@@ -244,7 +244,8 @@ export class InventarioState {
       this.error.set(null);
       await this.cargarSelectorProductos(true);
       await this.recargarProductosPaginados();
-      await this.cargarKpisInventario(true);
+      // KPI refetch happens reactively in KpisState's ctor effect on
+      // `productosRev` (REQ-DECOMP-003). No explicit reload needed.
       return nuevo;
     } catch (e: unknown) {
       this.error.set(this.toMessage(e));
@@ -260,7 +261,8 @@ export class InventarioState {
       this.error.set(null);
       await this.cargarSelectorProductos(true);
       await this.recargarProductosPaginados();
-      await this.cargarKpisInventario(true);
+      // KPI refetch happens reactively in KpisState's ctor effect on
+      // `productosRev` (REQ-DECOMP-003). No explicit reload needed.
       return actualizado;
     } catch (e: unknown) {
       this.error.set(this.toMessage(e));
@@ -297,7 +299,8 @@ export class InventarioState {
       await this.cargarSelectorProductos(true);
       // Recargar lista paginada para reflejar el cambio de pagina si es necesario
       await this.recargarProductosPaginados();
-      await this.cargarKpisInventario(true);
+      // KPI refetch happens reactively in KpisState's ctor effect on
+      // `productosRev` (REQ-DECOMP-003). No explicit reload needed.
     } catch (e: unknown) {
       this.error.set(this.toMessage(e));
       throw e;
@@ -327,7 +330,8 @@ export class InventarioState {
       );
       this.productosRev.update((n) => n + 1);
       this.error.set(null);
-      await this.cargarKpisInventario(true);
+      // KPI refetch happens reactively in KpisState's ctor effect on
+      // `productosRev` (REQ-DECOMP-003). No explicit reload needed.
       return producto;
     } catch (e: unknown) {
       this.error.set(this.toMessage(e));
@@ -354,7 +358,8 @@ export class InventarioState {
         })
       );
       this.error.set(null);
-      await this.cargarKpisInventario(true);
+      // KPI refetch happens reactively in KpisState's ctor effect on
+      // `productosRev` (REQ-DECOMP-003). No explicit reload needed.
       return mov;
     } catch (e: unknown) {
       this.error.set(this.toMessage(e));
