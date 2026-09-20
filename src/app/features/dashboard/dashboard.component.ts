@@ -6,7 +6,11 @@ import { Router, RouterLink } from '@angular/router';
 import { ConfirmDialogComponent } from '../../core/components/confirm-dialog.component';
 import { DropdownComponent, DropdownOption } from '../../core/components/dropdown.component';
 import { NotificationService } from '../../core/services/notification.service';
-import { InventarioState } from '../../core/state/inventario.state';
+import { CatalogosState } from '../../core/state/catalogos.state';
+import { KardexState } from '../../core/state/kardex.state';
+import { KpisState } from '../../core/state/kpis.state';
+import { ProductosState } from '../../core/state/productos.state';
+import { ShellState } from '../../core/state/shell.state';
 import {
   Producto,
   ProductoListItem,
@@ -36,7 +40,11 @@ interface FilaHistorial {
   imports: [CommonModule, ReactiveFormsModule, FormsModule, ConfirmDialogComponent, DropdownComponent, RouterLink, PaginadorComponent, ...TABLA_COMPONENTS],
 })
 export class DashboardComponent implements OnInit {
-  protected readonly state = inject(InventarioState);
+  protected readonly productos = inject(ProductosState);
+  protected readonly catalogos = inject(CatalogosState);
+  protected readonly kardex = inject(KardexState);
+  protected readonly kpis = inject(KpisState);
+  protected readonly shell = inject(ShellState);
   protected readonly notify = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
@@ -45,26 +53,26 @@ export class DashboardComponent implements OnInit {
 
   // --- Lista paginada (server-side) ---
   /** Lista paginada que se muestra en la tabla del dashboard. */
-  protected readonly productos  = this.state.productosPaginados;
+  protected readonly productosPaginados  = this.productos.productosPaginados;
   /**
    * Lista FULL de productos (no paginada), para el selector de
    * "Registrar Movimiento". Incluye eliminados logicamente? No:
    * usamos `productosActivos()` que filtra los eliminados.
    */
-  protected readonly todosLosProductos = this.state.productos;
+  protected readonly todosLosProductos = this.productos.productos;
   protected readonly productosActivos = computed<Producto[]>(() =>
     this.todosLosProductos().filter((p) => !p.eliminado)
   );
-  protected readonly totalItems = this.state.totalItems;
-  protected readonly totalPages = this.state.totalPages;
-  protected readonly page       = this.state.page;
-  protected readonly pageSize   = this.state.pageSize;
-  protected readonly buscando   = this.state.buscando;
-  protected readonly mostrarPapelera = this.state.mostrarPapelera;
+  protected readonly totalItems = this.productos.totalItems;
+  protected readonly totalPages = this.productos.totalPages;
+  protected readonly page       = this.productos.page;
+  protected readonly pageSize   = this.productos.pageSize;
+  protected readonly buscando   = this.productos.buscando;
+  protected readonly mostrarPapelera = this.productos.mostrarPapelera;
 
-  protected readonly marcas = this.state.marcas;
-  protected readonly categorias = this.state.categorias;
-  protected readonly atributos = this.state.atributos;
+  protected readonly marcas = this.catalogos.marcas;
+  protected readonly categorias = this.catalogos.categorias;
+  protected readonly atributos = this.catalogos.atributos;
 
   protected readonly opcionesMarcaFiltro = computed<DropdownOption[]>(() => [
     { value: 'all', label: 'Todas las marcas' },
@@ -136,7 +144,7 @@ export class DashboardComponent implements OnInit {
   protected readonly productoAEliminar   = signal<ProductoListItem | null>(null);
   protected readonly eliminando         = signal(false);
 
-  protected readonly kpi = computed(() => this.state.kpiInventario());
+  protected readonly kpi = computed(() => this.kpis.kpiInventario());
 
   protected readonly mensajeEliminar = computed(() => {
     const p = this.productoAEliminar();
@@ -169,7 +177,7 @@ export class DashboardComponent implements OnInit {
    * trae imagen ni atributos, para escalar bien a miles de productos.
    */
   protected readonly opcionesProducto = computed(() =>
-    this.state.productosSelector().map((p) => ({
+    this.productos.productosSelector().map((p) => ({
       value: p.id,
       label: p.nombre,
       sublabel: p.codigoBarra ?? undefined,
@@ -185,7 +193,7 @@ export class DashboardComponent implements OnInit {
     const id = this.formMovimiento.get('productoId')?.value;
     if (id == null) return null;
     // Primero cache (lista completa que el state mantiene al detalle)
-    const cached = this.state.productos().find((p) => p.id === Number(id));
+    const cached = this.productos.productos().find((p) => p.id === Number(id));
     if (cached) {
       // Cache devuelve Producto (con atributos), el form solo necesita ProductoListItem
       return {
@@ -210,7 +218,7 @@ export class DashboardComponent implements OnInit {
       };
     }
     // Si no, lo tomamos de la lista paginada
-    return this.productos().find((p) => p.id === Number(id)) ?? null;
+    return this.productosPaginados().find((p) => p.id === Number(id)) ?? null;
   });
 
   protected readonly stockDisponible = computed<number | null>(() => {
@@ -269,12 +277,12 @@ export class DashboardComponent implements OnInit {
       if (this.totalItems() === 0) {
         return 'La papelera está vacía. Los productos que elimines aparecerán aquí.';
       }
-      if (this.productos().length === 0 && this.filtro().trim()) {
+      if (this.productosPaginados().length === 0 && this.filtro().trim()) {
         return `Ningún producto eliminado coincide con "${this.filtro()}".`;
       }
       return '';
     }
-    if (this.productos().length === 0 && this.filtro().trim()) {
+    if (this.productosPaginados().length === 0 && this.filtro().trim()) {
       return `No hay productos que coincidan con "${this.filtro()}"`;
     }
     if (this.totalItems() === 0) {
@@ -290,10 +298,10 @@ export class DashboardComponent implements OnInit {
     // Asi cuando abras el popover de filtros ya estan disponibles.
     effect(() => {
       const attrs = this.atributos();
-      const cache = this.state.atributoValoresPorAtributo();
+      const cache = this.catalogos.atributoValoresPorAtributo();
       for (const a of attrs) {
         if (!cache.has(a.id)) {
-          this.state.obtenerValoresDeAtributo(a.id).catch(() => {});
+          this.catalogos.obtenerValoresDeAtributo(a.id).catch(() => {});
         }
       }
     });
@@ -308,7 +316,7 @@ export class DashboardComponent implements OnInit {
     // para que el effect no se re-ejecute cuando se actualice cualquier
     // signal interno durante la query.
     effect(() => {
-      const rev = this.state.productosRev();
+      const rev = this.productos.productosRev();
       if (rev > 0) {
         untracked(() => {
           // Llamamos sin await para no bloquear el effect.
@@ -322,10 +330,10 @@ export class DashboardComponent implements OnInit {
     effect(() => {
       if (this.filtrosAbiertos()) {
         const attrs = this.atributos();
-        const cache = this.state.atributoValoresPorAtributo();
+        const cache = this.catalogos.atributoValoresPorAtributo();
         for (const a of attrs) {
           if (!cache.has(a.id)) {
-            this.state.obtenerValoresDeAtributo(a.id).catch(() => {});
+            this.catalogos.obtenerValoresDeAtributo(a.id).catch(() => {});
           }
         }
       }
@@ -341,34 +349,34 @@ export class DashboardComponent implements OnInit {
     // Carga catalogos (marcas/categorias/atributos) si no estan ya.
     // Es idempotente: si otra pantalla los cargo antes, no hace nada.
     if (this.categorias().length === 0 || this.marcas().length === 0 || this.atributos().length === 0) {
-      await this.state.cargarCatalogos();
+      await this.catalogos.cargarCatalogos();
     }
 
     // Carga la lista LIVIANA de productos para el dropdown de
     // "Registrar Movimiento" (id + nombre + SKU + stock). Es
     // idempotente y no devuelve imagen ni atributos, asi que
     // escala bien a miles de productos.
-    this.state.cargarSelectorProductos();
+    this.productos.cargarSelectorProductos();
 
     // Carga los KPIs agregados del server (totalItems, totalUnidades,
     // productosBajos). Antes se calculaban sobre la página actual (bug
     // REQ-TEST-003); ahora vienen del endpoint
     // /api/reportes/kpis-inventario y reflejan la tabla Productos
     // completa (soft-deleted excluidos).
-    this.state.cargarKpisInventario();
+    this.kpis.cargarKpisInventario();
 
     // Carga inicial: pagina 1, sin filtro.
-    this.state.setPageSize(10);
+    this.productos.setPageSize(10);
     await this.refrescar(1);
     this.onFormChange();
     await this.refrescarHistorial();
   }
 
   protected async refrescar(page: number): Promise<void> {
-    this.state.setPage(page);
+    this.productos.setPage(page);
     const sort = this.sortActual();
     try {
-      await this.state.buscarProductos({
+      await this.productos.buscarProductos({
         q: this.filtro().trim() || undefined,
         page,
         size: this.pageSize(),
@@ -380,7 +388,7 @@ export class DashboardComponent implements OnInit {
         stockMax: this.filtroStockMax() ?? undefined,
       });
     } catch {
-      this.notify.error(this.state.error() ?? 'No se pudieron cargar los productos.');
+      this.notify.error(this.shell.error() ?? 'No se pudieron cargar los productos.');
     }
   }
 
@@ -513,7 +521,7 @@ export class DashboardComponent implements OnInit {
   }
 
   protected valoresPara(atributoId: number): { id: number; nombre: string }[] {
-    return this.state.valoresDeAtributo(atributoId);
+    return this.catalogos.valoresDeAtributo(atributoId);
   }
 
   protected isFiltroAtributoActivo(atributoId: number, valor: string): boolean {
@@ -551,7 +559,7 @@ export class DashboardComponent implements OnInit {
    */
   protected async togglePapelera(): Promise<void> {
     const activar = !this.mostrarPapelera();
-    this.state.togglePapelera(activar);
+    this.productos.togglePapelera(activar);
     this.filtro.set('');
     await this.refrescar(1);
   }
@@ -596,7 +604,7 @@ export class DashboardComponent implements OnInit {
   }
 
   protected async editarProducto(p: ProductoListItem): Promise<void> {
-    this.state.abrirEdicionProducto(p.id);
+    this.shell.abrirEdicionProducto(p.id);
   }
 
   protected confirmarEliminar(p: ProductoListItem): void {
@@ -610,14 +618,14 @@ export class DashboardComponent implements OnInit {
     const nombreProd = this.displayName(p);
     this.eliminando.set(true);
     try {
-      await this.state.eliminarProducto(p.id);
+      await this.productos.eliminarProducto(p.id);
       this.notify.success(`Producto "${nombreProd}" eliminado.`);
       this.confirmandoEliminar.set(false);
       this.productoAEliminar.set(null);
       // No aqui: el effect de productosRev ya hace refrescar() automaticamente.
       this.refrescarHistorial();
     } catch {
-      this.notify.error(this.state.error() ?? 'No se pudo eliminar el producto.');
+      this.notify.error(this.shell.error() ?? 'No se pudo eliminar el producto.');
     } finally {
       this.eliminando.set(false);
     }
@@ -630,19 +638,19 @@ export class DashboardComponent implements OnInit {
   protected async restaurarProducto(p: ProductoListItem): Promise<void> {
     const nombreProd = this.displayName(p);
     try {
-      await this.state.restaurarProducto(p.id);
+      await this.productos.restaurarProducto(p.id);
       this.notify.success(`Producto "${nombreProd}" restaurado.`);
       // Refrescamos la papelera (puede haber quedado vacia) y el selector
       // para que el dropdown incluya el producto devuelto.
       await this.refrescar(this.page());
-      this.state.cargarSelectorProductos(true);
+      this.productos.cargarSelectorProductos(true);
     } catch {
-      this.notify.error(this.state.error() ?? 'No se pudo restaurar el producto.');
+      this.notify.error(this.shell.error() ?? 'No se pudo restaurar el producto.');
     }
   }
 
   protected abrirModal(): void {
-    this.state.abrirModalNuevoProducto();
+    this.shell.abrirModalNuevoProducto();
   }
 
   /**
@@ -686,7 +694,7 @@ export class DashboardComponent implements OnInit {
     }
     this.procesando.set(true);
     try {
-      const mov = await this.state.registrarMovimiento({
+      const mov = await this.productos.registrarMovimiento({
         productoId: Number(v.productoId),
         tipoMovimientoId: Number(v.tipoMovimientoId) as 1 | 2,
         cantidad: cantNum,
@@ -713,19 +721,19 @@ export class DashboardComponent implements OnInit {
       await this.refrescar(this.page());
       this.refrescarHistorial();
     } catch {
-      this.notify.error(this.state.error() ?? 'No se pudo registrar el movimiento.');
+      this.notify.error(this.shell.error() ?? 'No se pudo registrar el movimiento.');
     } finally {
       this.procesando.set(false);
     }
   }
 
   private async refrescarHistorial(): Promise<void> {
-    const target = this.state.productoSeleccionado() ?? (this.productos()[0] as ProductoListItem | undefined);
+    const target = this.shell.productoSeleccionado() ?? (this.productosPaginados()[0] as ProductoListItem | undefined);
     if (!target) {
       this.historialReciente.set([]);
       return;
     }
-    const movs = await this.state.obtenerKardex(target.id);
+    const movs = await this.kardex.obtenerKardex(target.id);
     this.historialReciente.set(
       movs.slice(0, 3).map((m) => this.mapFila(m))
     );
@@ -735,10 +743,10 @@ export class DashboardComponent implements OnInit {
    * Click en el boton de kardex: abre el modal en el shell.
    */
   protected async toggleExpandir(p: ProductoListItem): Promise<void> {
-    if (this.state.kardexProductoId() === p.id) {
-      this.state.cerrarKardexModal();
+    if (this.kardex.kardexProductoId() === p.id) {
+      this.kardex.cerrarKardexModal();
     } else {
-      await this.state.abrirKardexModal(p.id);
+      await this.kardex.abrirKardexModal(p.id);
     }
   }
 
@@ -750,7 +758,7 @@ export class DashboardComponent implements OnInit {
   private mapFila(m: Movimiento): FilaHistorial {
     const esIngreso = m.tipoMovimientoId === 1;
     const tipo: 'INGRESO' | 'SALIDA' = esIngreso ? 'INGRESO' : 'SALIDA';
-    const producto = this.productos().find((p) => p.id === m.productoId);
+    const producto = this.productosPaginados().find((p) => p.id === m.productoId);
     const nombre = producto ? this.displayName(producto) : `Producto #${m.productoId}`;
     return {
       id: Number(m.id),

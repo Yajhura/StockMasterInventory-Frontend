@@ -204,9 +204,9 @@
   <app-tabla
     modo="paginado"
     [limiteScroll]="10"
-    [itemsCount]="productos().length"
+    [itemsCount]="productosPaginados().length"
     [cargando]="buscando()"
-    [isEmpty]="productos().length === 0"
+    [isEmpty]="productosPaginados().length === 0"
     [mensajeVacio]="mensajeVacio()"
     [titulo]="mostrarPapelera() ? 'Productos Eliminados' : 'Inventario de Accesorios'"
     [subtitulo]="totalItems() > 0 ? (totalItems() + (totalItems() === 1 ? ' producto' : ' productos') + (filtro() ? ' · filtrando por &quot;' + filtro() + '&quot;' : '')) : ''"
@@ -247,7 +247,7 @@
     </tr>
 
     <ng-container table-body>
-      @for (p of productos(); track p.id) {
+      @for (p of productosPaginados(); track p.id) {
         <tr
           app-tr
           [clickable]="!p.eliminado"
@@ -320,19 +320,19 @@
               <button
                 type="button"
                 class="grid place-items-center w-8 h-8 rounded-lg transition-colors"
-                [class.bg-blue-50]="state.kardexProductoId() === p.id"
-                [class.text-blue-600]="state.kardexProductoId() === p.id"
-                [class.text-slate-400]="state.kardexProductoId() !== p.id"
-                [class.hover:bg-slate-100]="state.kardexProductoId() !== p.id"
-                [class.hover:text-slate-700]="state.kardexProductoId() !== p.id"
-                [attr.aria-label]="(state.kardexProductoId() === p.id ? 'Cerrar' : 'Ver') + ' Kardex de ' + displayName(p)"
-                [attr.aria-expanded]="state.kardexProductoId() === p.id"
-                [title]="state.kardexProductoId() === p.id ? 'Cerrar Kardex' : 'Ver Kardex'"
+                [class.bg-blue-50]="kardex.kardexProductoId() === p.id"
+                [class.text-blue-600]="kardex.kardexProductoId() === p.id"
+                [class.text-slate-400]="kardex.kardexProductoId() !== p.id"
+                [class.hover:bg-slate-100]="kardex.kardexProductoId() !== p.id"
+                [class.hover:text-slate-700]="kardex.kardexProductoId() !== p.id"
+                [attr.aria-label]="(kardex.kardexProductoId() === p.id ? 'Cerrar' : 'Ver') + ' Kardex de ' + displayName(p)"
+                [attr.aria-expanded]="kardex.kardexProductoId() === p.id"
+                [title]="kardex.kardexProductoId() === p.id ? 'Cerrar Kardex' : 'Ver Kardex'"
                 (click)="toggleExpandir(p); $event.stopPropagation()"
               >
                 <svg
                   class="w-4 h-4"
-                  [class.text-blue-600]="state.kardexProductoId() === p.id"
+                  [class.text-blue-600]="kardex.kardexProductoId() === p.id"
                   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
                 >
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>

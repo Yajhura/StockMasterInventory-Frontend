@@ -7,7 +7,9 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { InventarioState } from '../../core/state/inventario.state';
+import { CatalogosState } from '../../core/state/catalogos.state';
+import { ProductosState } from '../../core/state/productos.state';
+import { ShellState } from '../../core/state/shell.state';
 import { ApiProductosService } from '../../core/api/api-productos.service';
 import { NotificationService } from '../../core/services/notification.service';
 import {
@@ -36,14 +38,16 @@ export class NuevoProductoComponent implements OnInit {
   readonly productoId = input<number | null>(null);
 
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly state = inject(InventarioState);
+  protected readonly catalogos = inject(CatalogosState);
+  protected readonly productos = inject(ProductosState);
+  protected readonly shell = inject(ShellState);
   private readonly apiProductos = inject(ApiProductosService);
   private readonly fb = inject(FormBuilder);
   private readonly notify = inject(NotificationService);
 
-  protected readonly categorias = this.state.categorias;
-  protected readonly marcas = this.state.marcas;
-  protected readonly atributos = this.state.atributos;
+  protected readonly categorias = this.catalogos.categorias;
+  protected readonly marcas = this.catalogos.marcas;
+  protected readonly atributos = this.catalogos.atributos;
   protected readonly guardando = signal<boolean>(false);
 
   protected readonly modo = computed<Modo>(() => (this.productoId() ? 'editar' : 'crear'));
@@ -86,12 +90,12 @@ export class NuevoProductoComponent implements OnInit {
   protected readonly maxBytes = MAX_IMAGE_MB * 1024 * 1024;
 
   protected valoresPara(atributoId: number): AtributoValor[] {
-    return this.state.valoresDeAtributo(atributoId);
+    return this.catalogos.valoresDeAtributo(atributoId);
   }
 
   protected tieneValores(atributoId: number): boolean {
-    return this.state.atributoValoresPorAtributo().has(atributoId)
-      && this.state.valoresDeAtributo(atributoId).length > 0;
+    return this.catalogos.atributoValoresPorAtributo().has(atributoId)
+      && this.catalogos.valoresDeAtributo(atributoId).length > 0;
   }
 
   protected enModoOtro(atributoId: number): boolean {
@@ -204,13 +208,13 @@ export class NuevoProductoComponent implements OnInit {
 
   private readonly cargarValoresEffect = effect(() => {
     for (const a of this.atributos()) {
-      this.state.obtenerValoresDeAtributo(a.id).catch(() => {});
+      this.catalogos.obtenerValoresDeAtributo(a.id).catch(() => {});
     }
   });
 
   async ngOnInit(): Promise<void> {
     if (this.categorias().length === 0 || this.marcas().length === 0 || this.atributos().length === 0) {
-      await this.state.cargarCatalogos();
+      await this.catalogos.cargarCatalogos();
     }
     for (const a of this.atributos()) {
       if (!this.form.get(this.ctrlAtributo(a.id))) {
@@ -250,7 +254,7 @@ export class NuevoProductoComponent implements OnInit {
     for (const a of p.atributos) {
       const ctrl = this.form.get(this.ctrlAtributo(a.atributoId));
       if (!ctrl) continue;
-      const valores = this.state.valoresDeAtributo(a.atributoId);
+      const valores = this.catalogos.valoresDeAtributo(a.atributoId);
       const existe = valores.some((v) => v.nombre === a.valor);
       if (existe) {
         this.atributosEnModoOtro.update((s) => {
@@ -290,8 +294,8 @@ export class NuevoProductoComponent implements OnInit {
     // del footer tambien esta deshabilitado. El X y el overlay
     // pueden llamar a cerrar() durante un save: lo impedimos aca.
     if (this.guardando()) return;
-    this.state.cerrarModalNuevoProducto();
-    this.state.productoEditandoId.set(null);
+    this.shell.cerrarModalNuevoProducto();
+    this.shell.productoEditandoId.set(null);
   }
 
   protected async guardar(): Promise<void> {
@@ -334,11 +338,11 @@ export class NuevoProductoComponent implements OnInit {
       const valor = (raw ?? '').toString().trim();
       if (!valor) continue;
       if (this.enModoOtro(a.id)) {
-        const yaExiste = this.state.valoresDeAtributo(a.id)
+        const yaExiste = this.catalogos.valoresDeAtributo(a.id)
           .some((vv) => vv.nombre.toLowerCase() === valor.toLowerCase());
         if (!yaExiste) {
           try {
-            const nuevo = await this.state.crearAtributoValor(a.id, valor);
+            const nuevo = await this.catalogos.crearAtributoValor(a.id, valor);
             if (nuevo?.id) valoresCreados.push({ id: nuevo.id, atributoId: a.id });
           } catch {
             // Si falla, seguimos. El backend validara.
@@ -374,29 +378,29 @@ export class NuevoProductoComponent implements OnInit {
           ...basePayload,
           quitarImagen: this.quitarImagen() || undefined,
         };
-        await this.state.actualizarProducto(this.productoId()!, payload);
+        await this.productos.actualizarProducto(this.productoId()!, payload);
         this.notify.success(`Producto "${basePayload.nombre}" actualizado.`);
       } else {
-        await this.state.crearProducto(basePayload);
+        await this.productos.crearProducto(basePayload);
         this.notify.success(`Producto "${basePayload.nombre}" creado.`);
       }
 
       // Cerrar ANTES de resetear guardando, asi el guard de cerrar()
       // no nos bloquea.
-      this.state.cerrarModalNuevoProducto();
-      this.state.productoEditandoId.set(null);
+      this.shell.cerrarModalNuevoProducto();
+      this.shell.productoEditandoId.set(null);
     } catch {
       // Rollback: borrar los AtributoValor que creamos en este submit
       // para que un retry del usuario no choque con el UNIQUE.
       // Best-effort: si falla el borrado, el usuario vera el error especifico.
       for (const { id, atributoId } of valoresCreados) {
         try {
-          await this.state.eliminarAtributoValor(id, atributoId);
+          await this.catalogos.eliminarAtributoValor(id, atributoId);
         } catch {
           // Silenciar: el rollback es best-effort.
         }
       }
-      this.notify.error(this.state.error() ?? 'No se pudo guardar el producto.');
+      this.notify.error(this.shell.error() ?? 'No se pudo guardar el producto.');
     } finally {
       this.guardando.set(false);
     }

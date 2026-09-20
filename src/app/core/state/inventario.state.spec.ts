@@ -1,5 +1,5 @@
 /**
- * InventarioState KPI spec — REQ-TEST-003.
+ * InventarioState KPI spec — REQ-TEST-003 (post-PR #2 wiring).
  *
  * Originally RED by design (intentional page-slice bug captured in
  * PR-F1 of the test scaffolding change). Turned GREEN by PR-F2 of
@@ -8,23 +8,27 @@
  * `_productosPaginados()` to a server-fetched signal that hits
  * `GET /api/reportes/kpis-inventario`.
  *
- * The contract asserted here is unchanged across the fix:
+ * The contract asserted here is unchanged across the PR #2 split:
  *
  *   totalItems       = 5   (server-side count over the WHOLE Productos table,
  *                            excluding soft-deleted via the global EF filter)
  *   productosBajos   = 3   (A, B, C all have StockActual <= StockMinimo)
  *   totalUnidades    = 35  (sum over all 5 matching productos: 3+2+5+10+15)
  *
- * Before the fix the page-slice implementation returned
- * `productosBajos = 0, totalUnidades = 25` (only saw page 2). After
- * the fix the values match the asserted contract because the signal
- * is hydrated from the server aggregate, not derived from a page.
+ * PR #2 changed the wiring: instead of going through the now-deleted
+ * `InventarioState` facade, this spec drives `ProductosState` for the
+ * search/pagination and `KpisState` for the aggregate KPI fetch. The
+ * `(5, 35, 3)` contract stays verbatim — only the wiring changed.
+ *
+ * PR #3 will rename this file to `kpis-integration.spec.ts` and drop
+ * the page-slice setup (which was only needed to prove the old bug).
  */
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
-import { InventarioState } from './inventario.state';
+import { ProductosState } from './productos.state';
+import { KpisState } from './kpis.state';
 import { ProductoListItem } from '../models/inventario.models';
 import { environment } from '../../../environments/environment';
 
@@ -59,28 +63,29 @@ function makeProducto(id: number, stockActual: number, stockMinimo: number): Pro
   };
 }
 
-describe('InventarioState.kpiInventario (REQ-TEST-003)', () => {
+describe('REQ-TEST-003 (post-PR #2: ProductosState + KpisState wiring)', () => {
   let httpTesting: HttpTestingController;
-  let state: InventarioState;
+  let productos: ProductosState;
+  let kpis: KpisState;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        InventarioState,
       ],
     });
 
     httpTesting = TestBed.inject(HttpTestingController);
-    state = TestBed.inject(InventarioState);
+    productos = TestBed.inject(ProductosState);
+    kpis = TestBed.inject(KpisState);
   });
 
   afterEach(() => {
     httpTesting.verify();
   });
 
-  it('REQ-TEST-003 (RED by design) computes KPIs over totals, not just current page', async () => {
+  it('REQ-TEST-003 computes KPIs over totals, not just current page', async () => {
     // GIVEN: 5 productos across 2 pages (page 1 has A/B/C stock-bajo,
     // page 2 has D/E stock-ok). totalItems server-side is 5.
     //
@@ -89,7 +94,7 @@ describe('InventarioState.kpiInventario (REQ-TEST-003)', () => {
 
     // Start page 1 search — DO NOT await yet, we need to flush the
     // HTTP request first.
-    const page1Promise = state.buscarProductos({ page: 1, size: 3 });
+    const page1Promise = productos.buscarProductos({ page: 1, size: 3 });
     const req1 = httpTesting.expectOne((r) => r.url === BUSCAR_URL && r.params.get('page') === '1');
     expect(req1.request.params.get('size')).toBe('3');
     req1.flush({
@@ -108,7 +113,7 @@ describe('InventarioState.kpiInventario (REQ-TEST-003)', () => {
     await page1Promise;
 
     // Page 2: [D(stock=10, min=10), E(stock=15, min=10)] — none below.
-    const page2Promise = state.buscarProductos({ page: 2, size: 3 });
+    const page2Promise = productos.buscarProductos({ page: 2, size: 3 });
     const req2 = httpTesting.expectOne((r) => r.url === BUSCAR_URL && r.params.get('page') === '2');
     req2.flush({
       items: [
@@ -125,33 +130,22 @@ describe('InventarioState.kpiInventario (REQ-TEST-003)', () => {
     await page2Promise;
 
     // WHEN: the dashboard requests the server-side aggregate KPIs
-    // (this is what `DashboardComponent.ngOnInit` and the 5 mutation
-    // reload sites now call).
-    const kpisPromise = state.cargarKpisInventario();
+    // (this is what `DashboardComponent.ngOnInit` calls).
+    const kpisPromise = kpis.cargarKpisInventario();
     const kpiReq = httpTesting.expectOne(KPIS_INVENTARIO);
     kpiReq.flush({ totalItems: 5, totalUnidades: 35, productosBajos: 3 });
     await kpisPromise;
 
     // THEN: `kpiInventario()` reflects the server aggregate, not the
     // current page slice.
-    const kpis = state.kpiInventario()!;
+    const kpi = kpis.kpiInventario()!;
 
-    // THEN: `totalItems` matches the server (5); `productosBajos` and
-    // `totalUnidades` reflect the WHOLE 5-product set, not just the
-    // current page.
     //
     //   productosBajos = 3  (A, B, C all < min=10)
     //   totalUnidades  = 35 (3 + 2 + 5 + 10 + 15)
     //
-    // The current implementation only sees page 2 (the last `buscar`
-    // call), so:
-    //   productosBajos (BUG) = 0 (D=10 NOT < 10, E=15 NOT < 10)
-    //   totalUnidades (BUG)  = 25 (10 + 15)
-    //
-    // This is why the spec is RED today: it asserts the correct
-    // values, not the buggy ones.
-    expect(kpis.totalItems).toBe(5);
-    expect(kpis.productosBajos).toBe(3);
-    expect(kpis.totalUnidades).toBe(35);
+    expect(kpi.totalItems).toBe(5);
+    expect(kpi.productosBajos).toBe(3);
+    expect(kpi.totalUnidades).toBe(35);
   });
 });

@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as ExcelJS from 'exceljs';
 import { DropdownComponent, DropdownOption } from '../../core/components/dropdown.component';
-import { InventarioState } from '../../core/state/inventario.state';
+import { CatalogosState } from '../../core/state/catalogos.state';
+import { ProductosState } from '../../core/state/productos.state';
 import { ApiReportesService } from '../../core/api/api-reportes.service';
 
 interface ProductoCatalogo {
@@ -24,9 +25,10 @@ interface ProductoCatalogo {
   imports: [CommonModule, FormsModule, DropdownComponent],
 })
 export class CatalogoComponent implements OnInit {
-  private readonly state = inject(InventarioState);
-  protected readonly marcas = this.state.marcas;
-  protected readonly categorias = this.state.categorias;
+  private readonly catalogos = inject(CatalogosState);
+  private readonly productosState = inject(ProductosState);
+  protected readonly marcas = this.catalogos.marcas;
+  protected readonly categorias = this.catalogos.categorias;
   private readonly apiReportes = inject(ApiReportesService);
 
   protected readonly productos = signal<ProductoCatalogo[]>([]);
@@ -61,7 +63,7 @@ export class CatalogoComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
-    await this.state.cargarCatalogos();
+    await this.catalogos.cargarCatalogos();
     await this.cargar();
   }
 
@@ -69,13 +71,13 @@ export class CatalogoComponent implements OnInit {
     this.cargando.set(true);
     this.error.set(null);
     try {
-      if (this.state.marcas().length === 0 || this.state.categorias().length === 0) {
-        await this.state.cargarCatalogos();
+      if (this.catalogos.marcas().length === 0 || this.catalogos.categorias().length === 0) {
+        await this.catalogos.cargarCatalogos();
       }
-      if (this.state.productos().length === 0) {
-        await this.state.cargarProductos();
+      if (this.productosState.productos().length === 0) {
+        await this.productosState.cargarProductos();
       }
-      let data: ProductoCatalogo[] = this.state.productos().map((p) => {
+      let data: ProductoCatalogo[] = this.productosState.productos().map((p) => {
         const marcaNom = p.marcaId ? this.marcaNombre(p.marcaId) : null;
         const catNom = p.categoriaId ? this.categoriaNombre(p.categoriaId) : null;
         return {
@@ -109,11 +111,11 @@ export class CatalogoComponent implements OnInit {
   }
 
   protected marcaNombre(id: number): string {
-    return this.state.marcas().find((m) => m.id === id)?.nombre ?? '';
+    return this.catalogos.marcas().find((m) => m.id === id)?.nombre ?? '';
   }
 
   protected categoriaNombre(id: number): string {
-    return this.state.categorias().find((c) => c.id === id)?.nombre ?? '';
+    return this.catalogos.categorias().find((c) => c.id === id)?.nombre ?? '';
   }
 
   protected formatearPrecio(precio: number): string {
