@@ -2,6 +2,7 @@ import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as ExcelJS from 'exceljs';
 import { InventarioState } from '../state/inventario.state';
+import { KardexState } from '../state/kardex.state';
 import { ModalOverlayComponent } from './modal-overlay.component';
 import { TABLA_COMPONENTS } from './tabla.component';
 
@@ -11,7 +12,7 @@ import { TABLA_COMPONENTS } from './tabla.component';
   imports: [CommonModule, ModalOverlayComponent, ...TABLA_COMPONENTS],
   template: `
     <app-modal-overlay
-      [open]="state.kardexProductoId() !== null"
+      [open]="kardex.kardexProductoId() !== null"
       containerClass="w-full max-w-5xl max-h-[90vh] overflow-hidden"
       (close)="cerrar()">
       <div class="flex flex-col h-full max-h-[90vh]">
@@ -23,7 +24,7 @@ import { TABLA_COMPONENTS } from './tabla.component';
               <span class="truncate">Kardex: {{ nombreProducto() }}</span>
             </h3>
             <p class="text-[11px] text-slate-500 mt-0.5 tabular-nums truncate">
-              {{ state.kardexMovimientos().length }} movimientos en total
+              {{ kardex.kardexMovimientos().length }} movimientos en total
             </p>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
@@ -51,9 +52,9 @@ import { TABLA_COMPONENTS } from './tabla.component';
           <app-tabla
             modo="scroll"
             [limiteScroll]="10"
-            [itemsCount]="state.kardexMovimientos().length"
-            [cargando]="state.kardexCargando()"
-            [isEmpty]="state.kardexMovimientos().length === 0"
+            [itemsCount]="kardex.kardexMovimientos().length"
+            [cargando]="kardex.kardexCargando()"
+            [isEmpty]="kardex.kardexMovimientos().length === 0"
             mensajeVacio="Este producto aún no tiene movimientos registrados."
           >
             <tr table-header class="text-left">
@@ -66,7 +67,7 @@ import { TABLA_COMPONENTS } from './tabla.component';
             </tr>
 
             <ng-container table-body>
-              @for (m of state.kardexMovimientos(); track m.id) {
+              @for (m of kardex.kardexMovimientos(); track m.id) {
                 <tr app-tr>
                   <td app-td extraClass="text-xs text-slate-600 tabular-nums whitespace-nowrap">{{ formatearFecha(m.fecha) }}</td>
                   <td app-td>
@@ -107,10 +108,15 @@ import { TABLA_COMPONENTS } from './tabla.component';
   `,
 })
 export class KardexModalComponent {
+  // PR #1 PoC: inject KardexState directly. `InventarioState` is still
+  // needed for the producto read path (`productos`, `productosSelector`).
+  // Those will move to `ProductosState` in PR #2, at which point this
+  // component will drop the `InventarioState` inject entirely.
   protected readonly state = inject(InventarioState);
+  protected readonly kardex = inject(KardexState);
 
   protected readonly nombreProducto = computed(() => {
-    const id = this.state.kardexProductoId();
+    const id = this.kardex.kardexProductoId();
     if (id === null) return '';
     const p = this.state.productos().find(x => x.id === id);
     if (p) return p.nombre ?? p.codigoBarra ?? `Producto #${id}`;
@@ -120,12 +126,12 @@ export class KardexModalComponent {
   });
 
   protected cerrar(): void {
-    this.state.cerrarKardexModal();
+    this.kardex.cerrarKardexModal();
   }
 
   protected async exportarExcel(): Promise<void> {
-    const movs = this.state.kardexMovimientos();
-    const pId = this.state.kardexProductoId();
+    const movs = this.kardex.kardexMovimientos();
+    const pId = this.kardex.kardexProductoId();
     if (!pId || movs.length === 0) return;
     const prodNombre = this.nombreProducto();
 
