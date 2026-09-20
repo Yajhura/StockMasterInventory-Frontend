@@ -13,13 +13,18 @@
  * Cookies are browser-managed. Tests assert the HTTP requests fire
  * correctly via HttpTestingController; they never touch `localStorage`
  * or read/write cookies directly.
+ *
+ * The credentialsInterceptor is registered in the test providers so
+ * the outgoing requests are cloned with `withCredentials: true` — the
+ * contract the prod app config enforces.
  */
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
 import { Usuario } from '../models/inventario.models';
+import { credentialsInterceptor } from '../interceptors/credentials.interceptor';
 import { environment } from '../../../environments/environment';
 
 const ME_URL = `${environment.apiBaseUrl}/api/auth/me`;
@@ -44,7 +49,7 @@ describe('AuthService (REQ-AUTH-COOKIE-007/008)', () => {
 
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withInterceptors([credentialsInterceptor])),
         provideHttpClientTesting(),
         { provide: Router, useValue: routerSpy },
         AuthService,
