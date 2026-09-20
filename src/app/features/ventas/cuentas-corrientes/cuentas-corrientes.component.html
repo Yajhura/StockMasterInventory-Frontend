@@ -213,8 +213,8 @@
           <div>
             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Método de pago *</label>
             <select formControlName="metodoPagoId" class="w-full px-3 py-2.5 bg-white border-2 border-slate-400 rounded-md text-sm text-slate-900 hover:border-slate-600 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20 transition-all">
-              @for (m of metodosPago; track m.id) {
-                <option [value]="m.id">{{ m.nombre }}</option>
+              @for (m of opcionesMetodosPago(); track m.value) {
+                <option [value]="m.value">{{ m.label }}</option>
               }
             </select>
           </div>
