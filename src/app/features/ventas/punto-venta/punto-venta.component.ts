@@ -9,7 +9,7 @@ import { ApiProductosService } from '../../../core/api/api-productos.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ProductoSelectorItem } from '../../../core/models/inventario.models';
 import { Cliente, CrearClientePayload } from '../../../core/models/cliente.models';
-import { CrearVentaPayload, PagoInicial, Venta, VentaFiltros, KpiVentas, EstadoPago } from '../../../core/models/venta.models';
+import { CrearVentaPayload, PagoInicial, Venta, VentaFiltros, KpiVentas, EstadoPago, MetodoPago } from '../../../core/models/venta.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
 
 interface CuotaPreview {
@@ -63,17 +63,15 @@ export class PuntoVentaComponent implements OnInit {
     }))
   );
 
-  protected readonly metodosPago = [
-    { id: 1, nombre: 'Efectivo' },
-    { id: 2, nombre: 'Transferencia Bancaria' },
-    { id: 3, nombre: 'Yape' },
-    { id: 4, nombre: 'Plin' }
-  ];
+  protected readonly metodosPago = signal<MetodoPago[]>([]);
+  protected readonly cargandoMetodosPago = signal<boolean>(true);
 
-  protected readonly opcionesMetodosPago = this.metodosPago.map(m => ({
-    value: m.id,
-    label: m.nombre
-  }));
+  protected readonly opcionesMetodosPago = computed<DropdownOption[]>(() =>
+    this.metodosPago().map(m => ({
+      value: m.id,
+      label: m.nombre
+    }))
+  );
 
   protected readonly opcionesEstadoPago: DropdownOption<EstadoPago | null>[] = [
     { value: 'Pagado', label: 'Pagado' },
@@ -264,7 +262,22 @@ export class PuntoVentaComponent implements OnInit {
   ngOnInit(): void {
     this.cargarVentas();
     this.cargarDatos();
+    this.cargarMetodosPago();
     this.agregarPagoVacio();
+  }
+
+  protected cargarMetodosPago(): void {
+    this.cargandoMetodosPago.set(true);
+    this.apiVentas.listarMetodosPago().subscribe({
+      next: (res) => {
+        this.metodosPago.set(res);
+        this.cargandoMetodosPago.set(false);
+      },
+      error: () => {
+        this.notify.error('Error al cargar métodos de pago');
+        this.cargandoMetodosPago.set(false);
+      }
+    });
   }
 
   protected cargarVentas() {

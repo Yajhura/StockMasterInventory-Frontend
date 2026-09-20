@@ -75,6 +75,11 @@ export interface CrearAbonoPayload {
 
 export type EstadoPago = 'Pagado' | 'Parcial' | 'Pendiente';
 
+export interface MetodoPago {
+  id: number;
+  nombre: string;
+}
+
 export interface VentaFiltros {
   desde: string | null;        // 'YYYY-MM-DD'
   hasta: string | null;
