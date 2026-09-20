@@ -68,6 +68,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/ventas/cuentas-corrientes/cuentas-corrientes.component').then((m) => m.CuentasCorrientesComponent),
       },
+      {
+        path: 'design-system',
+        loadComponent: () =>
+          import('./features/design-system/design-system.page.component').then((m) => m.DesignSystemPageComponent),
+      },
     ],
   },
 
