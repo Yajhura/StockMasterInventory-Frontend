@@ -6,17 +6,19 @@
  *     `${environment.apiBaseUrl}/api/ventas` and emits the parsed
  *     `Venta` returned by the server.
  *   - When the response is 401, the `httpErrorInterceptor` fires the
- *     logout chain (calls `AuthService.logout(true)` and navigates to
- *     `/login`).
+ *     logout chain: calls `AuthService.logout(true)` which issues
+ *     `POST /api/auth/logout`, then navigates to `/login`.
  *
  * Implementation detail:
  *   - The success path uses `provideHttpClient()` with no
  *     interceptors — we only care about the request shape and the
  *     emitted response.
  *   - The 401 path uses the real `httpErrorInterceptor` +
- *     `authInterceptor` chain. We use a Jasmine spy for `Router`
- *     because the interceptor calls `router.url.startsWith('/login')`
+ *     `credentialsInterceptor` chain. We use a Jasmine spy for
+ *     `Router` because the interceptor calls `router.url.startsWith('/login')`
  *     to decide whether to emit the toast — a synthetic URL works.
+ *   - Auth state is now cookie-based: seeding happens via the real
+ *     `authService.login()` flow (no localStorage seed).
  */
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -29,14 +31,16 @@ import { firstValueFrom } from 'rxjs';
 
 import { ApiVentasService } from './api-ventas.service';
 import { AuthService } from '../services/auth.service';
-import { authInterceptor } from '../interceptors/auth.interceptor';
+import { credentialsInterceptor } from '../interceptors/credentials.interceptor';
 import { httpErrorInterceptor } from '../interceptors/http-error.interceptor';
 import { NotificationService } from '../services/notification.service';
 import { CrearVentaPayload, Venta } from '../models/venta.models';
+import { Usuario } from '../models/inventario.models';
 import { environment } from '../../../environments/environment';
 
 const API_VENTAS = `${environment.apiBaseUrl}/api/ventas`;
-const ME_URL = `${environment.apiBaseUrl}/api/auth/me`;
+const LOGIN_URL = `${environment.apiBaseUrl}/api/auth/login`;
+const LOGOUT_URL = `${environment.apiBaseUrl}/api/auth/logout`;
 
 const payload: CrearVentaPayload = {
   clienteId: 7,
@@ -64,6 +68,13 @@ const mockVenta: Venta = {
   fechaInicioCredito: '2026-09-18',
 };
 
+const mockUsuario: Usuario = {
+  id: 1,
+  email: 'u@test',
+  nombreCompleto: 'U',
+  rol: 'Operador',
+};
+
 describe('ApiVentasService (REQ-TEST-004)', () => {
   let httpTesting: HttpTestingController;
   let service: ApiVentasService;
@@ -71,8 +82,6 @@ describe('ApiVentasService (REQ-TEST-004)', () => {
   let routerSpy: jasmine.SpyObj<Router>;
 
   beforeEach(() => {
-    localStorage.clear();
-
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigateByUrl', 'createUrlTree']);
     routerSpy.navigateByUrl.and.returnValue(Promise.resolve(true));
     routerSpy.createUrlTree.and.returnValue({} as ReturnType<Router['createUrlTree']>);
@@ -85,7 +94,7 @@ describe('ApiVentasService (REQ-TEST-004)', () => {
 
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(withInterceptors([authInterceptor, httpErrorInterceptor])),
+        provideHttpClient(withInterceptors([credentialsInterceptor, httpErrorInterceptor])),
         provideHttpClientTesting(),
         // NotificationService is injected by httpErrorInterceptor; we
         // provide a real instance — it only writes to its own toasts
@@ -128,25 +137,15 @@ describe('ApiVentasService (REQ-TEST-004)', () => {
     // tear down. The httpErrorInterceptor only emits the logout path
     // when status === 401 AND we are not already on /login (see
     // http-error.interceptor.ts).
-    localStorage.setItem('stockmaster.auth', JSON.stringify({
-      accessToken: 'stale',
-      accessTokenExpira: '2020-01-01T00:00:00Z',
-      refreshToken: 'stale-r',
-      refreshTokenExpira: '2020-02-01T00:00:00Z',
-      usuario: { id: 1, email: 'u@test', nombreCompleto: 'U', rol: 'Operador' },
-    }));
-
-    // Start init() — it fires /api/auth/me in the background.
-    const initPromise = authService.init();
-
-    // Sanity: synchronous signals from storage are populated.
+    //
+    // Cookie-based auth: seed via the real login flow. The login
+    // response body is the Usuario profile only.
+    const loginPromise = authService.login('u@test', 'secret');
+    const loginReq = httpTesting.expectOne(LOGIN_URL);
+    expect(loginReq.request.method).toBe('POST');
+    loginReq.flush(mockUsuario);
+    await loginPromise;
     expect(authService.isAuthenticated()).toBeTrue();
-
-    // Drain /api/auth/me so init() resolves without firing the
-    // 401-logout path.
-    const meReq = httpTesting.expectOne(ME_URL);
-    meReq.flush({ id: 1, email: 'u@test', nombreCompleto: 'U', rol: 'Operador' });
-    await initPromise;
 
     // WHEN: registrarVenta(payload) is called and the server replies 401.
     const ventaPromise = firstValueFrom(service.registrarVenta(payload));
@@ -160,11 +159,21 @@ describe('ApiVentasService (REQ-TEST-004)', () => {
     // as an uncaught-error failure.
     await expectAsync(ventaPromise).toBeRejected();
 
-    // THEN: the auth chain cleared the session and navigated to /login.
+    // THEN: AuthService.logout(true) issued POST /api/auth/logout to
+    // clear the server cookie. The interceptor fires the request
+    // immediately (without waiting for the caller to subscribe).
+    const logoutReq = httpTesting.expectOne(LOGOUT_URL);
+    expect(logoutReq.request.method).toBe('POST');
+    logoutReq.flush(null, { status: 204, statusText: 'No Content' });
+
+    // Flush microtasks so the logout() async continuation runs:
+    // firstValueFrom resolves, then _currentUser.set(null) +
+    // router.navigateByUrl('/login') execute.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    // AND: the auth chain cleared the session and navigated to /login.
     expect(authService.currentUser()).toBeNull();
-    expect(authService.accessToken()).toBeNull();
     expect(authService.isAuthenticated()).toBeFalse();
-    expect(localStorage.getItem('stockmaster.auth')).toBeNull();
     expect(routerSpy.navigateByUrl).toHaveBeenCalledWith('/login');
   });
 });

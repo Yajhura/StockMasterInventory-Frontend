@@ -4,7 +4,7 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { routes } from './app.routes';
 import { httpErrorInterceptor } from './core/interceptors/http-error.interceptor';
-import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { credentialsInterceptor } from './core/interceptors/credentials.interceptor';
 import { AuthService } from './core/services/auth.service';
 
 export const appConfig: ApplicationConfig = {
@@ -13,10 +13,11 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(
       withFetch(),
-      withInterceptors([authInterceptor, httpErrorInterceptor])
+      withInterceptors([credentialsInterceptor, httpErrorInterceptor])
     ),
     provideAnimationsAsync(),
-    // Restaura la sesion desde localStorage al arrancar la app.
+    // Restaura la sesion contra /api/auth/me al arrancar la app. La cookie
+    // __Host-sm_session viaja automaticamente con withCredentials: true.
     {
       provide: APP_INITIALIZER,
       multi: true,

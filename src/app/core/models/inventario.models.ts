@@ -159,14 +159,6 @@ export interface LoginPayload {
   password: string;
 }
 
-export interface AuthResponse {
-  accessToken: string;
-  accessTokenExpira: string;
-  refreshToken: string;
-  refreshTokenExpira: string;
-  usuario: Usuario;
-}
-
 // ---------- Paginacion (server-side) ----------
 
 export interface ProductoListItem {
