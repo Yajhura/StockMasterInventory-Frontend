@@ -149,7 +149,7 @@
 
         <button
           type="submit"
-          class="w-full h-12 rounded-lg bg-blue-600 text-white text-sm font-semibold inline-flex items-center justify-center gap-2 shadow-sm shadow-blue-600/30 hover:bg-blue-700 active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="btn-primary w-full"
           [disabled]="formMovimiento.invalid || procesando() || advertenciaStock().tipo === 'error'"
         >
           @if (procesando()) {
