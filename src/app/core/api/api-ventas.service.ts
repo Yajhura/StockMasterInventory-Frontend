@@ -60,11 +60,12 @@ export class ApiVentasService {
    * persiste. Reemplaza el calculo local que `punto-venta.component.ts`
    * tenia (con bugs de month-end overflow).
    */
-  previewPlan(total: number, cantidadCuotas: number, fechaInicio: string): Observable<CuotaPreview[]> {
+  previewPlan(total: number, cantidadCuotas: number, fechaInicio: string, frecuencia?: string): Observable<CuotaPreview[]> {
     const params = new HttpParams()
       .set('total', String(total))
       .set('cantidadCuotas', String(cantidadCuotas))
       .set('fechaInicio', fechaInicio);
+    if (frecuencia) params.set('frecuencia', frecuencia);
     return this.http.get<CuotaPreview[]>(`${this.url}/preview-plan`, { params });
   }
 }
