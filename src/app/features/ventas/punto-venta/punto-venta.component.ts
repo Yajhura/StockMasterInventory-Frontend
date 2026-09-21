@@ -37,6 +37,19 @@ export class PuntoVentaComponent implements OnInit {
   protected readonly esCredito = signal<boolean>(false);
   protected readonly cantidadCuotas = signal<number | null>(null);
   protected readonly fechaInicioCredito = signal<string>(new Date().toISOString().split('T')[0]);
+  // Frecuencia del plan. Default 'Mensual' (coincide con el backend cuando
+  // el campo viene null o no se manda).
+  protected readonly frecuencias: Array<{ value: 'Diario' | 'Semanal' | 'Quincenal' | 'Mensual'; label: string }> = [
+    { value: 'Diario', label: 'Diaria' },
+    { value: 'Semanal', label: 'Semanal' },
+    { value: 'Quincenal', label: 'Quincenal' },
+    { value: 'Mensual', label: 'Mensual' }
+  ];
+  protected readonly frecuencia = signal<'Diario' | 'Semanal' | 'Quincenal' | 'Mensual'>('Mensual');
+  // Pago inicial (down-payment) para ventas a crédito. Default 0 — el
+  // cliente no siempre da inicial. En contado este valor se ignora
+  // (los pagos vienen del array `pagos`).
+  protected readonly pagoInicialCredito = signal<number>(0);
 
   protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
     this.clientes().map(c => ({
@@ -155,6 +168,12 @@ export class PuntoVentaComponent implements OnInit {
   });
 
   protected readonly totalPagado = computed(() => {
+    // En contado, los pagos vienen del array `pagos`.
+    // En crédito, el pago inicial es el input dedicado `pagoInicialCredito`
+    // y NO usamos el array `pagos` (que en crédito no se muestra al usuario).
+    if (this.esCredito()) {
+      return this.round2(this.pagoInicialCredito());
+    }
     const val = this.formValue();
     let pagado = 0;
     if (val && val.pagos) {
@@ -259,7 +278,7 @@ export class PuntoVentaComponent implements OnInit {
         return;
       }
 
-      const sub = this.apiVentas.previewPlan(total, n, inicio).subscribe({
+      const sub = this.apiVentas.previewPlan(total, n, inicio, this.frecuencia()).subscribe({
         next: (cuotas) => this._planCuotas.set(cuotas),
         error: () => this._planCuotas.set([])
       });
@@ -409,7 +428,14 @@ export class PuntoVentaComponent implements OnInit {
   protected toggleEsCredito(value: boolean) {
     this.esCredito.set(value);
     if (!value) {
+      // Switching to contado: reset credito fields and clear credit-related state
       this.cantidadCuotas.set(null);
+      this.pagoInicialCredito.set(0);
+      this.frecuencia.set('Mensual');
+    } else {
+      // Switching to credito: reset contado payments to start fresh
+      this.pagosArray.clear();
+      this.agregarPagoVacio();
     }
   }
 
@@ -548,11 +574,21 @@ export class PuntoVentaComponent implements OnInit {
     }
 
     const value = this.formVenta.value;
-    const pagosFinales: Array<{ monto: number; metodoPagoId: number }> = value.pagos
-      .map((p: any): { monto: number; metodoPagoId: number } => ({
+    // En crédito, el pago inicial va como un único pago en el array `pagos`
+    // (el backend lo trata igual que cualquier otro abono).
+    // En contado, mantenemos el array actual del form.
+    let pagosFinales: Array<{ monto: number; metodoPagoId: number }>;
+    if (this.esCredito()) {
+      const pagoInicial = this.pagoInicialCredito();
+      pagosFinales = pagoInicial > 0
+        ? [{ monto: pagoInicial, metodoPagoId: Number(value.pagos?.[0]?.metodoPagoId ?? 1) }]
+        : [];
+    } else {
+      pagosFinales = (value.pagos ?? []).map((p: any) => ({
         monto: Number(p.monto),
         metodoPagoId: Number(p.metodoPagoId)
       }));
+    }
 
     const payload: CrearVentaPayload = {
       clienteId: Number(value.clienteId),
@@ -564,7 +600,7 @@ export class PuntoVentaComponent implements OnInit {
       pagos: pagosFinales.length > 0 && pagosFinales.some(p => p.monto > 0) ? pagosFinales : [],
       observacion: value.observacion ? value.observacion.toString().trim() : undefined,
       cantidadCuotas: this.esCredito() ? this.cantidadCuotas() : null,
-      frecuencia: this.esCredito() ? 'Mensual' : null,
+      frecuencia: this.esCredito() ? this.frecuencia() : null,
       fechaInicioCredito: this.esCredito() ? this.fechaInicioCredito() : null
     };
 
