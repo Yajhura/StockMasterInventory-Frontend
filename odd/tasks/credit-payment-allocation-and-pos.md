@@ -41,11 +41,11 @@ Mode: unknown. Source and test runner will be verified by the delegated implemen
   Checks: focused backend tests.
   Evidence: implemented in backend commit `662789600b8c4567cabf1b1fe4fa1f4a224f9e9b`. It introduces `AbonosCuotas`, decimal `MontoPagado`/`MontoPendiente`, FIFO allocation for initial and subsequent payments, DTO fields, and a real integration scenario covering S/150 + S/200 + S/50, partial allocations, final `Pagado`, and overpayment rejection. `dotnet build StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --no-restore` passed (23 pre-existing/package warnings). After Docker Desktop was started, `dotnet test StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --no-build --filter "FullyQualifiedName~VentaCreditoTests"` passed (2/2). `dotnet ef migrations script --idempotent` generated and was inspected for the allocation table and paid/pending migration SQL.
 
-- [ ] CPA-03 — Make payment and sale cancellation reverse all affected allocations, installments, balances, and payment state; add regression tests.
+- [x] CPA-03 — Make payment and sale cancellation reverse all affected allocations, installments, balances, and payment state; add regression tests.
   Route: delegated — multiple non-trivial backend files with financial correctness risk.
   Acceptance: cancelling an allocation-spanning payment restores every affected installment and makes the payment eligible only for its prior active lifecycle rules.
   Checks: focused backend cancellation tests.
-  Evidence: pending.
+  Evidence: implemented in backend commit `ba981f7b98372d31be693f0e17833b9ef7fe4eea`. Cancellation now reverses every persisted allocation in the same transaction, restores each affected installment's paid/pending amount, status and payment date, restores the bounded sale balance/payment state, and soft-deletes the payment as `Anulado`. Real SQL Server integration tests cover a payment spanning complete and partial installments, an allocated initial payment, duplicate cancellation, and the sale-cancellation rule requiring active payments to be cancelled first. `dotnet test StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --filter "FullyQualifiedName~AbonoCancellationTests"` passed (3/3); the related cancellation/credit suite passed (7/7). The full suite observed 41/42 passing; `KpisCobranzaTests.Kpis_returns_deudaTotal_clientesConDeuda_deudaVencida_cuotasVencenProximas` failed expecting `DeudaVencida = 200` but received `0`; rerunning the remaining suite passed (41/41).
 
 - [ ] CPA-04 — Reconcile frontend payment/sale cancellation API contracts and refresh relevant screens after a successful cancellation; add focused tests.
   Route: delegated — multiple non-trivial frontend files and depends on CPA-03.
@@ -59,4 +59,4 @@ Mode: unknown. Source and test runner will be verified by the delegated implemen
 
 ## Progress
 
-CPA-01 and CPA-02 completed and verified. Next: CPA-03.
+CPA-01, CPA-02, and CPA-03 completed and verified. Next: CPA-04.
