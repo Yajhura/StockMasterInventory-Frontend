@@ -185,4 +185,22 @@ describe('ApiVentasService (REQ-TEST-004)', () => {
     expect(req.request.params.get('frecuencia')).toBe('Diario');
     req.flush([]);
   });
+
+  it('post_anular_abono_uses_finalized_cancellation_contract', () => {
+    service.anularAbono(99, 12).subscribe();
+
+    const req = httpTesting.expectOne(`${API_VENTAS}/99/abonos/12/anular`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toBeNull();
+    req.flush(null, { status: 204, statusText: 'No Content' });
+  });
+
+  it('post_anular_venta_uses_finalized_cancellation_contract', () => {
+    service.anularVenta(99).subscribe();
+
+    const req = httpTesting.expectOne(`${API_VENTAS}/99/anular`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toBeNull();
+    req.flush(null, { status: 204, statusText: 'No Content' });
+  });
 });

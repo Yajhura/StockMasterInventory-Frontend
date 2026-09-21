@@ -42,6 +42,14 @@ export class ApiVentasService {
     return this.http.post<Abono>(`${this.url}/${ventaId}/abonos`, payload);
   }
 
+  anularAbono(ventaId: number, abonoId: number): Observable<void> {
+    return this.http.post<void>(`${this.url}/${ventaId}/abonos/${abonoId}/anular`, null);
+  }
+
+  anularVenta(ventaId: number): Observable<void> {
+    return this.http.post<void>(`${this.url}/${ventaId}/anular`, null);
+  }
+
   /**
    * Lista los métodos de pago activos desde el endpoint
    * `GET /api/metodos-pago` (no bajo `/api/ventas/...` porque es un

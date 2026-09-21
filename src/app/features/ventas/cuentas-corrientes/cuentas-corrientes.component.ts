@@ -5,8 +5,9 @@ import { ApiVentasService } from '../../../core/api/api-ventas.service';
 import { ApiClientesService } from '../../../core/api/api-clientes.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { Cliente } from '../../../core/models/cliente.models';
-import { Venta, CrearAbonoPayload, VentaDetallada, Cuota, KpiCobranza, VentaFiltros } from '../../../core/models/venta.models';
+import { Venta, CrearAbonoPayload, VentaDetallada, Cuota, KpiCobranza, VentaFiltros, Abono } from '../../../core/models/venta.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
+import { ConfirmDialogComponent } from '../../../core/components/confirm-dialog.component';
 
 interface CuotaConVencida extends Cuota {
   vencida: boolean;
@@ -15,7 +16,7 @@ interface CuotaConVencida extends Cuota {
 @Component({
   selector: 'app-cuentas-corrientes',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DropdownComponent],
+  imports: [CommonModule, ReactiveFormsModule, DropdownComponent, ConfirmDialogComponent],
   templateUrl: './cuentas-corrientes.component.html',
 })
 export class CuentasCorrientesComponent implements OnInit {
@@ -65,6 +66,11 @@ export class CuentasCorrientesComponent implements OnInit {
   protected readonly modalDetalleAbierto = signal<boolean>(false);
   protected readonly ventaDetallada = signal<VentaDetallada | null>(null);
   protected readonly cargandoDetalle = signal<boolean>(false);
+
+  // Confirmaciones de anulación
+  protected readonly abonoAAnular = signal<Abono | null>(null);
+  protected readonly ventaAAnular = signal<VentaDetallada | null>(null);
+  protected readonly procesandoAnulacion = signal<boolean>(false);
 
   // Cronograma de cuotas con flag "vencida"
   protected readonly cronogramaConVencida = computed<CuotaConVencida[]>(() => {
@@ -214,8 +220,7 @@ export class CuentasCorrientesComponent implements OnInit {
         this.cargarKpisCobranza();
       },
       error: (err) => {
-        const msg = err?.error?.detail || err?.error || 'Error al registrar abono';
-        this.notify.error(typeof msg === 'string' ? msg : 'Error al registrar abono');
+        this.notify.error(this.mensajeError(err, 'Error al registrar abono'));
         this.procesandoAbono.set(false);
       }
     });
@@ -242,6 +247,64 @@ export class CuentasCorrientesComponent implements OnInit {
     this.ventaDetallada.set(null);
   }
 
+  protected solicitarAnulacionAbono(abono: Abono) {
+    if (abono.estado !== 'Pagado') return;
+    this.abonoAAnular.set(abono);
+  }
+
+  protected cancelarAnulacionAbono() {
+    if (!this.procesandoAnulacion()) this.abonoAAnular.set(null);
+  }
+
+  protected confirmarAnulacionAbono() {
+    const abono = this.abonoAAnular();
+    const venta = this.ventaDetallada();
+    if (!abono || !venta || this.procesandoAnulacion()) return;
+
+    this.procesandoAnulacion.set(true);
+    this.apiVentas.anularAbono(venta.id, abono.id).subscribe({
+      next: () => {
+        this.notify.success('Abono anulado exitosamente');
+        this.abonoAAnular.set(null);
+        this.procesandoAnulacion.set(false);
+        this.refrescarDespuesDeAnulacion(venta.id);
+      },
+      error: (err) => {
+        this.notify.error(this.mensajeError(err, 'Error al anular abono'));
+        this.procesandoAnulacion.set(false);
+      }
+    });
+  }
+
+  protected solicitarAnulacionVenta(venta: VentaDetallada) {
+    this.ventaAAnular.set(venta);
+  }
+
+  protected cancelarAnulacionVenta() {
+    if (!this.procesandoAnulacion()) this.ventaAAnular.set(null);
+  }
+
+  protected confirmarAnulacionVenta() {
+    const venta = this.ventaAAnular();
+    if (!venta || this.procesandoAnulacion()) return;
+
+    this.procesandoAnulacion.set(true);
+    this.apiVentas.anularVenta(venta.id).subscribe({
+      next: () => {
+        this.notify.success('Venta anulada exitosamente');
+        this.ventaAAnular.set(null);
+        this.procesandoAnulacion.set(false);
+        this.cerrarModalDetalle();
+        this.cargarDeudas();
+        this.cargarKpisCobranza();
+      },
+      error: (err) => {
+        this.notify.error(this.mensajeError(err, 'Error al anular venta'));
+        this.procesandoAnulacion.set(false);
+      }
+    });
+  }
+
   protected abrirAbonoDesdeDetalle(d: VentaDetallada) {
     this.cerrarModalDetalle();
     // Esperar un tick para que se cierre el modal de detalle antes de abrir el de abono
@@ -260,5 +323,16 @@ export class CuentasCorrientesComponent implements OnInit {
         fechaInicioCredito: d.fechaInicioCredito
       });
     }, 100);
+  }
+
+  private refrescarDespuesDeAnulacion(ventaId: number) {
+    this.cargarDeudas();
+    this.cargarKpisCobranza();
+    this.verDetalles(ventaId);
+  }
+
+  private mensajeError(err: any, fallback: string): string {
+    const mensaje = err?.error?.detail ?? err?.error?.error ?? err?.error;
+    return typeof mensaje === 'string' ? mensaje : fallback;
   }
 }
