@@ -35,11 +35,11 @@ Mode: unknown. Source and test runner will be verified by the delegated implemen
   Checks: focused frontend tests and build/type check if available.
   Evidence: `npm test -- --include="src/app/core/api/api-ventas.service.spec.ts" --include="src/app/features/ventas/punto-venta/punto-venta.component.spec.ts"` passed (6 specs); `npm test` passed (46 specs); `npm run build` passed. The production build retained the pre-existing ExcelJS CommonJS optimization warning.
 
-- [ ] CPA-02 — Add persistent payment-to-installment allocation and installment paid/pending amounts in the backend, including migration and tests.
+- [x] CPA-02 — Add persistent payment-to-installment allocation and installment paid/pending amounts in the backend, including migration and tests.
   Route: delegated — multiple non-trivial backend domain, endpoint, persistence, migration, and test files.
   Acceptance: a S/400 three-installment sale accepts payments S/150, S/200, and S/50 with FIFO partial allocation and no overpayment.
   Checks: focused backend tests.
-  Evidence: implemented in backend commit `662789600b8c4567cabf1b1fe4fa1f4a224f9e9b`. It introduces `AbonosCuotas`, decimal `MontoPagado`/`MontoPendiente`, FIFO allocation for initial and subsequent payments, DTO fields, and a real integration scenario covering S/150 + S/200 + S/50, partial allocations, final `Pagado`, and overpayment rejection. `dotnet build StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --no-restore` passed (23 pre-existing/package warnings). The focused integration test and broader `dotnet test` were executed but blocked because Docker/Testcontainers is unavailable (`Docker is either not running or misconfigured`); 11 existing non-container tests passed and 56 container-dependent tests failed during fixture startup. `dotnet ef migrations script --idempotent` generated and was inspected for the allocation table and paid/pending migration SQL. CPA-02 remains unchecked until the SQL Server container suite can run.
+  Evidence: implemented in backend commit `662789600b8c4567cabf1b1fe4fa1f4a224f9e9b`. It introduces `AbonosCuotas`, decimal `MontoPagado`/`MontoPendiente`, FIFO allocation for initial and subsequent payments, DTO fields, and a real integration scenario covering S/150 + S/200 + S/50, partial allocations, final `Pagado`, and overpayment rejection. `dotnet build StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --no-restore` passed (23 pre-existing/package warnings). After Docker Desktop was started, `dotnet test StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --no-build --filter "FullyQualifiedName~VentaCreditoTests"` passed (2/2). `dotnet ef migrations script --idempotent` generated and was inspected for the allocation table and paid/pending migration SQL.
 
 - [ ] CPA-03 — Make payment and sale cancellation reverse all affected allocations, installments, balances, and payment state; add regression tests.
   Route: delegated — multiple non-trivial backend files with financial correctness risk.
@@ -59,4 +59,4 @@ Mode: unknown. Source and test runner will be verified by the delegated implemen
 
 ## Progress
 
-CPA-01 completed and verified. CPA-02 implemented; its integration verification is blocked by unavailable Docker/Testcontainers. Next: rerun CPA-02 with Docker, then CPA-03.
+CPA-01 and CPA-02 completed and verified. Next: CPA-03.
