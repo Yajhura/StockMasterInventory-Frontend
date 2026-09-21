@@ -53,10 +53,16 @@ Mode: unknown. Source and test runner will be verified by the delegated implemen
   Checks: focused frontend tests.
   Evidence: added `POST /api/ventas/{ventaId}/abonos/{abonoId}/anular` and `POST /api/ventas/{ventaId}/anular` service contracts, payment and sale cancellation confirmations, backend-error feedback, and successful cancellation refreshes for current accounts, collection KPIs, and payment history. Focused API/component tests passed (8 specs); `npm test` passed (51 specs); `npm run build` passed. The production build retained the pre-existing ExcelJS CommonJS optimization warning.
 
+- [x] CPA-05 — Display partial installment allocations and reject invalid credit frequencies.
+  Route: delegated — backend lifecycle/validation and multiple frontend contract/UI/test files.
+  Acceptance: a S/10 initial payment on two S/7.50 installments shows the second as Parcial with S/2.50 paid and S/5.00 pending; invalid frequencies are rejected rather than treated as monthly.
+  Checks: focused backend/frontend tests plus applicable full suites.
+  Evidence: backend commit `c968844` normalizes only the four supported frequencies (missing remains Mensual), rejects invalid values in preview and credit-sale creation, assigns Cuota `Parcial` whenever paid and pending amounts are both positive (including reversals), and includes partial balances in collection KPIs. Docker-backed SQL Server integration tests passed (15 focused, 45 full) using an isolated build output because the local API executable was locked by an existing process. Frontend `Cuota` now carries paid/pending values and the installment schedule renders both plus the Parcial state. Focused frontend tests passed (9 specs); `npm test` passed (52 specs); `npm run build` passed with the pre-existing ExcelJS CommonJS warning.
+
 ## Delivery strategy
 
 `ask-on-risk`. Keep frontend and backend commits as separate work units because they are independent Git repositories.
 
 ## Progress
 
-CPA-01 through CPA-04 are completed and verified. The CPA-02 fixture correction restored the CPA-03-associated KPI suite to 42/42 passing.
+CPA-01 through CPA-05 are completed and verified.

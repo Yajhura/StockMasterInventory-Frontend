@@ -36,7 +36,17 @@ describe('CuentasCorrientesComponent cancellations', () => {
       estado: 'Pagado',
       eliminadoEn: null,
     }],
-    cuotas: [],
+    cuotas: [{
+      id: 4,
+      numero: 2,
+      monto: 7.5,
+      montoPagado: 2.5,
+      montoPendiente: 5,
+      fechaVencimiento: '2026-10-01',
+      fechaPago: null,
+      estado: 'Parcial',
+      eliminadoEn: null,
+    }],
   };
 
   beforeEach(() => {
@@ -76,6 +86,18 @@ describe('CuentasCorrientesComponent cancellations', () => {
     expect(apiVentas.listarDeudas).toHaveBeenCalledTimes(2);
     expect(apiVentas.kpisCobranza).toHaveBeenCalledTimes(2);
     expect(apiVentas.obtener).toHaveBeenCalledWith(12);
+  });
+
+  it('shows paid and pending amounts for a partially allocated installment', () => {
+    const instance = component as any;
+    instance.modalDetalleAbierto.set(true);
+    instance.ventaDetallada.set(venta);
+    fixture.detectChanges();
+
+    const content = fixture.nativeElement.textContent;
+    expect(content).toContain('Parcial');
+    expect(content).toContain('S/ 2.50');
+    expect(content).toContain('S/ 5.00');
   });
 
   it('keeps the payment confirmation open and shows the backend error on failure', () => {
