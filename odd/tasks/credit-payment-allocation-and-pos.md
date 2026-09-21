@@ -59,10 +59,16 @@ Mode: unknown. Source and test runner will be verified by the delegated implemen
   Checks: focused backend/frontend tests plus applicable full suites.
   Evidence: backend commit `c968844` normalizes only the four supported frequencies (missing remains Mensual), rejects invalid values in preview and credit-sale creation, assigns Cuota `Parcial` whenever paid and pending amounts are both positive (including reversals), and includes partial balances in collection KPIs. Docker-backed SQL Server integration tests passed (15 focused, 45 full) using an isolated build output because the local API executable was locked by an existing process. Frontend `Cuota` now carries paid/pending values and the installment schedule renders both plus the Parcial state. Focused frontend tests passed (9 specs); `npm test` passed (52 specs); `npm run build` passed with the pre-existing ExcelJS CommonJS warning.
 
+- [x] CPA-06 — Add FIFO payment shortcuts to the accounts-receivable payment modal.
+  Route: delegated — modal state, template, models, and focused tests.
+  Acceptance: credit sales offer cuota vigente, consecutive installment advance, total balance, and free amount; the summary names affected installments before submission.
+  Checks: focused frontend tests and full suite.
+  Evidence: the modal loads installment detail when needed and offers cuota vigente, consecutive FIFO advance, total balance, and another amount. It calculates the amount for shortcut selections and shows affected installments in FIFO order before submission, with no installment-selection path that could skip a pending quota. Focused component tests passed (7 specs); `npm test` passed (55 specs); `npm run build` passed with the pre-existing ExcelJS CommonJS optimization warning.
+
 ## Delivery strategy
 
 `ask-on-risk`. Keep frontend and backend commits as separate work units because they are independent Git repositories.
 
 ## Progress
 
-CPA-01 through CPA-05 are completed and verified.
+CPA-01 through CPA-06 are completed and verified.

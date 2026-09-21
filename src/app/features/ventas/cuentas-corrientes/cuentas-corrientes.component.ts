@@ -13,6 +13,13 @@ interface CuotaConVencida extends Cuota {
   vencida: boolean;
 }
 
+type ModoAbonoCredito = 'cuota-vigente' | 'adelantar-cuotas' | 'pagar-todo' | 'otro-monto';
+
+interface CuotaAfectada {
+  numero: number;
+  monto: number;
+}
+
 @Component({
   selector: 'app-cuentas-corrientes',
   standalone: true,
@@ -61,6 +68,31 @@ export class CuentasCorrientesComponent implements OnInit {
   protected readonly modalAbonoAbierto = signal<boolean>(false);
   protected readonly procesandoAbono = signal<boolean>(false);
   protected readonly ventaSeleccionada = signal<Venta | null>(null);
+  protected readonly detalleAbono = signal<VentaDetallada | null>(null);
+  protected readonly cargandoDetalleAbono = signal<boolean>(false);
+  protected readonly modoAbonoCredito = signal<ModoAbonoCredito>('otro-monto');
+  protected readonly cantidadCuotasAdelantar = signal<number>(1);
+  private readonly montoAbono = signal<number>(0);
+
+  protected readonly cuotasPendientesAbono = computed(() => (this.detalleAbono()?.cuotas ?? [])
+    .filter(c => c.montoPendiente > 0)
+    .sort((a, b) => a.fechaVencimiento.localeCompare(b.fechaVencimiento) || a.numero - b.numero));
+
+  protected readonly cuotasAfectadas = computed<CuotaAfectada[]>(() => {
+    const venta = this.ventaSeleccionada();
+    if (!venta?.esCredito) return [];
+
+    const pendientes = this.cuotasPendientesAbono();
+    const monto = Math.min(this.montoAbono(), venta.saldoPendiente);
+    let restante = monto;
+
+    return pendientes.flatMap(cuota => {
+      if (restante <= 0) return [];
+      const aplicado = Math.min(cuota.montoPendiente, restante);
+      restante = Math.round((restante - aplicado) * 100) / 100;
+      return [{ numero: cuota.numero, monto: aplicado }];
+    });
+  });
 
   // Detalles e historial de una venta
   protected readonly modalDetalleAbierto = signal<boolean>(false);
@@ -98,6 +130,10 @@ export class CuentasCorrientesComponent implements OnInit {
   });
 
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    this.formAbono.controls.monto.valueChanges.subscribe(monto => this.montoAbono.set(Number(monto) || 0));
+  }
 
   ngOnInit(): void {
     this.cargarDeudas();
@@ -167,26 +203,73 @@ export class CuentasCorrientesComponent implements OnInit {
     }, 300);
   }
 
-  protected abrirModalAbono(venta: Venta) {
+  protected abrirModalAbono(venta: Venta, detalle?: VentaDetallada) {
     this.ventaSeleccionada.set(venta);
+    this.detalleAbono.set(null);
+    this.cantidadCuotasAdelantar.set(1);
     this.formAbono.reset({
-      monto: venta.saldoPendiente,
+      monto: venta.esCredito ? 0 : venta.saldoPendiente,
       metodoPagoId: 1,
       observacion: ''
     });
     this.modalAbonoAbierto.set(true);
+
+    if (!venta.esCredito) {
+      this.modoAbonoCredito.set('otro-monto');
+      return;
+    }
+
+    if (detalle) {
+      this.prepararAtajosCredito(detalle);
+      return;
+    }
+
+    this.cargandoDetalleAbono.set(true);
+    this.apiVentas.obtener(venta.id).subscribe({
+      next: (data) => {
+        this.cargandoDetalleAbono.set(false);
+        this.prepararAtajosCredito(data);
+      },
+      error: () => {
+        this.cargandoDetalleAbono.set(false);
+        this.cerrarModalAbono();
+        this.notify.error('No se pudieron cargar las cuotas para registrar el abono');
+      }
+    });
   }
 
-  protected aplicarPorcentaje(pct: number) {
-    const v = this.ventaSeleccionada();
-    if (!v) return;
-    const monto = Math.round(v.saldoPendiente * pct * 100) / 100;
-    this.formAbono.patchValue({ monto });
+  protected seleccionarModoAbono(modo: ModoAbonoCredito) {
+    this.modoAbonoCredito.set(modo);
+    if (modo === 'otro-monto') return;
+
+    const pendientes = this.cuotasPendientesAbono();
+    const venta = this.ventaSeleccionada();
+    if (!venta) return;
+
+    const monto = modo === 'cuota-vigente'
+      ? pendientes[0]?.montoPendiente ?? 0
+      : modo === 'adelantar-cuotas'
+        ? pendientes.slice(0, this.cantidadCuotasAdelantar()).reduce((total, cuota) => total + cuota.montoPendiente, 0)
+        : venta.saldoPendiente;
+    this.formAbono.patchValue({ monto: Math.round(monto * 100) / 100 });
+  }
+
+  protected cambiarCantidadCuotasAdelantar(event: Event) {
+    const maximo = this.cuotasPendientesAbono().length;
+    const cantidad = Math.max(1, Math.min(maximo, Number((event.target as HTMLInputElement).value) || 1));
+    this.cantidadCuotasAdelantar.set(cantidad);
+    this.seleccionarModoAbono('adelantar-cuotas');
+  }
+
+  protected seleccionarOtroMonto() {
+    this.modoAbonoCredito.set('otro-monto');
   }
 
   protected cerrarModalAbono() {
     this.modalAbonoAbierto.set(false);
     this.ventaSeleccionada.set(null);
+    this.detalleAbono.set(null);
+    this.cargandoDetalleAbono.set(false);
   }
 
   protected guardarAbono() {
@@ -321,7 +404,7 @@ export class CuentasCorrientesComponent implements OnInit {
         cantidadCuotas: d.cantidadCuotas,
         frecuencia: d.frecuencia,
         fechaInicioCredito: d.fechaInicioCredito
-      });
+      }, d);
     }, 100);
   }
 
@@ -329,6 +412,11 @@ export class CuentasCorrientesComponent implements OnInit {
     this.cargarDeudas();
     this.cargarKpisCobranza();
     this.verDetalles(ventaId);
+  }
+
+  private prepararAtajosCredito(detalle: VentaDetallada) {
+    this.detalleAbono.set(detalle);
+    this.seleccionarModoAbono('cuota-vigente');
   }
 
   private mensajeError(err: any, fallback: string): string {

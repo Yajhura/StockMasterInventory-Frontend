@@ -100,6 +100,58 @@ describe('CuentasCorrientesComponent cancellations', () => {
     expect(content).toContain('S/ 5.00');
   });
 
+  it('loads credit installments and defaults the payment to the first pending installment', () => {
+    const instance = component as any;
+
+    instance.abrirModalAbono(venta);
+
+    expect(apiVentas.obtener).toHaveBeenCalledWith(12);
+    expect(instance.modoAbonoCredito()).toBe('cuota-vigente');
+    expect(instance.formAbono.controls.monto.value).toBe(5);
+    expect(instance.cuotasAfectadas()).toEqual([{ numero: 2, monto: 5 }]);
+  });
+
+  it('advances only consecutive pending installments in FIFO order', () => {
+    const instance = component as any;
+    const detalleConCuotas = {
+      ...venta,
+      cuotas: [
+        { ...venta.cuotas[0], id: 3, numero: 1, monto: 4, montoPagado: 0, montoPendiente: 4, fechaVencimiento: '2026-09-25', estado: 'Pendiente' },
+        venta.cuotas[0],
+      ],
+    };
+
+    instance.abrirModalAbono(detalleConCuotas, detalleConCuotas);
+    instance.cantidadCuotasAdelantar.set(2);
+    instance.seleccionarModoAbono('adelantar-cuotas');
+
+    expect(instance.formAbono.controls.monto.value).toBe(9);
+    expect(instance.cuotasAfectadas()).toEqual([
+      { numero: 1, monto: 4 },
+      { numero: 2, monto: 5 },
+    ]);
+  });
+
+  it('shows a FIFO summary for another amount instead of allowing installment selection', () => {
+    const instance = component as any;
+    const detalleConCuotas = {
+      ...venta,
+      cuotas: [
+        { ...venta.cuotas[0], id: 3, numero: 1, monto: 4, montoPagado: 0, montoPendiente: 4, fechaVencimiento: '2026-09-25', estado: 'Pendiente' },
+        venta.cuotas[0],
+      ],
+    };
+
+    instance.abrirModalAbono(detalleConCuotas, detalleConCuotas);
+    instance.formAbono.patchValue({ monto: 6 });
+    instance.seleccionarOtroMonto();
+
+    expect(instance.cuotasAfectadas()).toEqual([
+      { numero: 1, monto: 4 },
+      { numero: 2, monto: 2 },
+    ]);
+  });
+
   it('keeps the payment confirmation open and shows the backend error on failure', () => {
     const instance = component as any;
     apiVentas.anularAbono.and.returnValue(throwError(() => ({ error: { error: 'El abono ya fue anulado.' } })));
