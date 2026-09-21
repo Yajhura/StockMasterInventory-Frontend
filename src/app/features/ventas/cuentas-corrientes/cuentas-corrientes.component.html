@@ -84,6 +84,16 @@
         />
       </div>
     </div>
+    <div>
+      <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Estado</label>
+      <div class="w-48">
+        <app-dropdown
+          [options]="opcionesEstadoPago"
+          placeholder="Todos los estados"
+          (selectionChange)="onFiltroEstadoChange($event)"
+        />
+      </div>
+    </div>
     <button type="button" (click)="limpiarFiltros()"
       class="ml-auto px-4 py-2 text-slate-700 bg-white border border-slate-300 hover:border-slate-900 hover:text-slate-900 rounded-md text-sm font-semibold transition-colors">
       Limpiar filtros

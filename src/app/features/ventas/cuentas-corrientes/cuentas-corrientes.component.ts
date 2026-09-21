@@ -5,7 +5,7 @@ import { ApiVentasService } from '../../../core/api/api-ventas.service';
 import { ApiClientesService } from '../../../core/api/api-clientes.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { Cliente } from '../../../core/models/cliente.models';
-import { Venta, CrearAbonoPayload, VentaDetallada, Cuota, KpiCobranza, VentaFiltros, Abono } from '../../../core/models/venta.models';
+import { Venta, CrearAbonoPayload, VentaDetallada, Cuota, KpiCobranza, VentaFiltros, Abono, EstadoPago } from '../../../core/models/venta.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
 import { ConfirmDialogComponent } from '../../../core/components/confirm-dialog.component';
 
@@ -59,6 +59,12 @@ export class CuentasCorrientesComponent implements OnInit {
     { value: null, label: 'Todos los clientes', sublabel: 'Sin filtro' },
     ...this.clientes().map(c => ({ value: c.id, label: c.nombre }))
   ]);
+
+  protected readonly opcionesEstadoPago: DropdownOption<EstadoPago | null>[] = [
+    { value: null, label: 'Todos los estados', sublabel: 'Sin filtro' },
+    { value: 'Pendiente', label: 'Pendiente' },
+    { value: 'Parcial', label: 'Parcial' }
+  ];
 
   // Las "deudas" ya vienen filtradas del backend (EstadoPago != 'Pagado' && !Eliminado).
   // No hace falta aplicar filtros client-side adicionales.
@@ -183,6 +189,11 @@ export class CuentasCorrientesComponent implements OnInit {
   protected onFiltroClienteChange(value: unknown) {
     const id = value == null ? null : Number(value);
     this.filtros.update(f => ({ ...f, clienteId: Number.isFinite(id as number) ? id : null }));
+    this.scheduleReload();
+  }
+
+  protected onFiltroEstadoChange(value: unknown) {
+    this.filtros.update(f => ({ ...f, estadoPago: (value as EstadoPago | null) ?? null }));
     this.scheduleReload();
   }
 

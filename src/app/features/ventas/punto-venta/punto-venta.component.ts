@@ -50,6 +50,7 @@ export class PuntoVentaComponent implements OnInit {
   // cliente no siempre da inicial. En contado este valor se ignora
   // (los pagos vienen del array `pagos`).
   protected readonly pagoInicialCredito = signal<number>(0);
+  protected readonly metodoPagoInicialId = signal<number>(1);
 
   protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
     this.clientes().map(c => ({
@@ -364,6 +365,9 @@ export class PuntoVentaComponent implements OnInit {
     this.esCredito.set(false);
     this.cantidadCuotas.set(null);
     this.fechaInicioCredito.set(new Date().toISOString().split('T')[0]);
+    this.pagoInicialCredito.set(0);
+    this.metodoPagoInicialId.set(1);
+    this.frecuencia.set('Mensual');
   }
 
   private async cargarDatos() {
@@ -562,7 +566,7 @@ export class PuntoVentaComponent implements OnInit {
       if (this.excedeLimiteCredito()) {
         const cli = this.clienteSeleccionado();
         this.notify.error(
-          `El cliente supera su límite de crédito. Deuda actual: S/ ${this.saldoActualCliente().toFixed(2)}, nuevo total: S/ ${this.totalVenta().toFixed(2)}, límite: S/ ${(cli?.limiteCredito ?? 0).toFixed(2)}.`
+          `El cliente supera su límite de crédito. Deuda actual: S/ ${this.saldoActualCliente().toFixed(2)}, saldo financiado: S/ ${this.saldoPendiente().toFixed(2)}, límite: S/ ${(cli?.limiteCredito ?? 0).toFixed(2)}.`
         );
         return;
       }
@@ -576,7 +580,7 @@ export class PuntoVentaComponent implements OnInit {
     if (this.esCredito()) {
       const pagoInicial = this.pagoInicialCredito();
       pagosFinales = pagoInicial > 0
-        ? [{ monto: pagoInicial, metodoPagoId: Number(value.pagos?.[0]?.metodoPagoId ?? 1) }]
+        ? [{ monto: pagoInicial, metodoPagoId: this.metodoPagoInicialId() }]
         : [];
     } else {
       pagosFinales = (value.pagos ?? []).map((p: any) => ({

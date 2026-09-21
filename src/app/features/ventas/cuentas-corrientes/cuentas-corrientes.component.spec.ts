@@ -88,6 +88,17 @@ describe('CuentasCorrientesComponent cancellations', () => {
     expect(apiVentas.obtener).toHaveBeenCalledWith(12);
   });
 
+  it('filters debts by payment status', () => {
+    const instance = component as any;
+    jasmine.clock().install();
+
+    instance.onFiltroEstadoChange('Parcial');
+
+    jasmine.clock().tick(300);
+    jasmine.clock().uninstall();
+    expect(apiVentas.listarDeudas).toHaveBeenCalledWith(jasmine.objectContaining({ estadoPago: 'Parcial' }));
+  });
+
   it('shows paid and pending amounts for a partially allocated installment', () => {
     const instance = component as any;
     instance.modalDetalleAbierto.set(true);

@@ -27,6 +27,7 @@ export class ApiVentasService {
     if (filtros?.desde) params = params.set('desde', filtros.desde);
     if (filtros?.hasta) params = params.set('hasta', filtros.hasta);
     if (filtros?.clienteId != null) params = params.set('clienteId', String(filtros.clienteId));
+    if (filtros?.estadoPago) params = params.set('estadoPago', filtros.estadoPago);
     return this.http.get<Venta[]>(`${this.url}/deudas`, { params });
   }
 
