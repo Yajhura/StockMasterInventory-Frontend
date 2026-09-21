@@ -176,4 +176,13 @@ describe('ApiVentasService (REQ-TEST-004)', () => {
     expect(authService.isAuthenticated()).toBeFalse();
     expect(routerSpy.navigateByUrl).toHaveBeenCalledWith('/login');
   });
+
+  it('preview_plan_sends_selected_frequency', () => {
+    service.previewPlan(90, 3, '2026-09-21', 'Diario').subscribe();
+
+    const req = httpTesting.expectOne(`${API_VENTAS}/preview-plan?total=90&cantidadCuotas=3&fechaInicio=2026-09-21&frecuencia=Diario`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('frecuencia')).toBe('Diario');
+    req.flush([]);
+  });
 });

@@ -188,6 +188,10 @@ export class PuntoVentaComponent implements OnInit {
   });
 
   protected readonly pagoInvalido = computed(() => {
+    // Credit uses the dedicated optional initial-payment signal. The form
+    // keeps a zero-valued payment placeholder for when the user switches
+    // back to cash, so it must not invalidate a credit sale.
+    if (this.esCredito()) return false;
     const val = this.formValue();
     if (!val || !val.pagos) return false;
     return val.pagos.some((p: any) => Number(p.monto) <= 0);
@@ -244,7 +248,7 @@ export class PuntoVentaComponent implements OnInit {
     if (!this.esCredito()) return false;
     const cli = this.clienteSeleccionado();
     if (!cli || cli.limiteCredito == null) return false;
-    return (this.saldoActualCliente() + this.totalVenta()) > cli.limiteCredito;
+    return (this.saldoActualCliente() + this.saldoPendiente()) > cli.limiteCredito;
   });
 
   // --- Validacion: cantidad de cuotas invalida ---
@@ -261,21 +265,21 @@ export class PuntoVentaComponent implements OnInit {
     effect((onCleanup) => {
       const esCredito = this.esCredito();
       const n = this.cantidadCuotas();
-      const total = this.totalVenta();
+      const saldoFinanciado = this.saldoPendiente();
       const inicio = this.fechaInicioCredito();
 
-      if (!esCredito || !n || n < 1 || n > 36 || total <= 0 || !inicio) {
+      if (!esCredito || !n || n < 1 || n > 36 || saldoFinanciado <= 0 || !inicio) {
         this._planCuotas.set([]);
         return;
       }
 
-      const sub = this.apiVentas.previewPlan(total, n, inicio, this.frecuencia()).subscribe({
+      const sub = this.apiVentas.previewPlan(saldoFinanciado, n, inicio, this.frecuencia()).subscribe({
         next: (cuotas) => this._planCuotas.set(cuotas),
         error: () => this._planCuotas.set([])
       });
 
       onCleanup(() => sub.unsubscribe());
-    });
+    }, { allowSignalWrites: true });
   }
 
   ngOnInit(): void {
