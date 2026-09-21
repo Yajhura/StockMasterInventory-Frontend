@@ -48,8 +48,13 @@
 }
 
 @layer components {
+  /* ===========================================================================
+     Design System — Variant A primitives (compact, dense, sharp)
+     Picked via /design-system showcase on 2026-09-20.
+     ====================================================================== */
+
   .kpi-card {
-    @apply bg-white rounded-2xl border border-slate-200/70 shadow-[0_4px_12px_rgba(15,23,42,0.05)] p-5 transition-all duration-200;
+    @apply bg-white rounded-xl border border-slate-200/70 shadow-[0_4px_12px_rgba(15,23,42,0.05)] p-4 transition-all duration-200;
   }
 
   .kpi-card:hover {
@@ -57,27 +62,67 @@
   }
 
   .surface-card {
-    @apply bg-white rounded-2xl border border-slate-200/70 shadow-[0_4px_12px_rgba(15,23,42,0.05)];
+    @apply bg-white rounded-xl border border-slate-200/70 shadow-[0_4px_12px_rgba(15,23,42,0.05)];
   }
 
   .input-base {
-    @apply w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 transition-all duration-200;
-  }
-
-  .input-base:focus {
-    @apply outline-none border-blue-600 ring-4 ring-blue-600/20;
+    @apply w-full h-9 px-2.5 bg-white border border-slate-200 rounded-md text-xs text-slate-900 placeholder:text-slate-400 transition-all duration-150 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 h-11 px-5 rounded-lg bg-blue-600 text-white text-sm font-semibold transition-all duration-200 shadow-sm hover:bg-blue-700 active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-md bg-blue-600 text-white text-xs font-semibold transition-all duration-150 hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 h-11 px-5 rounded-lg bg-white border border-slate-200 text-slate-700 text-sm font-semibold transition-all duration-200 hover:border-blue-600 hover:text-blue-600 active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-md bg-white border border-slate-300 text-slate-700 text-xs font-semibold transition-all duration-150 hover:bg-slate-50 hover:border-slate-400 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-md bg-rose-600 text-white text-xs font-semibold transition-all duration-150 hover:bg-rose-700 active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-md bg-transparent text-slate-600 text-xs font-semibold transition-all duration-150 hover:bg-slate-100 hover:text-slate-900 active:scale-[0.98];
+  }
+
+  .btn-icon {
+    @apply grid place-items-center w-7 h-7 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer;
+  }
+
+  .btn-icon-primary {
+    @apply grid place-items-center w-7 h-7 rounded-md text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer;
+  }
+
+  .table-compact {
+    @apply w-full text-xs text-slate-700;
+  }
+
+  .table-compact thead {
+    @apply bg-slate-50;
+  }
+
+  .table-compact thead th {
+    @apply px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200;
+  }
+
+  .table-compact tbody tr {
+    @apply border-b border-slate-200 hover:bg-slate-50/50 transition-colors;
+  }
+
+  .table-compact tbody td {
+    @apply px-3 py-2;
+  }
+
+  .modal-card {
+    @apply bg-white rounded-xl shadow-2xl p-5 max-w-md w-full mx-4;
+  }
+
+  .modal-card-lg {
+    @apply bg-white rounded-xl shadow-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto;
   }
 
   .chip {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider;
+    @apply inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-slate-100 text-slate-700;
   }
 
   .chip-success {

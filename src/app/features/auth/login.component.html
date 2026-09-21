@@ -80,7 +80,7 @@
               />
               <button
                 type="button"
-                class="absolute right-3 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                class="btn-icon absolute right-3 top-1/2 -translate-y-1/2"
                 (click)="togglePassword()"
                 [attr.aria-label]="mostrarPassword() ? 'Ocultar contrasena' : 'Mostrar contrasena'"
               >
@@ -98,7 +98,7 @@
 
           <button
             type="submit"
-            class="w-full h-12 rounded-lg bg-blue-600 text-white text-sm font-semibold inline-flex items-center justify-center gap-2 shadow-sm shadow-blue-600/30 hover:bg-blue-700 active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="btn-primary w-full"
             [disabled]="form.invalid || cargando()"
           >
             @if (cargando()) {
