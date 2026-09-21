@@ -206,9 +206,6 @@
         @if (ec.cliente.direccion) {
           <p class="text-slate-600"><strong class="text-slate-500 font-semibold">Dir:</strong> {{ ec.cliente.direccion }}</p>
         }
-        @if (ec.cliente.limiteCredito) {
-          <p class="text-slate-600"><strong class="text-slate-500 font-semibold">Límite crédito:</strong> S/ {{ ec.cliente.limiteCredito | number:'1.2-2' }}</p>
-        }
       </section>
 
       <!-- Mini-KPIs -->
@@ -345,17 +342,6 @@
           <div>
             <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Dirección</label>
             <input type="text" formControlName="direccion" class="input-base w-full" placeholder="Calle, número, ciudad (opcional)">
-          </div>
-
-          <div>
-            <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Límite de crédito</label>
-            <div class="relative">
-              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-500 pointer-events-none">S/</span>
-              <input type="number" formControlName="limiteCredito" min="0" step="0.01" class="input-base w-full pl-10 tabular-nums" placeholder="0.00">
-            </div>
-            @if (formCliente.get('limiteCredito')?.invalid && formCliente.get('limiteCredito')?.touched) {
-              <p class="text-[10px] text-rose-600 mt-1 font-semibold">El límite de crédito no puede ser negativo.</p>
-            }
           </div>
 
           <div class="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">

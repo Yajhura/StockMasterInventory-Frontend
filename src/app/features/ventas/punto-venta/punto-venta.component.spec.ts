@@ -22,7 +22,6 @@ describe('PuntoVentaComponent credit sales', () => {
     telefono: null,
     email: null,
     direccion: null,
-    limiteCredito: 110,
     tipoDocumentoId: 1,
     tipoDocumentoNombre: 'DNI',
     creadoEn: '2026-09-21T00:00:00Z',
@@ -75,7 +74,6 @@ describe('PuntoVentaComponent credit sales', () => {
     configureCreditSale(10);
 
     expect((component as any).pagoInvalido()).toBeFalse();
-    expect((component as any).excedeLimiteCredito()).toBeFalse();
 
     (component as any).procesarVenta();
 
