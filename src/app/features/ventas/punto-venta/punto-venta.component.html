@@ -313,7 +313,7 @@
                 </button>
               </div>
               <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
-                {{ esCredito() ? 'Se generará un plan de cuotas mensuales automático.' : 'Cobro completo en este momento.' }}
+                {{ esCredito() ? 'Se generará un plan de cuotas con frecuencia ' + frecuencia() + '.' : 'Cobro completo en este momento.' }}
               </p>
             </div>
 
@@ -468,7 +468,7 @@
                     <p class="text-[11px] text-rose-600 mt-2 font-bold uppercase tracking-wider">Excede el total</p>
                   } @else if (esCredito() && saldoPendiente() > 0) {
                     <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
-                      Se distribuirá en <strong class="text-slate-700">{{ cantidadCuotas() }}</strong> cuotas mensuales.
+                      Se distribuirá en <strong class="text-slate-700">{{ cantidadCuotas() }}</strong> cuotas con frecuencia <strong class="text-slate-700">{{ frecuencia() }}</strong>.
                     </p>
                   } @else if (!esCredito() && saldoPendiente() === 0 && totalVenta() > 0) {
                     <p class="text-[11px] text-emerald-700 mt-2 font-bold uppercase tracking-wider">Pagado completo</p>
