@@ -11,7 +11,7 @@ import {
   Movimiento,
   PaginatedResponse,
   Usuario,
-  RegistrarMovimientoPayload
+  ActualizarMovimientoPayload
 } from '../../core/models/inventario.models';
 import { ApiAuthService } from '../../core/api/api-auth.service';
 import { ModalOverlayComponent } from '../../core/components/modal-overlay.component';
@@ -64,6 +64,7 @@ export class KardexPageComponent implements OnInit {
   protected readonly vistaModo = signal<'cards' | 'tabla'>('cards');
 
   Math = Math;
+  Number = Number;
 
   // Computeds para los selectores personalizados
   protected readonly opcionesProductos = computed<DropdownOption[]>(() => {
@@ -134,7 +135,6 @@ export class KardexPageComponent implements OnInit {
   protected editCantidad = 1;
   protected editPrecio = 0;
   protected editObservacion = '';
-  protected editCliente = '';
 
   // Modal de Confirmación de Eliminación
   protected readonly movimientoAEliminar = signal<Movimiento | null>(null);
@@ -267,7 +267,6 @@ export class KardexPageComponent implements OnInit {
     this.editCantidad = m.cantidad;
     this.editPrecio = m.precioUnitario;
     this.editObservacion = m.observacion || '';
-    this.editCliente = m.cliente || '';
   }
 
   protected cerrarModalEdicion(): void {
@@ -276,16 +275,21 @@ export class KardexPageComponent implements OnInit {
 
   protected async guardarEdicion(): Promise<void> {
     const mov = this.movimientoAEditar();
-    if (!mov || this.editCantidad <= 0 || this.editPrecio < 0) return;
+    if (
+      !mov ||
+      !Number.isInteger(this.editCantidad) ||
+      this.editCantidad <= 0 ||
+      !Number.isFinite(this.editPrecio) ||
+      this.editPrecio < 0
+    ) return;
 
     this.editGuardando = true;
     try {
-      const payload: Partial<RegistrarMovimientoPayload> = {
+      const payload: ActualizarMovimientoPayload = {
         tipoMovimientoId: mov.tipoMovimientoId as 1 | 2,
         cantidad: this.editCantidad,
         precioUnitario: this.editPrecio,
         observacion: this.editObservacion.trim() || undefined,
-        cliente: this.editCliente.trim() || undefined
       };
       
       await this.productosState.actualizarMovimiento(mov.id, payload);

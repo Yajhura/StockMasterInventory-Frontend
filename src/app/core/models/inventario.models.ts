@@ -143,6 +143,14 @@ export interface RegistrarMovimientoPayload {
   observacion?: string;
 }
 
+/** Complete representation required by the movimiento PUT endpoint. */
+export interface ActualizarMovimientoPayload {
+  tipoMovimientoId: 1 | 2;
+  cantidad: number;
+  precioUnitario: number;
+  observacion?: string;
+}
+
 // ---------- Auth ----------
 
 export type Rol = 'Admin' | 'Operador';

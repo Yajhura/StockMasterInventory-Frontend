@@ -9,6 +9,7 @@ import {
   ProductoSearchParams,
   CrearProductoPayload,
   ActualizarProductoPayload,
+  ActualizarMovimientoPayload,
   RegistrarMovimientoPayload,
   Movimiento,
   ProductoSelectorItem,
@@ -34,10 +35,8 @@ import { ShellState } from './shell.state';
  *     to `productosRev` and refetches the aggregate KPIs when it
  *     changes (after the first load).
  *
- *   - `actualizarMovimiento` / `eliminarMovimiento` MUST NOT bump
- *     `productosRev`. Those mutations only refresh selector and
- *     paginated lists; the KPI aggregate over the full Productos
- *     table does not change.
+ *   - `actualizarMovimiento` / `eliminarMovimiento` MUST refresh the
+ *     full product list, selector, paginated list, and KPIs after success.
  *
  * Error writes go to `ShellState.error` (REQ-DECOMP-006).
  */
@@ -96,7 +95,7 @@ export class ProductosState {
    *   refetches the server aggregate KPIs when it changes.
    *
    * Bumps happen on SUCCESS only — failed mutations do NOT bump.
-   * `actualizarMovimiento` / `eliminarMovimiento` do NOT bump.
+   * Movement edits and deletes also bump after refreshing derived product state.
    */
   readonly productosRev = signal<number>(0);
 
@@ -326,17 +325,15 @@ export class ProductosState {
   }
 
   /**
-   * Updates an existing movimiento. Does NOT bump `productosRev` —
-   * the per-producto stock row is already accurate (updated atomically
-   * by the backend when the movimiento row changes), and the KPI
-   * aggregate over the full Productos table does not change just
-   * because an existing movimiento was edited.
+   * Updates an existing movimiento and refreshes all product-derived state.
    */
-  async actualizarMovimiento(id: number, payload: Partial<RegistrarMovimientoPayload>): Promise<Movimiento> {
+  async actualizarMovimiento(id: number, payload: ActualizarMovimientoPayload): Promise<Movimiento> {
     try {
       const movActualizado = await firstValueFrom(this.apiMovimientos.actualizar(id, payload));
+      await this.cargarProductos();
       await this.cargarSelectorProductos(true);
       await this.recargarProductosPaginados();
+      this.productosRev.update((n) => n + 1);
 
       this.shell.error.set(null);
       return movActualizado;
@@ -347,16 +344,15 @@ export class ProductosState {
   }
 
   /**
-   * Deletes an existing movimiento. Does NOT bump `productosRev` —
-   * same rationale as `actualizarMovimiento`. The producto stock
-   * state is unchanged from the user's perspective; only the
-   * historical record is removed.
+   * Deletes an existing movimiento and refreshes all product-derived state.
    */
   async eliminarMovimiento(id: number): Promise<void> {
     try {
       await firstValueFrom(this.apiMovimientos.eliminar(id));
+      await this.cargarProductos();
       await this.cargarSelectorProductos(true);
       await this.recargarProductosPaginados();
+      this.productosRev.update((n) => n + 1);
       this.shell.error.set(null);
     } catch (e: unknown) {
       this.shell.error.set(this.toMessage(e));

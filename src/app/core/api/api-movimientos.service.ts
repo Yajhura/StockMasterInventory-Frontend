@@ -6,6 +6,7 @@ import {
   Movimiento,
   PaginatedResponse,
   RegistrarMovimientoPayload,
+  ActualizarMovimientoPayload,
 } from '../models/inventario.models';
 
 export interface ListarMovimientosParams {
@@ -70,7 +71,7 @@ export class ApiMovimientosService {
     return this.http.post<Movimiento>(this.base, payload);
   }
 
-  actualizar(id: number, payload: Partial<RegistrarMovimientoPayload>): Observable<Movimiento> {
+  actualizar(id: number, payload: ActualizarMovimientoPayload): Observable<Movimiento> {
     return this.http.put<Movimiento>(`${this.base}/${id}`, payload);
   }
 
