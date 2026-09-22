@@ -1,0 +1,22 @@
+/* Design System showcase page — minimal page-specific styles.
+   The component variants themselves live inline in the .html
+   (using literal Tailwind class strings) so the user can SEE the
+   designs before we commit to primitive class names. */
+
+:host {
+  display: block;
+}
+
+.ds-cell {
+  @apply bg-slate-50/40 border border-slate-200/70 rounded-xl p-5;
+  @apply flex flex-col items-stretch justify-start;
+}
+
+.choice-btn {
+  @apply px-2.5 py-1 rounded-md bg-white border border-slate-300 text-slate-600 text-[11px] font-bold;
+  @apply hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 transition-colors cursor-pointer;
+}
+
+.choice-btn:active {
+  @apply scale-95;
+}
