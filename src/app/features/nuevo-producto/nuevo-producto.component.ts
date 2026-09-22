@@ -321,8 +321,13 @@ export class NuevoProductoComponent implements OnInit {
       return;
     }
     const stockMinNum = Number(v.stockMinimo ?? 0);
-    if (isNaN(stockMinNum) || stockMinNum < 0) {
-      this.notify.warning('El stock mínimo debe ser un número mayor o igual a 0.');
+    if (!Number.isInteger(stockMinNum) || stockMinNum < 0) {
+      this.notify.warning('El stock mínimo debe ser un número entero mayor o igual a 0.');
+      return;
+    }
+    const stockInicialNum = Number(v.stockInicial ?? 0);
+    if (!Number.isInteger(stockInicialNum) || stockInicialNum < 0) {
+      this.notify.warning('El stock inicial debe ser un número entero mayor o igual a 0.');
       return;
     }
 
@@ -368,7 +373,7 @@ export class NuevoProductoComponent implements OnInit {
         imagenBase64: this.imagenBase64() ?? undefined,
         imagenMime: this.imagenMime() ?? undefined,
         // Stock inicial: se aplica al ALTA o a la EDICIÓN.
-        stockInicial: Math.max(0, Number(v.stockInicial ?? 0)),
+        stockInicial: stockInicialNum,
         stockInicialPrecioUnitario: Math.max(0, Number(v.stockInicialPrecioUnitario ?? 0)),
         stockInicialObservacion: (v.stockInicialObservacion ?? '').toString().trim() || undefined,
       };
