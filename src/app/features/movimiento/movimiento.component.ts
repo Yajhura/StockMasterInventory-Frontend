@@ -146,6 +146,10 @@ export class MovimientoComponent implements OnInit {
     }
   }
 
+  protected buscarProductosRemotamente(query: string): void {
+    void this.productosState.buscarSelectorProductos(query);
+  }
+
   async ngOnInit(): Promise<void> {
     await this.productosState.cargarSelectorProductos(true);
     if (this.productosState.productos().length === 0) {

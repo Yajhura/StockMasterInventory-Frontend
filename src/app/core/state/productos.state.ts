@@ -57,6 +57,7 @@ export class ProductosState {
    */
   private readonly _productosSelector = signal<ProductoSelectorItem[]>([]);
   private cargandoSelector = false;
+  private selectorSearchRequest = 0;
 
   /** Lista paginada ligera para el dashboard (ProductoListItem). */
   private readonly _productosPaginados = signal<ProductoListItem[]>([]);
@@ -69,6 +70,8 @@ export class ProductosState {
   private readonly _buscando = signal<boolean>(false);
   /** Si true, /buscar envia incluirEliminados=true (solo Admin). */
   private readonly _mostrarPapelera = signal<boolean>(false);
+  /** Last applied server query, reused after a successful mutation. */
+  private lastSearchParams: ProductoSearchParams = {};
 
   private cargandoProductos = false;
 
@@ -133,6 +136,17 @@ export class ProductosState {
     }
   }
 
+  /** Searches remotely so products outside the initial selector page remain selectable. */
+  async buscarSelectorProductos(query: string): Promise<void> {
+    const request = ++this.selectorSearchRequest;
+    try {
+      const data = await firstValueFrom(this.apiProductos.selector(query, 100));
+      if (request === this.selectorSearchRequest) this._productosSelector.set(data);
+    } catch (e: unknown) {
+      if (request === this.selectorSearchRequest) this.shell.error.set(this.toMessage(e));
+    }
+  }
+
   // =====================================================
   //   Search + pagination (server-side)
   // =====================================================
@@ -140,6 +154,7 @@ export class ProductosState {
   async buscarProductos(params: ProductoSearchParams): Promise<void> {
     this._buscando.set(true);
     try {
+      this.lastSearchParams = { ...params };
       const resp = await firstValueFrom(
         this.apiProductos.buscar({ ...params, incluirEliminados: this._mostrarPapelera() })
       );
@@ -246,7 +261,11 @@ export class ProductosState {
 
   /** Recarga la lista paginada de productos con la paginacion actual. */
   private async recargarProductosPaginados(): Promise<void> {
-    await this.buscarProductos({ page: this._page(), size: this._pageSize() });
+    await this.buscarProductos({
+      ...this.lastSearchParams,
+      page: this._page(),
+      size: this._pageSize(),
+    });
   }
 
   /**
