@@ -24,6 +24,12 @@ Protect Kardex and inventory stock from invalid or conflicting movement mutation
   Checks: focused and full backend suites.
   Evidence: backend commit `fe9b862` permits PUT of `EsStockInicial` movements, recalculates stock, and rejects a negative result; `VentaId` movements remain immutable, and DELETE remains blocked for both sale and initial-stock movements. Docker/Testcontainers focused suite: `dotnet test StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --no-restore --filter "FullyQualifiedName~MovimientoStockIntegrityTests" -p:BaseOutputPath=C:\Users\manua\AppData\Local\Temp\opencode\stockmaster-tests\` — 7 passed, 0 failed (2026-09-22). Full suite: `dotnet test StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --no-restore -p:BaseOutputPath=C:\Users\manua\AppData\Local\Temp\opencode\stockmaster-tests\` — 63 passed, 0 failed (2026-09-22).
 
+- [x] MOV-04 — Stabilize Kardex filters, request freshness, and test infrastructure.
+  Route: delegated — frontend/backend filters, request state, UI, and tests.
+  Acceptance: invalid filter IDs reject; stale Kardex responses do not replace current data; user filtering is exposed; unsupported export is removed; frontend suite is green.
+  Checks: focused and full frontend/backend suites.
+  Evidence: backend rejects malformed and non-positive brand/category filter IDs; the Kardex modal and paginated view ignore superseded responses; the user filter is visible; the unsupported export remains absent from the UI; and the current-account mock includes `listarMetodosPago`. Focused frontend: `npx ng test --watch=false --browsers=ChromeHeadlessNoSandbox --include=src/app/core/state/kardex.state.spec.ts --include=src/app/features/ventas/cuentas-corrientes/cuentas-corrientes.component.spec.ts` — 12 passed (2026-09-22). Full frontend: `npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox` — 62 passed (2026-09-22). Focused backend: `dotnet test StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --no-restore --filter "FullyQualifiedName~KardexTests" -p:BaseOutputPath=C:\Users\manua\AppData\Local\Temp\opencode\stockmaster-tests\` — 7 passed, 0 failed (2026-09-22). Full backend: `dotnet test StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --no-restore -p:BaseOutputPath=C:\Users\manua\AppData\Local\Temp\opencode\stockmaster-tests\` — 67 passed, 0 failed (2026-09-22).
+
 ## Delivery
 
 `ask-on-risk`; commit as one frontend work unit.

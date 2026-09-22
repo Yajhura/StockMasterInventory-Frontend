@@ -95,6 +95,21 @@ describe('KardexState', () => {
     expect(kardex.kardexMovimientos()).toEqual([]);
   });
 
+  it('keeps the newest modal request when an older Kardex response arrives last', async () => {
+    const firstRequest = kardex.abrirKardexModal(1);
+    const firstHttpRequest = httpTesting.expectOne((r) => r.url === KARDEX_URL && r.params.get('productoId') === '1');
+    const secondRequest = kardex.abrirKardexModal(2);
+    const secondHttpRequest = httpTesting.expectOne((r) => r.url === KARDEX_URL && r.params.get('productoId') === '2');
+
+    secondHttpRequest.flush([makeMovimiento(2)]);
+    firstHttpRequest.flush([makeMovimiento(1)]);
+    await Promise.all([firstRequest, secondRequest]);
+
+    expect(kardex.kardexProductoId()).toBe(2);
+    expect(kardex.kardexMovimientos().map((movement) => movement.id)).toEqual([2]);
+    expect(kardex.kardexCargando()).toBeFalse();
+  });
+
   it('abrirKardexModal writes to ShellState.error when the fetch fails', async () => {
     const shell = TestBed.inject(ShellState);
 

@@ -27,26 +27,33 @@ export class KardexState {
   private readonly _kardexProductoId = signal<number | null>(null);
   private readonly _kardexMovimientos = signal<Movimiento[]>([]);
   private readonly _kardexCargando = signal<boolean>(false);
+  private kardexRequestId = 0;
 
   readonly kardexProductoId = this._kardexProductoId.asReadonly();
   readonly kardexMovimientos = this._kardexMovimientos.asReadonly();
   readonly kardexCargando = this._kardexCargando.asReadonly();
 
   async abrirKardexModal(productoId: number): Promise<void> {
+    const requestId = ++this.kardexRequestId;
     this._kardexProductoId.set(productoId);
     this._kardexCargando.set(true);
     this._kardexMovimientos.set([]);
     try {
       const movs = await this.obtenerKardex(productoId);
-      this._kardexMovimientos.set(movs);
+      if (requestId === this.kardexRequestId) {
+        this._kardexMovimientos.set(movs);
+      }
     } catch {
       this.shell.error.set('No se pudo cargar el Kardex.');
     } finally {
-      this._kardexCargando.set(false);
+      if (requestId === this.kardexRequestId) {
+        this._kardexCargando.set(false);
+      }
     }
   }
 
   cerrarKardexModal(): void {
+    this.kardexRequestId++;
     this._kardexProductoId.set(null);
     this._kardexMovimientos.set([]);
   }

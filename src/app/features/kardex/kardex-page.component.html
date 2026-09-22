@@ -69,7 +69,7 @@
       </div>
 
       <!-- Segunda fila de filtros -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 pt-2 border-t border-slate-100">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 pt-2 border-t border-slate-100">
         <!-- Selector Producto -->
         <div class="flex flex-col">
           <label class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">Producto Específico</label>
@@ -122,6 +122,15 @@
             [options]="opcionesTipo()"
             [(ngModel)]="tipoFiltro"
             placeholder="Todos los tipos"
+          />
+        </div>
+
+        <div class="flex flex-col">
+          <label class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1.5">Usuario</label>
+          <app-dropdown
+            [options]="opcionesUsuarios()"
+            [(ngModel)]="usuarioFiltro"
+            placeholder="Todos los usuarios"
           />
         </div>
       </div>
