@@ -155,6 +155,8 @@ export class DropdownComponent implements ControlValueAccessor {
 
   /** Emite cuando el usuario elige una opcion. */
   readonly selectionChange = output<unknown>();
+  /** Emits the current search text so consumers can load remote options. */
+  readonly searchChange = output<string>();
 
   protected readonly abierto = signal<boolean>(false);
   protected readonly query = signal<string>('');
@@ -214,6 +216,7 @@ export class DropdownComponent implements ControlValueAccessor {
   protected onQueryChange(value: string): void {
     this.query.set(value);
     this.highlightedIndex.set(0);
+    this.searchChange.emit(value);
   }
 
   protected seleccionar(opt: DropdownOption): void {
