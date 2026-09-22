@@ -154,6 +154,20 @@ describe('ProductosState', () => {
       expect(productos.productosPaginados().length).toBe(1);
       expect(productos.totalItems()).toBe(1);
     });
+
+    it('preserves the active query when a product mutation reloads the page', async () => {
+      const query = {
+        q: 'charger', page: 2, size: 10, sortBy: 'stock' as const, order: 'desc' as const,
+        marcaId: 4, atributos: [{ atributoId: 1, valor: '65W' }], stockMax: 8,
+      };
+      apiProductos.buscar.and.returnValue(of(EMPTY_PAGINATED));
+      apiProductos.crear.and.returnValue(of(SAMPLE_PRODUCTO));
+
+      await productos.buscarProductos(query);
+      await productos.crearProducto({} as CrearProductoPayload);
+
+      expect(apiProductos.buscar).toHaveBeenCalledWith(jasmine.objectContaining(query));
+    });
   });
 
   describe('productosRev bumping (REQ-DECOMP-002)', () => {
