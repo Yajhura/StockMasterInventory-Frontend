@@ -172,11 +172,14 @@ export class KardexPageComponent implements OnInit {
         sortBy: 'fecha',
         order: 'desc',
       };
+      // Parsear como hora LOCAL del usuario (sin sufijo Z = interpretado local,
+      // no UTC). Si el user en Lima pickea "2026-09-20" → 00:00 Lima
+      // (UTC-5) → 05:00 UTC Sep 20, no 19:00 UTC Sep 19.
       if (this.desde) {
-        params.desde = new Date(this.desde + 'T00:00:00.000Z').toISOString();
+        params.desde = new Date(this.desde + 'T00:00:00').toISOString();
       }
       if (this.hasta) {
-        params.hasta = new Date(this.hasta + 'T23:59:59.999Z').toISOString();
+        params.hasta = new Date(this.hasta + 'T23:59:59.999').toISOString();
       }
       if (this.tipoFiltro !== 0) params.tipo = this.tipoFiltro as 1 | 2;
       if (this.productoFiltro !== null) params.productoId = this.productoFiltro;
@@ -363,10 +366,10 @@ export class KardexPageComponent implements OnInit {
           page, size, sortBy: 'fecha', order: 'desc',
         };
         if (this.desde) {
-          params.desde = new Date(this.desde + 'T00:00:00.000Z').toISOString();
+          params.desde = new Date(this.desde + 'T00:00:00').toISOString();
         }
         if (this.hasta) {
-          params.hasta = new Date(this.hasta + 'T23:59:59.999Z').toISOString();
+          params.hasta = new Date(this.hasta + 'T23:59:59.999').toISOString();
         }
         if (this.tipoFiltro !== 0) params.tipo = this.tipoFiltro as 1 | 2;
         if (this.productoFiltro !== null) params.productoId = this.productoFiltro;
