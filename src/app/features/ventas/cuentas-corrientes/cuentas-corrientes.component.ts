@@ -5,7 +5,7 @@ import { ApiVentasService } from '../../../core/api/api-ventas.service';
 import { ApiClientesService } from '../../../core/api/api-clientes.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { Cliente } from '../../../core/models/cliente.models';
-import { Venta, CrearAbonoPayload, VentaDetallada, Cuota, KpiCobranza, VentaFiltros, Abono, EstadoPago } from '../../../core/models/venta.models';
+import { Venta, CrearAbonoPayload, VentaDetallada, Cuota, KpiCobranza, VentaFiltros, Abono, EstadoPago,MetodoPago } from '../../../core/models/venta.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
 import { ConfirmDialogComponent } from '../../../core/components/confirm-dialog.component';
 
