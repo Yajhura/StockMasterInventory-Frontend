@@ -51,11 +51,12 @@ describe('CuentasCorrientesComponent cancellations', () => {
 
   beforeEach(() => {
     apiVentas = jasmine.createSpyObj<ApiVentasService>('ApiVentasService', [
-      'listarDeudas', 'kpisCobranza', 'obtener', 'registrarAbono', 'anularAbono', 'anularVenta',
+      'listarDeudas', 'kpisCobranza', 'obtener', 'listarMetodosPago', 'registrarAbono', 'anularAbono', 'anularVenta',
     ]);
     apiVentas.listarDeudas.and.returnValue(of([]));
     apiVentas.kpisCobranza.and.returnValue(of({ deudaTotal: 0, clientesConDeuda: 0, deudaVencida: 0, cuotasVencenProximas: 0 }));
     apiVentas.obtener.and.returnValue(of(venta));
+    apiVentas.listarMetodosPago.and.returnValue(of([]));
     apiVentas.anularAbono.and.returnValue(of(void 0));
     apiVentas.anularVenta.and.returnValue(of(void 0));
     notification = jasmine.createSpyObj<NotificationService>('NotificationService', ['success', 'error']);
