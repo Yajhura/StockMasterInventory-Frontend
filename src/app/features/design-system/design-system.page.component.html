@@ -1,0 +1,385 @@
+<section class="anim-fade-in-up min-h-screen bg-slate-50/40 py-8 px-6">
+  <div class="max-w-6xl mx-auto">
+
+    <header class="mb-10">
+      <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Design System — Showcase</h1>
+      <p class="mt-2 text-sm text-slate-600 max-w-3xl">
+        3 variantes por componente UI. Elegí <strong>A / B / C</strong> en cada uno — la elección
+        define el primitive canónico que después se extrae a <code class="font-mono text-xs bg-slate-100 px-1 rounded">styles.css</code>
+        y reemplaza todos los consumidores inline. Esta página es <strong>solo dev</strong>
+        (<code class="font-mono text-xs bg-slate-100 px-1 rounded">environment.production === false</code>),
+        no aparece en nav ni en builds de producción.
+      </p>
+    </header>
+
+    <!-- ============================================================ -->
+    <!-- 1. PRIMARY BUTTON                                          -->
+    <!-- ============================================================ -->
+    <article class="ds-section bg-white border border-slate-200/70 rounded-2xl p-6 shadow-[0_4px_12px_rgba(15,23,42,0.05)] mb-8">
+      <header class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">1. Primary Button</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Acción principal del usuario (Guardar, Confirmar, Comprar…)</p>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] font-semibold">
+          <span class="text-slate-400">Tu pick:</span>
+          <button (click)="pick('btnPrimary', 'A')" class="choice-btn">A</button>
+          <button (click)="pick('btnPrimary', 'B')" class="choice-btn">B</button>
+          <button (click)="pick('btnPrimary', 'C')" class="choice-btn">C</button>
+        </div>
+      </header>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">A · Compact</div>
+          <button [class]="btnPrimary.A">Guardar</button>
+          <p class="mt-2 text-[10px] text-slate-400">h-9 · rounded-md · text-xs · semibold</p>
+        </div>
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">B · Material-tall</div>
+          <button [class]="btnPrimary.B">Guardar</button>
+          <p class="mt-2 text-[10px] text-slate-400">h-11 · rounded-lg · text-sm · shadow</p>
+        </div>
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">C · Pill</div>
+          <button [class]="btnPrimary.C">Guardar</button>
+          <p class="mt-2 text-[10px] text-slate-400">h-10 · rounded-full · text-sm</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============================================================ -->
+    <!-- 2. SECONDARY BUTTON                                        -->
+    <!-- ============================================================ -->
+    <article class="ds-section bg-white border border-slate-200/70 rounded-2xl p-6 shadow-[0_4px_12px_rgba(15,23,42,0.05)] mb-8">
+      <header class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">2. Secondary Button</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Acción alternativa (Cancelar, Volver…)</p>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] font-semibold">
+          <button (click)="pick('btnSecondary', 'A')" class="choice-btn">A</button>
+          <button (click)="pick('btnSecondary', 'B')" class="choice-btn">B</button>
+          <button (click)="pick('btnSecondary', 'C')" class="choice-btn">C</button>
+        </div>
+      </header>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">A · Compact outline</div>
+          <button [class]="btnSecondary.A">Cancelar</button>
+          <p class="mt-2 text-[10px] text-slate-400">h-9 · rounded-md · semibold</p>
+        </div>
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">B · Material-tall outline</div>
+          <button [class]="btnSecondary.B">Cancelar</button>
+          <p class="mt-2 text-[10px] text-slate-400">h-11 · rounded-lg · shadow</p>
+        </div>
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">C · Ghost</div>
+          <button [class]="btnSecondary.C">Cancelar</button>
+          <p class="mt-2 text-[10px] text-slate-400">h-10 · transparent · semibold</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============================================================ -->
+    <!-- 3. INPUT                                                   -->
+    <!-- ============================================================ -->
+    <article class="ds-section bg-white border border-slate-200/70 rounded-2xl p-6 shadow-[0_4px_12px_rgba(15,23,42,0.05)] mb-8">
+      <header class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">3. Input (text/number/date)</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Campos de texto en formularios, filtros, búsqueda</p>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] font-semibold">
+          <button (click)="pick('input', 'A')" class="choice-btn">A</button>
+          <button (click)="pick('input', 'B')" class="choice-btn">B</button>
+          <button (click)="pick('input', 'C')" class="choice-btn">C</button>
+        </div>
+      </header>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">A · Minimal flat (current .input-base)</div>
+          <input type="text" [class]="input.A" placeholder="Buscar...">
+          <p class="mt-2 text-[10px] text-slate-400">h-11 · rounded-lg · outlined · ring-blue-600/20</p>
+        </div>
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">B · Underline only</div>
+          <input type="text" [class]="input.B" placeholder="Buscar...">
+          <p class="mt-2 text-[10px] text-slate-400">h-10 · border-b only · editorial</p>
+        </div>
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">C · Filled</div>
+          <input type="text" [class]="input.C" placeholder="Buscar...">
+          <p class="mt-2 text-[10px] text-slate-400">h-10 · bg-slate-50 → white on focus</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============================================================ -->
+    <!-- 4. TABLE                                                   -->
+    <!-- ============================================================ -->
+    <article class="ds-section bg-white border border-slate-200/70 rounded-2xl p-6 shadow-[0_4px_12px_rgba(15,23,42,0.05)] mb-8">
+      <header class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">4. Table Row</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Listados densos de datos (productos, ventas, kardex…)</p>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] font-semibold">
+          <button (click)="pick('tableRow', 'A')" class="choice-btn">A</button>
+          <button (click)="pick('tableRow', 'B')" class="choice-btn">B</button>
+          <button (click)="pick('tableRow', 'C')" class="choice-btn">C</button>
+        </div>
+      </header>
+      <div class="grid grid-cols-3 gap-4">
+        @for (variant of ['A', 'B', 'C']; track variant) {
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">Variant {{ variant }}</div>
+          <div class="border border-slate-200 rounded-lg overflow-hidden">
+            <div [class]="variant === 'A' ? tableHeader.A : (variant === 'B' ? tableHeader.B : tableHeader.C)">Producto</div>
+            <div [class]="variant === 'A' ? tableRow.A : (variant === 'B' ? tableRow.B : tableRow.C)">
+              <div class="font-semibold">Cable HDMI 2m</div>
+              <div class="text-slate-500 text-[11px]">SKU: cb-001 · Stock: 24</div>
+            </div>
+            <div [class]="variant === 'A' ? tableRow.A : (variant === 'B' ? tableRow.B : tableRow.C)">
+              <div class="font-semibold">Adaptador USB-C</div>
+              <div class="text-slate-500 text-[11px]">SKU: cb-002 · Stock: 8</div>
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+    </article>
+
+    <!-- ============================================================ -->
+    <!-- 5. KPI CARD                                                -->
+    <!-- ============================================================ -->
+    <article class="ds-section bg-white border border-slate-200/70 rounded-2xl p-6 shadow-[0_4px_12px_rgba(15,23,42,0.05)] mb-8">
+      <header class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">5. KPI Card</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Tarjetas de métricas (dashboard, reportes, inventarios)</p>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] font-semibold">
+          <button (click)="pick('kpiCard', 'A')" class="choice-btn">A</button>
+          <button (click)="pick('kpiCard', 'B')" class="choice-btn">B</button>
+          <button (click)="pick('kpiCard', 'C')" class="choice-btn">C</button>
+        </div>
+      </header>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">A · Metric tile</div>
+          <div [class]="kpiCard.A">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Productos</div>
+            <div class="text-2xl font-bold text-slate-900 tabular-nums mt-1">142</div>
+            <div class="mt-2 flex items-center gap-1.5 text-[11px] font-semibold">
+              <span class="text-emerald-600">↑ 12.4%</span>
+              <span class="text-slate-400">vs mes anterior</span>
+            </div>
+          </div>
+        </div>
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">B · Sparkline</div>
+          <div [class]="kpiCard.B">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Ventas Hoy</div>
+                <div class="text-2xl font-bold text-slate-900 tabular-nums mt-1">S/ 4,520</div>
+              </div>
+              <svg width="64" height="32" viewBox="0 0 64 32" class="shrink-0 ml-3">
+                <polyline points="0,28 8,22 16,24 24,16 32,18 40,10 48,12 56,6 64,8"
+                  fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">C · Comparison</div>
+          <div [class]="kpiCard.C">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Stock Bajo</div>
+            <div class="flex items-baseline gap-2 mt-1">
+              <div class="text-2xl font-bold text-slate-900 tabular-nums">8</div>
+              <div class="text-[11px] font-semibold text-rose-600">+3 desde ayer</div>
+            </div>
+            <div class="mt-2 h-1 bg-rose-100 rounded-full overflow-hidden">
+              <div class="h-full bg-rose-500" style="width: 24%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============================================================ -->
+    <!-- 6. MODAL                                                   -->
+    <!-- ============================================================ -->
+    <article class="ds-section bg-white border border-slate-200/70 rounded-2xl p-6 shadow-[0_4px_12px_rgba(15,23,42,0.05)] mb-8">
+      <header class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">6. Modal</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Confirmaciones, formularios, detalles</p>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] font-semibold">
+          <button (click)="pick('modal', 'A')" class="choice-btn">A</button>
+          <button (click)="pick('modal', 'B')" class="choice-btn">B</button>
+          <button (click)="pick('modal', 'C')" class="choice-btn">C</button>
+        </div>
+      </header>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">A · Centered compact</div>
+          <div class="bg-slate-200/40 rounded-xl p-6 flex items-center justify-center min-h-[140px]">
+            <div [class]="modal.A">
+              <div class="text-sm font-bold text-slate-900 mb-1">¿Confirmar?</div>
+              <div class="text-xs text-slate-600 mb-3">Acción irreversible</div>
+              <div class="flex gap-2 justify-end">
+                <button class="text-xs text-slate-600 hover:text-slate-900">Cancelar</button>
+                <button [class]="btnPrimary.B">Aceptar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">B · Side drawer</div>
+          <div class="bg-slate-200/40 rounded-xl p-4 flex justify-end min-h-[140px]">
+            <div [class]="modal.B">
+              <div class="text-sm font-bold text-slate-900 mb-2">Editar producto</div>
+              <div class="space-y-2 text-xs">
+                <div>Nombre: <span class="font-mono">Cable HDMI</span></div>
+                <div>Stock: <span class="font-mono">24</span></div>
+              </div>
+              <button [class]="btnPrimary.B" class="mt-3">Guardar</button>
+            </div>
+          </div>
+        </div>
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">C · Full-screen sheet</div>
+          <div class="bg-slate-200/40 rounded-xl p-6 flex items-center justify-center min-h-[140px]">
+            <div [class]="modal.C" class="w-full">
+              <div class="text-sm font-bold text-slate-900 mb-2">Nuevo producto</div>
+              <div class="text-xs text-slate-600 space-y-1">
+                <div>SKU</div>
+                <div>Nombre</div>
+                <div>Categoría</div>
+                <div>Precio</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============================================================ -->
+    <!-- 7. BADGE / CHIP                                             -->
+    <!-- ============================================================ -->
+    <article class="ds-section bg-white border border-slate-200/70 rounded-2xl p-6 shadow-[0_4px_12px_rgba(15,23,42,0.05)] mb-8">
+      <header class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">7. Badge / Chip</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Estados (Activo, Pendiente, Pagado…), categorías, tags</p>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] font-semibold">
+          <button (click)="pick('badge', 'A')" class="choice-btn">A</button>
+          <button (click)="pick('badge', 'B')" class="choice-btn">B</button>
+          <button (click)="pick('badge', 'C')" class="choice-btn">C</button>
+        </div>
+      </header>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">A · Subtle pill</div>
+          <div class="flex flex-wrap gap-2 items-center">
+            <span [class]="badge.A + ' ' + badgeSuccess">Activo</span>
+            <span [class]="badge.A + ' ' + badgeDanger">Inactivo</span>
+            <span [class]="badge.A + ' ' + badgeInfo">Nuevo</span>
+            <span [class]="badge.A + ' ' + badgeWarning">Pendiente</span>
+          </div>
+          <p class="mt-3 text-[10px] text-slate-400">bg-emerald-50 · text-emerald-700 · ring-inset</p>
+        </div>
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">B · Colored status</div>
+          <div class="flex flex-wrap gap-2 items-center">
+            <span [class]="badge.B + ' ' + badgeSuccess">Activo</span>
+            <span [class]="badge.B + ' ' + badgeDanger">Inactivo</span>
+            <span [class]="badge.B + ' ' + badgeInfo">Nuevo</span>
+            <span [class]="badge.B + ' ' + badgeWarning">Pendiente</span>
+          </div>
+          <p class="mt-3 text-[10px] text-slate-400">ring-1 · text-[11px] · tracking-wider</p>
+        </div>
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">C · Dot indicator</div>
+          <div class="flex flex-col gap-2">
+            <span [class]="badge.C + ' ' + badgeSuccess"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Activo</span>
+            <span [class]="badge.C + ' ' + badgeDanger"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Inactivo</span>
+            <span [class]="badge.C + ' ' + badgeInfo"><span class="w-1.5 h-1.5 rounded-full bg-violet-500"></span> Nuevo</span>
+            <span [class]="badge.C + ' ' + badgeWarning"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pendiente</span>
+          </div>
+          <p class="mt-3 text-[10px] text-slate-400">w-1.5 h-1.5 · rounded-full · bg-emerald-500</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============================================================ -->
+    <!-- 8. ICON-ONLY BUTTON                                         -->
+    <!-- ============================================================ -->
+    <article class="ds-section bg-white border border-slate-200/70 rounded-2xl p-6 shadow-[0_4px_12px_rgba(15,23,42,0.05)] mb-8">
+      <header class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">8. Icon-only Button</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Acciones de fila (editar, eliminar, ver detalles)</p>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] font-semibold">
+          <button (click)="pick('iconButton', 'A')" class="choice-btn">A</button>
+          <button (click)="pick('iconButton', 'B')" class="choice-btn">B</button>
+          <button (click)="pick('iconButton', 'C')" class="choice-btn">C</button>
+        </div>
+      </header>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">A · Square hover</div>
+          <div class="flex gap-2 justify-center py-6">
+            <button [class]="iconButton.A" aria-label="Edit">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button [class]="iconButton.A" aria-label="Delete">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+          <p class="mt-2 text-[10px] text-slate-400">w-8 h-8 · rounded-md</p>
+        </div>
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">B · Round hover</div>
+          <div class="flex gap-2 justify-center py-6">
+            <button [class]="iconButton.B" aria-label="Edit">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button [class]="iconButton.B" aria-label="Delete">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+          <p class="mt-2 text-[10px] text-slate-400">w-8 h-8 · rounded-full · hover blue-50</p>
+        </div>
+        <div class="ds-cell">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">C · Ghost minimal</div>
+          <div class="flex gap-2 justify-center py-6">
+            <button [class]="iconButton.C" aria-label="Edit">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button [class]="iconButton.C" aria-label="Delete">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+          <p class="mt-2 text-[10px] text-slate-400">w-7 h-7 · text-color only</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- Summary -->
+    <aside class="bg-blue-50 border border-blue-200/60 rounded-2xl p-6">
+      <h3 class="text-sm font-bold text-blue-900 mb-2">Próximo paso</h3>
+      <p class="text-xs text-blue-800 leading-relaxed">
+        Cuando termines de elegir, decime "primary=A, secondary=B, …" (o "default B para todos").
+        Extraigo las 8 primitives elegidas a <code class="font-mono text-[11px] bg-white px-1 rounded">styles.css</code>,
+        reemplazo los consumers inline en los features, y vuelvo a mergear.
+      </p>
+    </aside>
+
+  </div>
+</section>

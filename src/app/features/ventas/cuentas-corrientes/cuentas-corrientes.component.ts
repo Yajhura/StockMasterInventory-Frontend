@@ -44,6 +44,10 @@ export class CuentasCorrientesComponent implements OnInit {
     cuotasVencenProximas: 0
   });
 
+  // Métodos de pago — cargados server-side via /api/metodos-pago
+  // (antes hardcoded; no reflejaba métodos agregados por el admin).
+  protected readonly metodosPago = signal<MetodoPago[]>([]);
+
   // Filtros (signal reactivo con debounce al backend)
   protected readonly filtros = signal<VentaFiltros>({
     desde: null,
@@ -60,11 +64,9 @@ export class CuentasCorrientesComponent implements OnInit {
     ...this.clientes().map(c => ({ value: c.id, label: c.nombre }))
   ]);
 
-  protected readonly opcionesEstadoPago: DropdownOption<EstadoPago | null>[] = [
-    { value: null, label: 'Todos los estados', sublabel: 'Sin filtro' },
-    { value: 'Pendiente', label: 'Pendiente' },
-    { value: 'Parcial', label: 'Parcial' }
-  ];
+  protected readonly opcionesMetodosPago = computed<DropdownOption[]>(() =>
+    this.metodosPago().map(m => ({ value: m.id, label: m.nombre }))
+  );
 
   // Las "deudas" ya vienen filtradas del backend (EstadoPago != 'Pagado' && !Eliminado).
   // No hace falta aplicar filtros client-side adicionales.
@@ -122,13 +124,6 @@ export class CuentasCorrientesComponent implements OnInit {
     }));
   });
 
-  protected readonly metodosPago = [
-    { id: 1, nombre: 'Efectivo' },
-    { id: 2, nombre: 'Transferencia Bancaria' },
-    { id: 3, nombre: 'Yape' },
-    { id: 4, nombre: 'Plin' }
-  ];
-
   protected formAbono = this.fb.group({
     monto: [0, [Validators.required, Validators.min(0.01)]],
     metodoPagoId: [1, Validators.required],
@@ -145,6 +140,16 @@ export class CuentasCorrientesComponent implements OnInit {
     this.cargarDeudas();
     this.cargarKpisCobranza();
     this.cargarClientes();
+    this.cargarMetodosPago();
+  }
+
+  protected cargarMetodosPago(): void {
+    this.apiVentas.listarMetodosPago().subscribe({
+      next: (res) => this.metodosPago.set(res),
+      error: () => {
+        // Si falla, dejamos el dropdown vacío (no spameamos al usuario).
+      }
+    });
   }
 
   private cargarDeudas() {

@@ -102,9 +102,11 @@ export class PuntoVentaComponent implements OnInit {
   // --- KPIs calculados sobre las ventas filtradas ---
   protected readonly kpis = computed<KpiVentas>(() => {
     const lista = this.ventas();
-    const totalVendido = lista.reduce((acc, v) => acc + (Number(v.montoTotal) || 0), 0);
+    // Acumulamos con redondeo a 2 decimales para evitar drift de floating-point
+    // (p.ej. 33.33 * 3 = 99.99000000000001 sin redondeo).
+    const totalVendido = lista.reduce((acc, v) => this.round2(acc + (Number(v.montoTotal) || 0)), 0);
     const cantidadVentas = lista.length;
-    const ticketPromedio = cantidadVentas > 0 ? totalVendido / cantidadVentas : 0;
+    const ticketPromedio = cantidadVentas > 0 ? this.round2(totalVendido / cantidadVentas) : 0;
     const ventasCreditoCount = lista.filter(v => v.esCredito).length;
     const ventasCreditoPorcentaje = cantidadVentas > 0
       ? Math.round((ventasCreditoCount / cantidadVentas) * 100)
@@ -157,7 +159,10 @@ export class PuntoVentaComponent implements OnInit {
     let total = 0;
     if (val && val.detalles) {
       for (const item of val.detalles) {
-        total += (Number(item.cantidad) || 0) * (Number(item.precioUnitario) || 0);
+        // Redondeo a 2 decimales en cada item para evitar drift acumulado
+        // (sin esto, 33.33 * 3 da 99.99000000000001).
+        const itemTotal = this.round2((Number(item.cantidad) || 0) * (Number(item.precioUnitario) || 0));
+        total = this.round2(total + itemTotal);
       }
     }
     return total;
@@ -181,7 +186,7 @@ export class PuntoVentaComponent implements OnInit {
   });
 
   protected readonly saldoPendiente = computed(() => {
-    return this.totalVenta() - this.totalPagado();
+    return this.round2(this.totalVenta() - this.totalPagado());
   });
 
   protected readonly pagoExcedido = computed(() => {
@@ -195,6 +200,10 @@ export class PuntoVentaComponent implements OnInit {
     if (this.esCredito()) return false;
     const val = this.formValue();
     if (!val || !val.pagos) return false;
+    // En ventas a crédito no se requiere pago inicial; el (único) row vacío
+    // que se auto-crea en ngOnInit (monto=0) sería "inválido" sin este guard.
+    // En contado, sí exigimos que cada pago tenga monto > 0.
+    if (this.esCredito()) return false;
     return val.pagos.some((p: any) => Number(p.monto) <= 0);
   });
 
@@ -215,6 +224,15 @@ export class PuntoVentaComponent implements OnInit {
     const id = this.formValue()?.clienteId;
     if (id == null) return null;
     return this.clientes().find(c => c.id === Number(id)) ?? null;
+  });
+
+  // --- Computed: deuda actual del cliente seleccionado ---
+  protected readonly saldoActualCliente = computed<number>(() => {
+    const cli = this.clienteSeleccionado();
+    if (!cli) return 0;
+    return this.ventas()
+      .filter(v => v.clienteId === cli.id && v.estadoPago !== 'Pagado')
+      .reduce((acc, v) => this.round2(acc + (Number(v.saldoPendiente) || 0)), 0);
   });
 
   /** Redondeo a 2 decimales — evita drift acumulado de floating-point

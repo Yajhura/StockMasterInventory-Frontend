@@ -271,8 +271,8 @@
           <div>
             <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Método de pago *</label>
             <select formControlName="metodoPagoId" class="w-full px-3 py-2.5 bg-white border-2 border-slate-400 rounded-md text-sm text-slate-900 hover:border-slate-600 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20 transition-all">
-              @for (m of metodosPago; track m.id) {
-                <option [value]="m.id">{{ m.nombre }}</option>
+              @for (m of opcionesMetodosPago(); track m.value) {
+                <option [value]="m.value">{{ m.label }}</option>
               }
             </select>
           </div>
@@ -515,7 +515,7 @@
           </button>
           @if (d.saldoPendiente > 0) {
             <button type="button" (click)="abrirAbonoDesdeDetalle(d)"
-              class="flex-1 py-2.5 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-sm">
+              class="btn-primary flex-1">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
               Registrar Abono
             </button>
