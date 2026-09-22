@@ -47,11 +47,11 @@ Mode: unknown. Source and test runner will be verified by the delegated implemen
   Checks: focused backend cancellation tests.
   Evidence: implemented in backend commit `ba981f7b98372d31be693f0e17833b9ef7fe4eea`. Cancellation now reverses every persisted allocation in the same transaction, restores each affected installment's paid/pending amount, status and payment date, restores the bounded sale balance/payment state, and soft-deletes the payment as `Anulado`. Real SQL Server integration tests cover a payment spanning complete and partial installments, an allocated initial payment, duplicate cancellation, and the sale-cancellation rule requiring active payments to be cancelled first. `dotnet test StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --filter "FullyQualifiedName~AbonoCancellationTests"` passed (3/3); the related cancellation/credit suite passed (7/7). The candidate-caused KPI failure was corrected in `TestDataBuilder.NewVentaAsync`: direct-seeded cuotas now initialize `MontoPagado = 0m` and `MontoPendiente = montoCuota`, matching production. With Docker available, `dotnet test StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --filter "FullyQualifiedName~KpisCobranzaTests.Kpis_returns_deudaTotal_clientesConDeuda_deudaVencida_cuotasVencenProximas"` passed (1/1), and `dotnet test StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --no-build` passed (42/42).
 
-- [ ] CPA-04 — Reconcile frontend payment/sale cancellation API contracts and refresh relevant screens after a successful cancellation; add focused tests.
+- [x] CPA-04 — Reconcile frontend payment/sale cancellation API contracts and refresh relevant screens after a successful cancellation; add focused tests.
   Route: delegated — multiple non-trivial frontend files and depends on CPA-03.
   Acceptance: frontend uses the finalized backend cancellation contract and reflects recalculated sale/debt state.
   Checks: focused frontend tests.
-  Evidence: pending.
+  Evidence: added `POST /api/ventas/{ventaId}/abonos/{abonoId}/anular` and `POST /api/ventas/{ventaId}/anular` service contracts, payment and sale cancellation confirmations, backend-error feedback, and successful cancellation refreshes for current accounts, collection KPIs, and payment history. Focused API/component tests passed (8 specs); `npm test` passed (51 specs); `npm run build` passed. The production build retained the pre-existing ExcelJS CommonJS optimization warning.
 
 ## Delivery strategy
 
@@ -59,4 +59,4 @@ Mode: unknown. Source and test runner will be verified by the delegated implemen
 
 ## Progress
 
-CPA-01, CPA-02, and CPA-03 completed and verified. The CPA-02 fixture correction restored the CPA-03-associated KPI suite to 42/42 passing. Next: CPA-04.
+CPA-01 through CPA-04 are completed and verified. The CPA-02 fixture correction restored the CPA-03-associated KPI suite to 42/42 passing.

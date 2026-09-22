@@ -28,6 +28,10 @@ export interface Abono {
   metodoPagoId: number;
   metodoPagoNombre: string | null;
   observacion: string | null;
+  /** 'Pagado' (vigente) o 'Anulado' (soft-cancel). Anular mueve a 'Anulado' y revierte el impacto en saldo/cuota. */
+  estado: string;
+  /** Cuándo fue anulado. null si sigue vigente. */
+  eliminadoEn: string | null;
 }
 
 export interface Cuota {
