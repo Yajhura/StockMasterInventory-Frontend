@@ -5,8 +5,8 @@
  *   - `crearProducto` / `actualizarProducto` / `eliminarProducto` /
  *     `restaurarProducto` / `registrarMovimiento` MUST bump
  *     `productosRev` on success (REQ-DECOMP-002).
- *   - `actualizarMovimiento` / `eliminarMovimiento` MUST NOT bump
- *     `productosRev`.
+ *   - `actualizarMovimiento` / `eliminarMovimiento` refresh product-derived
+ *     state and bump `productosRev`.
  *   - The `productosRev` bump is the signal that drives `KpisState`'s
  *     ctor effect to refetch the server aggregate KPIs.
  *
@@ -27,6 +27,7 @@ import {
   Producto,
   CrearProductoPayload,
   ActualizarProductoPayload,
+  ActualizarMovimientoPayload,
   RegistrarMovimientoPayload,
   ProductoSelectorItem,
 } from '../models/inventario.models';
@@ -240,22 +241,35 @@ describe('ProductosState', () => {
       expect(productos.productosRev()).toBe(revBefore + 1);
     });
 
-    it('actualizarMovimiento does NOT bump productosRev', async () => {
+    it('actualizarMovimiento refreshes product state and bumps productosRev', async () => {
       apiMovimientos.actualizar.and.returnValue(of(SAMPLE_MOVIMIENTO));
       const revBefore = productos.productosRev();
+      const payload: ActualizarMovimientoPayload = {
+        tipoMovimientoId: 1,
+        cantidad: 3,
+        precioUnitario: 10,
+        observacion: 'Corrected count',
+      };
 
-      await productos.actualizarMovimiento(7, { cantidad: 3 });
+      await productos.actualizarMovimiento(7, payload);
 
-      expect(productos.productosRev()).toBe(revBefore);
+      expect(apiMovimientos.actualizar).toHaveBeenCalledWith(7, payload);
+      expect(apiProductos.listar).toHaveBeenCalled();
+      expect(apiProductos.selector).toHaveBeenCalledWith(undefined, 500);
+      expect(apiProductos.buscar).toHaveBeenCalled();
+      expect(productos.productosRev()).toBe(revBefore + 1);
     });
 
-    it('eliminarMovimiento does NOT bump productosRev', async () => {
+    it('eliminarMovimiento refreshes product state and bumps productosRev', async () => {
       apiMovimientos.eliminar.and.returnValue(of(undefined));
       const revBefore = productos.productosRev();
 
       await productos.eliminarMovimiento(7);
 
-      expect(productos.productosRev()).toBe(revBefore);
+      expect(apiProductos.listar).toHaveBeenCalled();
+      expect(apiProductos.selector).toHaveBeenCalledWith(undefined, 500);
+      expect(apiProductos.buscar).toHaveBeenCalled();
+      expect(productos.productosRev()).toBe(revBefore + 1);
     });
   });
 
