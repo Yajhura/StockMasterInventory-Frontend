@@ -106,6 +106,11 @@ export class KardexPageComponent implements OnInit {
     { value: 2, label: 'Solo Salidas', badge: 'Salida', badgeClass: 'bg-rose-50 text-rose-700' },
   ]);
 
+  protected readonly opcionesUsuarios = computed<DropdownOption<number | null>[]>(() => [
+    { value: null, label: 'Todos los usuarios' },
+    ...this.usuarios().map((u) => ({ value: u.id, label: u.nombreCompleto })),
+  ]);
+
   // Filtros (solo se ejecutan al hacer clic en 'Buscar' o dar Enter)
   protected busqueda = '';
   protected clienteFiltro = '';
@@ -121,6 +126,7 @@ export class KardexPageComponent implements OnInit {
   protected readonly kardexPage = signal<number>(1);
   protected readonly kardexPageSize = signal<number>(10);
   protected readonly kardexTotalPages = signal<number>(0);
+  private requestSequence = 0;
 
   // Modal de Observaciones
   protected readonly observacionModal = signal<string | null>(null);
@@ -164,6 +170,7 @@ export class KardexPageComponent implements OnInit {
   }
 
   protected async recargarKardex(): Promise<void> {
+    const requestId = ++this.requestSequence;
     this.cargando.set(true);
     try {
       const params: ListarMovimientosParams = {
@@ -198,11 +205,15 @@ export class KardexPageComponent implements OnInit {
       if (this.busqueda.trim()) params.q = this.busqueda.trim();
 
       const r: PaginatedResponse<Movimiento> = await this.kardexState.listarMovimientos(params);
-      this.kardex.set(r.items);
-      this.totalMovimientos.set(r.totalItems);
-      this.kardexTotalPages.set(r.totalPages);
+      if (requestId === this.requestSequence) {
+        this.kardex.set(r.items);
+        this.totalMovimientos.set(r.totalItems);
+        this.kardexTotalPages.set(r.totalPages);
+      }
     } finally {
-      this.cargando.set(false);
+      if (requestId === this.requestSequence) {
+        this.cargando.set(false);
+      }
     }
   }
 
