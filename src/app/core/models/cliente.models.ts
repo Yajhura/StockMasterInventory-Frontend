@@ -12,7 +12,6 @@ export interface Cliente {
   telefono: string | null;
   email: string | null;
   direccion: string | null;
-  limiteCredito: number | null;
   tipoDocumentoId: number;
   tipoDocumentoNombre: string;
   creadoEn: string;
@@ -25,7 +24,6 @@ export interface CrearClientePayload {
   telefono?: string;
   email?: string;
   direccion?: string;
-  limiteCredito?: number;
   tipoDocumentoId?: number;
 }
 

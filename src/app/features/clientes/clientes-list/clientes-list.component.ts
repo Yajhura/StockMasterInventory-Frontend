@@ -96,10 +96,6 @@ export class ClientesListComponent implements OnInit, OnDestroy {
     email: [''],
     tipoDocumentoId: [3 as number | null, Validators.required],
     direccion: [''],
-    limiteCredito: [
-      null as number | null,
-      [Validators.min(0)],
-    ],
   });
 
   // --- Debounce para recarga cuando cambian filtros ---
@@ -211,7 +207,6 @@ export class ClientesListComponent implements OnInit, OnDestroy {
       email: '',
       tipoDocumentoId: this.tiposDocumento()[0]?.id ?? 3,
       direccion: '',
-      limiteCredito: null,
     });
     this.modalAbierto.set(true);
   }
@@ -226,7 +221,6 @@ export class ClientesListComponent implements OnInit, OnDestroy {
       email: cliente.email ?? '',
       tipoDocumentoId: cliente.tipoDocumentoId,
       direccion: cliente.direccion ?? '',
-      limiteCredito: cliente.limiteCredito,
     });
     this.modalAbierto.set(true);
   }
@@ -256,7 +250,6 @@ export class ClientesListComponent implements OnInit, OnDestroy {
       email: val.email?.trim() || undefined,
       tipoDocumentoId: val.tipoDocumentoId ?? undefined,
       direccion: val.direccion?.trim() || undefined,
-      limiteCredito: val.limiteCredito ?? undefined,
     };
 
     const editando = this.clienteEnEdicion();

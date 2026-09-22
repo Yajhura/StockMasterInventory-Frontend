@@ -71,10 +71,16 @@ Mode: unknown. Source and test runner will be verified by the delegated implemen
   Checks: focused and full frontend/backend suites.
   Evidence: the POS resets initial-payment amount, method, and frequency when it closes; it exposes the active payment-method selector only when an initial payment exists and uses that choice in the request. Credit-limit feedback now consistently names the financed balance. Current accounts exposes Pending/Partial state filtering and forwards it to `/deudas`. The backend filters debts by `estadoPago`, evaluates credit limits against `saldo` after the initial payment, rejects zero/negative quantities, zero/negative prices, zero/negative/over-total payments, aggregate insufficient stock, and nonexistent/inactive payment methods; subsequent payment registration also validates an active method. Focused frontend tests passed (19 specs); `npm test` passed (59 specs); `npm run build` passed with the pre-existing ExcelJS CommonJS optimization warning. Backend CPA-07 integration coverage passed (5/5), and the full isolated backend suite passed (46/46). The normal backend test build remains blocked by a pre-existing running `StockMaster.Api` process locking `bin/Debug/net10.0/StockMaster.Api.exe`; the isolated output build passed with the existing 23 warnings.
 
+- [x] CPA-08 — Remove credit limit and harden client lifecycle.
+  Route: delegated — cross-repository contract, schema, validation, UI, and test changes.
+  Acceptance: no credit-limit field/rule remains; inactive/missing clients cannot be used in sales; clients with sales cannot be deleted.
+  Checks: focused and full frontend/backend suites.
+  Evidence: removed `limiteCredito` from client forms, models, POS feedback, and sale blocking in the frontend; focused POS tests passed (5 specs), `npm test` passed (59 specs), and `npm run build` passed with the pre-existing ExcelJS CommonJS optimization warning. Backend commit `96d02a3` removes the entity/DTO/configuration/rule, adds `20260921223000_RemoveClienteCreditLimit`, validates missing or soft-deleted customers before cash and credit sales, and rejects client deletion when any sale exists. Focused backend integration tests passed (7/7) and the full isolated backend suite passed (48/48); it used an isolated output because the running API locks the normal Debug binaries.
+
 ## Delivery strategy
 
 `ask-on-risk`. Keep frontend and backend commits as separate work units because they are independent Git repositories.
 
 ## Progress
 
-CPA-01 through CPA-07 are completed and verified.
+CPA-01 through CPA-08 are completed and verified.

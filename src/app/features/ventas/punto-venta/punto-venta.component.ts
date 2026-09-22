@@ -253,14 +253,6 @@ export class PuntoVentaComponent implements OnInit {
   // Effect definido en el constructor abajo (necesita `inject()` despues del field init).
 
 
-  // --- Computed: excede limite de credito? ---
-  protected readonly excedeLimiteCredito = computed<boolean>(() => {
-    if (!this.esCredito()) return false;
-    const cli = this.clienteSeleccionado();
-    if (!cli || cli.limiteCredito == null) return false;
-    return (this.saldoActualCliente() + this.saldoPendiente()) > cli.limiteCredito;
-  });
-
   // --- Validacion: cantidad de cuotas invalida ---
   protected readonly cantidadCuotasInvalida = computed<boolean>(() => {
     if (!this.esCredito()) return false;
@@ -570,13 +562,6 @@ export class PuntoVentaComponent implements OnInit {
       }
       if (this.totalPagado() >= this.totalVenta()) {
         this.notify.error('Una venta a crédito debe tener saldo pendiente mayor a 0. Use una venta normal si va a cobrar el total.');
-        return;
-      }
-      if (this.excedeLimiteCredito()) {
-        const cli = this.clienteSeleccionado();
-        this.notify.error(
-          `El cliente supera su límite de crédito. Deuda actual: S/ ${this.saldoActualCliente().toFixed(2)}, saldo financiado: S/ ${this.saldoPendiente().toFixed(2)}, límite: S/ ${(cli?.limiteCredito ?? 0).toFixed(2)}.`
-        );
         return;
       }
     }
