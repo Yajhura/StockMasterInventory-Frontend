@@ -17,7 +17,7 @@ Correct critical inventory listing and stock consistency defects before further 
   Route: delegated — backend endpoint, transaction, stock invariants, and tests span multiple non-trivial files.
   Acceptance: trash excludes active products; initial stock edits cannot make current stock negative; failed initial-movement persistence leaves no partial product/stock state.
   Checks: focused and full backend test suites.
-  Evidence: backend commit pending; focused and full Docker-backed integration suites passed.
+  Evidence: backend commit `f57436d`; focused and full Docker-backed integration suites passed.
 
 ## Delivery
 
