@@ -35,17 +35,17 @@ Mode: unknown. Source and test runner will be verified by the delegated implemen
   Checks: focused frontend tests and build/type check if available.
   Evidence: `npm test -- --include="src/app/core/api/api-ventas.service.spec.ts" --include="src/app/features/ventas/punto-venta/punto-venta.component.spec.ts"` passed (6 specs); `npm test` passed (46 specs); `npm run build` passed. The production build retained the pre-existing ExcelJS CommonJS optimization warning.
 
-- [ ] CPA-02 — Add persistent payment-to-installment allocation and installment paid/pending amounts in the backend, including migration and tests.
+- [x] CPA-02 — Add persistent payment-to-installment allocation and installment paid/pending amounts in the backend, including migration and tests.
   Route: delegated — multiple non-trivial backend domain, endpoint, persistence, migration, and test files.
   Acceptance: a S/400 three-installment sale accepts payments S/150, S/200, and S/50 with FIFO partial allocation and no overpayment.
   Checks: focused backend tests.
-  Evidence: pending.
+  Evidence: implemented in backend commit `662789600b8c4567cabf1b1fe4fa1f4a224f9e9b`. It introduces `AbonosCuotas`, decimal `MontoPagado`/`MontoPendiente`, FIFO allocation for initial and subsequent payments, DTO fields, and a real integration scenario covering S/150 + S/200 + S/50, partial allocations, final `Pagado`, and overpayment rejection. `dotnet build StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --no-restore` passed (23 pre-existing/package warnings). After Docker Desktop was started, `dotnet test StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --no-build --filter "FullyQualifiedName~VentaCreditoTests"` passed (2/2). `dotnet ef migrations script --idempotent` generated and was inspected for the allocation table and paid/pending migration SQL. Follow-up correction: `TestDataBuilder.NewVentaAsync` now initializes direct-seeded cuotas with `MontoPagado = 0m` and `MontoPendiente = montoCuota`, matching production.
 
-- [ ] CPA-03 — Make payment and sale cancellation reverse all affected allocations, installments, balances, and payment state; add regression tests.
+- [x] CPA-03 — Make payment and sale cancellation reverse all affected allocations, installments, balances, and payment state; add regression tests.
   Route: delegated — multiple non-trivial backend files with financial correctness risk.
   Acceptance: cancelling an allocation-spanning payment restores every affected installment and makes the payment eligible only for its prior active lifecycle rules.
   Checks: focused backend cancellation tests.
-  Evidence: pending.
+  Evidence: implemented in backend commit `ba981f7b98372d31be693f0e17833b9ef7fe4eea`. Cancellation now reverses every persisted allocation in the same transaction, restores each affected installment's paid/pending amount, status and payment date, restores the bounded sale balance/payment state, and soft-deletes the payment as `Anulado`. Real SQL Server integration tests cover a payment spanning complete and partial installments, an allocated initial payment, duplicate cancellation, and the sale-cancellation rule requiring active payments to be cancelled first. `dotnet test StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --filter "FullyQualifiedName~AbonoCancellationTests"` passed (3/3); the related cancellation/credit suite passed (7/7). The candidate-caused KPI failure was corrected in `TestDataBuilder.NewVentaAsync`: direct-seeded cuotas now initialize `MontoPagado = 0m` and `MontoPendiente = montoCuota`, matching production. With Docker available, `dotnet test StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --filter "FullyQualifiedName~KpisCobranzaTests.Kpis_returns_deudaTotal_clientesConDeuda_deudaVencida_cuotasVencenProximas"` passed (1/1), and `dotnet test StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --no-build` passed (42/42).
 
 - [ ] CPA-04 — Reconcile frontend payment/sale cancellation API contracts and refresh relevant screens after a successful cancellation; add focused tests.
   Route: delegated — multiple non-trivial frontend files and depends on CPA-03.
@@ -59,4 +59,4 @@ Mode: unknown. Source and test runner will be verified by the delegated implemen
 
 ## Progress
 
-CPA-01 completed and verified. Next: CPA-02.
+CPA-01, CPA-02, and CPA-03 completed and verified. The CPA-02 fixture correction restored the CPA-03-associated KPI suite to 42/42 passing. Next: CPA-04.
