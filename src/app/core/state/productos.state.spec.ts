@@ -170,6 +170,21 @@ describe('ProductosState', () => {
     });
   });
 
+  describe('buscarSelectorProductos', () => {
+    it('uses the remote selector search and keeps its results', async () => {
+      const match: ProductoSelectorItem = {
+        id: 501, nombre: 'Remote match', codigoBarra: 'cb-501',
+        stockActual: 5, stockMinimo: 1, precioVentaSugerido: 20,
+      };
+      apiProductos.selector.and.returnValue(of([match]));
+
+      await productos.buscarSelectorProductos('Remote');
+
+      expect(apiProductos.selector).toHaveBeenCalledWith('Remote', 100);
+      expect(productos.productosSelector()).toEqual([match]);
+    });
+  });
+
   describe('productosRev bumping (REQ-DECOMP-002)', () => {
     it('crearProducto bumps productosRev after success', async () => {
       apiProductos.crear.and.returnValue(of(SAMPLE_PRODUCTO));

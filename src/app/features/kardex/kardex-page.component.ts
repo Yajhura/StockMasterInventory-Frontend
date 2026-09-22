@@ -355,6 +355,10 @@ export class KardexPageComponent implements OnInit {
     return u?.nombreCompleto ?? `Usuario #${id}`;
   }
 
+  protected buscarProductosRemotamente(query: string): void {
+    void this.productosState.buscarSelectorProductos(query);
+  }
+
   protected async exportarExcel(): Promise<void> {
     this.cargando.set(true);
     try {

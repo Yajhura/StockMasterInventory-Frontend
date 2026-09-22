@@ -46,8 +46,8 @@ export interface Producto {
   id: number;
   nombre: string;
   codigoBarra: string | null;
-  categoriaId: number;
-  marcaId: number;
+  categoriaId: number | null;
+  marcaId: number | null;
   stockActual: number;
   stockMinimo: number;
   precioVentaSugerido: number;
@@ -165,8 +165,8 @@ export interface ProductoListItem {
   id: number;
   nombre: string;
   codigoBarra: string | null;
-  categoriaId: number;
-  marcaId: number;
+  categoriaId: number | null;
+  marcaId: number | null;
   stockActual: number;
   stockMinimo: number;
   precioVentaSugerido: number;

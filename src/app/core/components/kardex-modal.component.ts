@@ -30,14 +30,6 @@ import { TABLA_COMPONENTS } from './tabla.component';
           <div class="flex items-center gap-2 flex-shrink-0">
             <button
               type="button"
-              class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors shadow-sm"
-              (click)="exportarExcel()"
-            >
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-              Exportar Excel
-            </button>
-            <button
-              type="button"
               class="grid place-items-center w-9 h-9 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
               (click)="cerrar()"
               aria-label="Cerrar modal de Kardex"

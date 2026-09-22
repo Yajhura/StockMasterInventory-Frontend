@@ -57,6 +57,7 @@ export class ProductosState {
    */
   private readonly _productosSelector = signal<ProductoSelectorItem[]>([]);
   private cargandoSelector = false;
+  private selectorSearchRequest = 0;
 
   /** Lista paginada ligera para el dashboard (ProductoListItem). */
   private readonly _productosPaginados = signal<ProductoListItem[]>([]);
@@ -132,6 +133,17 @@ export class ProductosState {
       this.shell.error.set(this.toMessage(e));
     } finally {
       this.cargandoSelector = false;
+    }
+  }
+
+  /** Searches remotely so products outside the initial selector page remain selectable. */
+  async buscarSelectorProductos(query: string): Promise<void> {
+    const request = ++this.selectorSearchRequest;
+    try {
+      const data = await firstValueFrom(this.apiProductos.selector(query, 100));
+      if (request === this.selectorSearchRequest) this._productosSelector.set(data);
+    } catch (e: unknown) {
+      if (request === this.selectorSearchRequest) this.shell.error.set(this.toMessage(e));
     }
   }
 

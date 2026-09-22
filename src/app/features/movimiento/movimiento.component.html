@@ -18,6 +18,7 @@
             placeholder="— Buscar producto —"
             [searchable]="true"
             (selectionChange)="onProductoSeleccionado($event)"
+            (searchChange)="buscarProductosRemotamente($event)"
           />
 
           @if (productoDelForm(); as p) {
