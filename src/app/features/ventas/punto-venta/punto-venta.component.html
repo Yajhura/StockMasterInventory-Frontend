@@ -352,7 +352,7 @@
                 </div>
 
                 <!-- Pago inicial (down-payment). Default 0 — el cliente no siempre da inicial. -->
-                <div class="mt-2.5">
+                 <div class="mt-2.5">
                   <div class="relative">
                     <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500 text-xs font-bold">S/</div>
                     <input type="number" min="0" step="0.01"
@@ -361,8 +361,20 @@
                       class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-md text-sm text-slate-900 font-bold tabular-nums focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900"
                       placeholder="0.00">
                   </div>
-                  <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-medium">Pago inicial (opcional, 0 si no hay)</p>
-                </div>
+                   <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-medium">Pago inicial (opcional, 0 si no hay)</p>
+                 </div>
+                 @if (pagoInicialCredito() > 0) {
+                   <div class="mt-2.5 relative z-[5]">
+                     <app-dropdown
+                       [options]="opcionesMetodosPago()"
+                       [ngModel]="metodoPagoInicialId()"
+                       [ngModelOptions]="{ standalone: true }"
+                       placeholder="Método de pago inicial"
+                       (selectionChange)="metodoPagoInicialId.set(+$any($event))"
+                     />
+                     <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-medium">Método de pago inicial</p>
+                   </div>
+                 }
                 @if (cantidadCuotasInvalida()) {
                   <p class="text-[11px] text-rose-600 mt-2 font-semibold">Ingresá un número entero entre 1 y 36.</p>
                 }

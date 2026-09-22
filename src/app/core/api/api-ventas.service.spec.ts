@@ -186,6 +186,14 @@ describe('ApiVentasService (REQ-TEST-004)', () => {
     req.flush([]);
   });
 
+  it('listar_deudas_sends_the_payment_status_filter', () => {
+    service.listarDeudas({ desde: null, hasta: null, clienteId: null, estadoPago: 'Parcial' }).subscribe();
+
+    const req = httpTesting.expectOne(`${API_VENTAS}/deudas?estadoPago=Parcial`);
+    expect(req.request.method).toBe('GET');
+    req.flush([]);
+  });
+
   it('post_anular_abono_uses_finalized_cancellation_contract', () => {
     service.anularAbono(99, 12).subscribe();
 

@@ -99,4 +99,26 @@ describe('PuntoVentaComponent credit sales', () => {
 
     expect((component as any).pagoInvalido()).toBeFalse();
   });
+
+  it('uses the selected active payment method for an initial payment', () => {
+    configureCreditSale(10);
+    (component as any).metodoPagoInicialId.set(4);
+
+    (component as any).procesarVenta();
+
+    expect(apiVentas.registrarVenta).toHaveBeenCalledWith(jasmine.objectContaining({
+      pagos: [{ monto: 10, metodoPagoId: 4 }],
+    }));
+  });
+
+  it('resets the initial payment and frequency when the POS closes', () => {
+    configureCreditSale(10);
+    const instance = component as any;
+
+    instance.cerrarPOS();
+
+    expect(instance.pagoInicialCredito()).toBe(0);
+    expect(instance.metodoPagoInicialId()).toBe(1);
+    expect(instance.frecuencia()).toBe('Mensual');
+  });
 });
