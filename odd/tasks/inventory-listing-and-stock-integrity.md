@@ -22,3 +22,8 @@ Correct critical inventory listing and stock consistency defects before further 
 ## Delivery
 
 `ask-on-risk`; commit as one backend work unit.
+- [x] INV-03 ? Align product contracts and resilient inventory controls.
+  Route: delegated ? frontend/backend API contract, filtering, selector, and UI changes.
+  Acceptance: nullable category/brand contracts align; selector can find products beyond 500; EAV values support commas; unsupported export action is removed.
+  Checks: focused and full frontend/backend suites.
+  Evidence: backend `1a45e43`; focused frontend (14) and backend (11) suites passed, plus full frontend (61) and backend (56) suites.

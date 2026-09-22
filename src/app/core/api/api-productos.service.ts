@@ -24,8 +24,8 @@ export class ApiProductosService {
   /**
    * Lista liviana para alimentar dropdowns (selector de producto en
    * "Registrar Movimiento"). Excluye imagen, atributos y productos
-   * eliminados. Filtro por texto aplicado en el cliente sobre el limite
-   * pedido (default 200).
+   * eliminados. When `q` is provided, filtering happens server-side before
+   * applying the limit so matches beyond the initial selector page are found.
    */
   selector(q?: string, limit = 200): Observable<ProductoSelectorItem[]> {
     let p = new HttpParams().set('limit', String(limit));
@@ -45,9 +45,7 @@ export class ApiProductosService {
     if (params.categoriaId === 'null') p = p.set('categoriaId', 'null');
     else if (typeof params.categoriaId === 'number') p = p.set('categoriaId', String(params.categoriaId));
     if (params.atributos?.length) {
-      const serialized = params.atributos
-        .map((a) => `${a.atributoId}:${a.valor}`)
-        .join(',');
+      const serialized = JSON.stringify(params.atributos);
       p = p.set('atributos', serialized);
     }
     if (params.sortBy)                p = p.set('sortBy', params.sortBy);
