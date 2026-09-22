@@ -341,7 +341,7 @@
                 </span>
               </header>
               <p class="text-[10px] text-slate-500 italic mb-2">
-                Las cuotas se marcan <strong>Pagadas</strong> al cubrirse completas. Los pagos parciales se aplican al saldo general.
+                Cada cuota muestra lo abonado y su saldo pendiente. Una cuota queda <strong>Parcial</strong> hasta cubrirse por completo.
               </p>
               @if (cronogramaConVencida().length > 0) {
                 <div class="border border-slate-200 rounded-xl overflow-hidden">
@@ -351,6 +351,8 @@
                         <th class="py-2 px-3 w-12 text-center">N°</th>
                         <th class="py-2 px-3">Vencimiento</th>
                         <th class="py-2 px-3 text-right">Monto</th>
+                        <th class="py-2 px-3 text-right">Pagado</th>
+                        <th class="py-2 px-3 text-right">Pendiente</th>
                         <th class="py-2 px-3 text-center">Estado</th>
                         <th class="py-2 px-3">Fecha Pago</th>
                       </tr>
@@ -360,12 +362,16 @@
                         <tr class="hover:bg-slate-50/50"
                           [ngClass]="{ 'bg-rose-50/40': c.vencida }">
                           <td class="py-2 px-3 text-center font-bold text-slate-700">{{ c.numero }}</td>
-                          <td class="py-2 px-3 text-slate-600 tabular-nums">{{ c.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
-                          <td class="py-2 px-3 text-right tabular-nums font-semibold text-slate-800">S/ {{ c.monto | number:'1.2-2' }}</td>
-                          <td class="py-2 px-3 text-center">
-                            @if (c.estado === 'Pagada') {
-                              <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/60">Pagada</span>
-                            } @else if (c.vencida) {
+                           <td class="py-2 px-3 text-slate-600 tabular-nums">{{ c.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
+                           <td class="py-2 px-3 text-right tabular-nums font-semibold text-slate-800">S/ {{ c.monto | number:'1.2-2' }}</td>
+                           <td class="py-2 px-3 text-right tabular-nums font-semibold text-emerald-700">S/ {{ c.montoPagado | number:'1.2-2' }}</td>
+                           <td class="py-2 px-3 text-right tabular-nums font-semibold text-rose-700">S/ {{ c.montoPendiente | number:'1.2-2' }}</td>
+                           <td class="py-2 px-3 text-center">
+                             @if (c.estado === 'Pagada') {
+                               <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/60">Pagada</span>
+                             } @else if (c.estado === 'Parcial') {
+                               <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200/60">Parcial</span>
+                             } @else if (c.vencida) {
                               <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200/60">Vencida</span>
                             } @else {
                               <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200/60">Pendiente</span>

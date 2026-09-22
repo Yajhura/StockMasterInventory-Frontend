@@ -38,10 +38,12 @@ export interface Cuota {
   id: number;
   numero: number;
   monto: number;
+  montoPagado: number;
+  montoPendiente: number;
   fechaVencimiento: string;
   fechaPago: string | null;
-  estado: string; // "Pendiente", "Pagada", "Vencida"
-  abonoId: number | null;
+  estado: string; // "Pendiente", "Parcial", "Pagada", "Vencida"
+  eliminadoEn: string | null;
 }
 
 export interface VentaDetallada extends Venta {

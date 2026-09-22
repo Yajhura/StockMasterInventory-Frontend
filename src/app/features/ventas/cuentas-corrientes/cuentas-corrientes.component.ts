@@ -88,7 +88,7 @@ export class CuentasCorrientesComponent implements OnInit {
     hoy.setHours(0, 0, 0, 0);
     return (d.cuotas ?? []).map(c => ({
       ...c,
-      vencida: c.estado === 'Pendiente' && new Date(c.fechaVencimiento) < hoy
+      vencida: c.montoPendiente > 0 && new Date(c.fechaVencimiento) < hoy
     }));
   });
 
