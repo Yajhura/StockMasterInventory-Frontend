@@ -10,7 +10,7 @@ Ensure report aggregates represent active sales and real customer attribution.
   Route: delegated — backend reporting SQL, contracts, and integration tests.
   Acceptance: POS sales appear in top customers; cancelled sales and soft-deleted movements do not affect financial/stock aggregates; audit trace remains intact.
   Checks: focused and full backend suites.
-  Evidence: backend commit `58153d6` (`fix(reports): preserve financial aggregate integrity`); `dotnet build StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --no-restore` passed. Focused and full Testcontainers suites are blocked locally because the Docker Desktop Linux daemon is unavailable.
+  Evidence: backend commit `58153d6` (`fix(reports): preserve financial aggregate integrity`); `dotnet build StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --no-restore` passed. After Docker Desktop was started, `dotnet test StockMaster.Api.Tests/StockMaster.Api.Tests.csproj --no-build` passed 68/68.
 
 ## Delivery
 
