@@ -38,6 +38,15 @@ export const routes: Routes = [
           import('./features/reportes/reportes.component').then((m) => m.ReportesComponent),
       },
       {
+        // WAC-03 — WAC-aware profitability grid. Sibling to /reportes
+        // (cash-basis view) so both pages stay reachable. Toggle the
+        // `reportesConWac` flag in environments to gate it later if
+        // we need a staged rollout.
+        path: 'reportes/rentabilidad-wac',
+        loadComponent: () =>
+          import('./features/reportes/wac/wac-rentabilidad-page.component').then((m) => m.WacRentabilidadPageComponent),
+      },
+      {
         path: 'catalogo',
         loadComponent: () =>
           import('./features/catalogo/catalogo.component').then((m) => m.CatalogoComponent),
