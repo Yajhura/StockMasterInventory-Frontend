@@ -68,6 +68,12 @@ export class CuentasCorrientesComponent implements OnInit {
     this.metodosPago().map(m => ({ value: m.id, label: m.nombre }))
   );
 
+  protected readonly opcionesEstadoPago: DropdownOption<EstadoPago | null>[] = [
+    { value: null, label: 'Todos los estados', sublabel: 'Sin filtro' },
+    { value: 'Pendiente', label: 'Pendiente' },
+    { value: 'Parcial', label: 'Parcial' },
+  ];
+
   // Las "deudas" ya vienen filtradas del backend (EstadoPago != 'Pagado' && !Eliminado).
   // No hace falta aplicar filtros client-side adicionales.
   protected readonly deudas = computed(() => this.ventas());
