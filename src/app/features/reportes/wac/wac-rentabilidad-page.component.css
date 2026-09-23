@@ -1,0 +1,24 @@
+/* WAC-03 frontend — extra rules on top of the global Tailwind design system. */
+
+/* Warning row (producto en cuarentena). Server still returns revenue / cogs;
+   the chip + amber ring surfaces the risk without hiding the numbers. */
+.wac-row-warning {
+  background-color: rgb(255 251 235 / 0.6); /* amber-50/60 */
+  box-shadow: inset 3px 0 0 0 rgb(245 158 11); /* amber-500 left rail */
+}
+
+/* Danger row (producto con costo faltante) — datos parciales, margen
+   posiblemente no representativo. */
+.wac-row-danger {
+  background-color: rgb(255 241 242 / 0.6); /* rose-50/60 */
+  box-shadow: inset 3px 0 0 0 rgb(244 63 94); /* rose-500 left rail */
+}
+
+.animate-fade-in {
+  animation: wacFadeIn 0.25s ease-out both;
+}
+
+@keyframes wacFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
