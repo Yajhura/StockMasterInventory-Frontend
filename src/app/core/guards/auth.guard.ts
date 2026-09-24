@@ -1,6 +1,7 @@
 import { CanActivateFn, Router } from '@angular/router';
 import { inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 /**
  * Protege rutas: si no hay sesion activa, redirige a /login.
@@ -34,4 +35,12 @@ export const adminGuard: CanActivateFn = () => {
   const auth   = inject(AuthService);
   const router = inject(Router);
   return auth.esAdmin() ? true : router.createUrlTree(['/']);
+};
+
+/**
+ * Controls access to the WAC profitability report during staged rollout.
+ */
+export const wacReportesGuard: CanActivateFn = () => {
+  const router = inject(Router);
+  return environment.reportesConWac ? true : router.createUrlTree(['/reportes']);
 };

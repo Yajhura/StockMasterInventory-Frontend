@@ -70,6 +70,26 @@ describe('PuntoVentaComponent credit sales', () => {
     fixture.detectChanges();
   }
 
+  function configureCashSale(payment: number): void {
+    const instance = component as any;
+    instance.clientes.set([client]);
+    instance.productos.set([{ id: 10, nombre: 'Product', codigoBarra: null, stockActual: 5, stockMinimo: 1, precioVentaSugerido: 100 }]);
+    instance.formVenta.patchValue({ clienteId: client.id });
+    instance.onProductoSeleccionado(10);
+    instance.pagosArray.at(0).patchValue({ monto: payment });
+    instance.abrirPOS();
+    fixture.detectChanges();
+  }
+
+  it('does not submit a cash sale with a partial payment', () => {
+    configureCashSale(50);
+
+    (component as any).procesarVenta();
+
+    expect(notification.error).toHaveBeenCalledWith('El pago debe ser exactamente igual al total de la venta');
+    expect(apiVentas.registrarVenta).not.toHaveBeenCalled();
+  });
+
   it('submits a credit sale with a down payment despite the zero payment placeholder', () => {
     configureCreditSale(10);
 
@@ -96,6 +116,18 @@ describe('PuntoVentaComponent credit sales', () => {
     configureCreditSale(0);
 
     expect((component as any).pagoInvalido()).toBeFalse();
+  });
+
+  it('submits a fully paid credit sale as its initial payment', () => {
+    configureCreditSale(100);
+
+    (component as any).procesarVenta();
+
+    expect(notification.error).not.toHaveBeenCalled();
+    expect(apiVentas.registrarVenta).toHaveBeenCalledWith(jasmine.objectContaining({
+      pagos: [{ monto: 100, metodoPagoId: 1 }],
+      cantidadCuotas: 3,
+    }));
   });
 
   it('uses the selected active payment method for an initial payment', () => {

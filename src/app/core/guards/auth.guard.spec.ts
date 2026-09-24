@@ -23,7 +23,7 @@ import { provideRouter, UrlTree } from '@angular/router';
 import { EnvironmentInjector, runInInjectionContext } from '@angular/core';
 
 import { AuthService } from '../services/auth.service';
-import { authGuard } from './auth.guard';
+import { authGuard, wacReportesGuard } from './auth.guard';
 import { Usuario } from '../models/inventario.models';
 import { environment } from '../../../environments/environment';
 
@@ -105,6 +105,46 @@ describe('authGuard (REQ-TEST-002)', () => {
     );
 
     // THEN: the guard allows navigation.
+    expect(result).toBeTrue();
+  });
+});
+
+describe('wacReportesGuard (WAC-GUARD-01)', () => {
+  let injector: EnvironmentInjector;
+  let originalReportesConWac: boolean;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter([])],
+    });
+    injector = TestBed.inject(EnvironmentInjector);
+    originalReportesConWac = environment.reportesConWac;
+  });
+
+  afterEach(() => {
+    environment.reportesConWac = originalReportesConWac;
+  });
+
+  it('redirects_direct_wac_route_to_reportes_when_disabled', () => {
+    environment.reportesConWac = false;
+
+    const result = runInInjectionContext(injector, () =>
+      wacReportesGuard({} as never, { url: '/reportes/rentabilidad-wac' } as never),
+    );
+
+    expect(result instanceof UrlTree).toBeTrue();
+    const urlTree = result as UrlTree;
+    const segments = urlTree.root.children['primary']?.segments ?? [];
+    expect(segments.map((segment) => segment.path)).toEqual(['reportes']);
+  });
+
+  it('allows_direct_wac_route_when_enabled', () => {
+    environment.reportesConWac = true;
+
+    const result = runInInjectionContext(injector, () =>
+      wacReportesGuard({} as never, { url: '/reportes/rentabilidad-wac' } as never),
+    );
+
     expect(result).toBeTrue();
   });
 });

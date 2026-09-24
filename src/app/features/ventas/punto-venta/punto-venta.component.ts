@@ -193,6 +193,10 @@ export class PuntoVentaComponent implements OnInit {
     return this.totalPagado() > this.totalVenta();
   });
 
+  protected readonly pagoIncompleto = computed(() => {
+    return !this.esCredito() && this.totalPagado() !== this.totalVenta();
+  });
+
   protected readonly pagoInvalido = computed(() => {
     // Credit uses the dedicated optional initial-payment signal. The form
     // keeps a zero-valued payment placeholder for when the user switches
@@ -545,6 +549,11 @@ export class PuntoVentaComponent implements OnInit {
       return;
     }
 
+    if (this.pagoIncompleto()) {
+      this.notify.error('El pago debe ser exactamente igual al total de la venta');
+      return;
+    }
+
     if (this.pagoInvalido()) {
       this.notify.error('Los montos de pago deben ser mayores a 0. Si es a crédito, no agregue pagos.');
       return;
@@ -558,10 +567,6 @@ export class PuntoVentaComponent implements OnInit {
     if (this.esCredito()) {
       if (this.cantidadCuotasInvalida()) {
         this.notify.error('Indique una cantidad de cuotas válida (1 a 36).');
-        return;
-      }
-      if (this.totalPagado() >= this.totalVenta()) {
-        this.notify.error('Una venta a crédito debe tener saldo pendiente mayor a 0. Use una venta normal si va a cobrar el total.');
         return;
       }
     }
