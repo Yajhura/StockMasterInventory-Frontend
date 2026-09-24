@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, publicOnlyGuard, adminGuard } from './core/guards/auth.guard';
+import { authGuard, publicOnlyGuard, adminGuard, wacReportesGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   // Rutas publicas (sin header)
@@ -38,11 +38,10 @@ export const routes: Routes = [
           import('./features/reportes/reportes.component').then((m) => m.ReportesComponent),
       },
       {
-        // WAC-03 — WAC-aware profitability grid. Sibling to /reportes
-        // (cash-basis view) so both pages stay reachable. Toggle the
-        // `reportesConWac` flag in environments to gate it later if
-        // we need a staged rollout.
+        // WAC-03 — WAC-aware profitability grid. Its availability is
+        // controlled by the staged-rollout feature flag.
         path: 'reportes/rentabilidad-wac',
+        canActivate: [wacReportesGuard],
         loadComponent: () =>
           import('./features/reportes/wac/wac-rentabilidad-page.component').then((m) => m.WacRentabilidadPageComponent),
       },
