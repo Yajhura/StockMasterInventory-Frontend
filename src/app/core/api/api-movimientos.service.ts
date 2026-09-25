@@ -67,6 +67,23 @@ export class ApiMovimientosService {
     return this.http.get<PaginatedResponse<Movimiento>>(this.base, { params: httpParams });
   }
 
+  exportar(params: ListarMovimientosParams = {}): Observable<Blob> {
+    let httpParams = new HttpParams();
+    if (params.desde) httpParams = httpParams.set('desde', params.desde);
+    if (params.hasta) httpParams = httpParams.set('hasta', params.hasta);
+    if (params.tipo) httpParams = httpParams.set('tipo', String(params.tipo));
+    if (params.productoId != null) httpParams = httpParams.set('productoId', String(params.productoId));
+    if (params.marcaId === null) httpParams = httpParams.set('marcaId', 'null');
+    else if (params.marcaId != null && params.marcaId !== 'all') httpParams = httpParams.set('marcaId', String(params.marcaId));
+    if (params.categoriaId === null) httpParams = httpParams.set('categoriaId', 'null');
+    else if (params.categoriaId != null && params.categoriaId !== 'all') httpParams = httpParams.set('categoriaId', String(params.categoriaId));
+    if (params.creadoPorId != null) httpParams = httpParams.set('creadoPorId', String(params.creadoPorId));
+    if (params.cliente) httpParams = httpParams.set('cliente', params.cliente);
+    if (params.q) httpParams = httpParams.set('q', params.q);
+    if (params.order) httpParams = httpParams.set('order', params.order);
+    return this.http.get(`${this.base}/exportar`, { params: httpParams, responseType: 'blob' });
+  }
+
   registrar(payload: RegistrarMovimientoPayload): Observable<Movimiento> {
     return this.http.post<Movimiento>(this.base, payload);
   }

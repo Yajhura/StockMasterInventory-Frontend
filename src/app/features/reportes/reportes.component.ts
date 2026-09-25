@@ -16,9 +16,9 @@ import {
   ApiReportesService,
   TopVendidoItem,
   TopClienteItem,
-  RentabilidadItem,
   StockCriticoEstancadosResult,
 } from '../../core/api/api-reportes.service';
+import { RentabilidadLinea, RentabilidadResponse } from './wac/rentabilidad.dtos';
 import { ApiAuthService } from '../../core/api/api-auth.service';
 import { ModalOverlayComponent } from '../../core/components/modal-overlay.component';
 import { PaginadorComponent } from '../../core/components/paginador.component';
@@ -97,7 +97,8 @@ export class ReportesComponent implements OnInit {
   });
 
   // Rentabilidad y Margen
-  protected readonly rentabilidadItems = signal<RentabilidadItem[]>([]);
+  protected readonly rentabilidadItems = signal<RentabilidadLinea[]>([]);
+  protected readonly rentabilidadResponse = signal<RentabilidadResponse | null>(null);
   protected readonly cargandoRentabilidad = signal<boolean>(false);
   protected readonly tabRentabilidad = signal<'producto' | 'categoria'>('producto');
   protected readonly rentabilidadPage = signal<number>(1);
@@ -124,10 +125,10 @@ export class ReportesComponent implements OnInit {
       categoriaNombre: string;
       productosCount: number;
       unidadesVendidas: number;
-      totalGasto: number;
-      totalVentas: number;
-      gananciaNeta: number;
-      margenPorcentaje: number;
+        totalGasto: number;
+        totalVentas: number;
+        gananciaNeta: number;
+        margenPorcentaje: number;
     }>();
 
     for (const item of items) {
@@ -143,14 +144,14 @@ export class ReportesComponent implements OnInit {
       };
       prev.productosCount += 1;
       prev.unidadesVendidas += item.unidadesVendidas;
-      prev.totalGasto += item.totalGastoCompras;
-      prev.totalVentas += item.totalIngresoVentas;
+      prev.totalGasto += item.cogs;
+      prev.totalVentas += item.revenue;
       prev.gananciaNeta += item.gananciaNeta;
       map.set(cat, prev);
     }
 
     const result = Array.from(map.values()).map((c) => {
-      const margen = c.totalVentas > 0 ? Math.round((c.gananciaNeta / c.totalVentas) * 10000) / 100 : 0;
+      const margen = c.totalVentas === 0 ? 0 : Math.round((c.gananciaNeta / c.totalVentas) * 10000) / 100;
       return { ...c, margenPorcentaje: margen };
     });
 
@@ -165,27 +166,14 @@ export class ReportesComponent implements OnInit {
   });
 
   protected readonly rentabilidadKpis = computed(() => {
-    const items = this.rentabilidadItems();
-    let totalVentas = 0;
-    let totalGasto = 0;
-    let gananciaTotal = 0;
-    let unidadesVendidas = 0;
-
-    for (const item of items) {
-      totalVentas += item.totalIngresoVentas;
-      totalGasto += item.totalGastoCompras;
-      gananciaTotal += item.gananciaNeta;
-      unidadesVendidas += item.unidadesVendidas;
-    }
-
-    const margenGlobal = totalVentas > 0 ? Math.round((gananciaTotal / totalVentas) * 10000) / 100 : 0;
+    const totales = this.rentabilidadResponse()?.totales;
     return {
-      totalVentas,
-      totalGasto,
-      gananciaTotal,
-      unidadesVendidas,
-      margenGlobal,
-      totalProductosCount: items.length,
+      totalVentas: totales?.revenue ?? 0,
+      totalGasto: totales?.cogs ?? 0,
+      gananciaTotal: totales?.gananciaNeta ?? 0,
+      unidadesVendidas: this.rentabilidadItems().reduce((total, item) => total + item.unidadesVendidas, 0),
+      margenGlobal: totales?.margenPorcentaje ?? 0,
+      totalProductosCount: this.rentabilidadItems().length,
     };
   });
 
@@ -311,17 +299,19 @@ export class ReportesComponent implements OnInit {
       const marcaId = this.marcaFiltro !== 'all' && this.marcaFiltro !== 'null' ? Number(this.marcaFiltro) : undefined;
       const categoriaId = this.categoriaFiltro !== 'all' && this.categoriaFiltro !== 'null' ? Number(this.categoriaFiltro) : undefined;
 
-      const items = await firstValueFrom(this.apiReportes.rentabilidad({
+      const response = await firstValueFrom(this.apiReportes.rentabilidad({
         desde: desdeISO,
         hasta: hastaISO,
         marcaId,
         categoriaId,
       }));
-      this.rentabilidadItems.set(items);
+      this.rentabilidadResponse.set(response);
+      this.rentabilidadItems.set(response.lineas);
       this.rentabilidadPage.set(1);
       this.rentabilidadCatPage.set(1);
     } catch {
       this.rentabilidadItems.set([]);
+      this.rentabilidadResponse.set(null);
     } finally {
       this.cargandoRentabilidad.set(false);
     }
