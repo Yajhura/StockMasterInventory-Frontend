@@ -125,10 +125,10 @@ export class ReportesComponent implements OnInit {
       categoriaNombre: string;
       productosCount: number;
       unidadesVendidas: number;
-        totalGasto: number;
+        totalGasto: number | null;
         totalVentas: number;
-        gananciaNeta: number;
-        margenPorcentaje: number;
+        gananciaNeta: number | null;
+        margenPorcentaje: number | null;
     }>();
 
     for (const item of items) {
@@ -137,25 +137,31 @@ export class ReportesComponent implements OnInit {
         categoriaNombre: cat,
         productosCount: 0,
         unidadesVendidas: 0,
-        totalGasto: 0,
+        totalGasto: item.cogs === null ? null : 0,
         totalVentas: 0,
-        gananciaNeta: 0,
-        margenPorcentaje: 0,
+        gananciaNeta: item.gananciaNeta === null ? null : 0,
+        margenPorcentaje: null,
       };
       prev.productosCount += 1;
       prev.unidadesVendidas += item.unidadesVendidas;
-      prev.totalGasto += item.cogs;
+      prev.totalGasto = prev.totalGasto !== null && item.cogs !== null
+        ? prev.totalGasto + item.cogs
+        : null;
       prev.totalVentas += item.revenue;
-      prev.gananciaNeta += item.gananciaNeta;
+      prev.gananciaNeta = prev.gananciaNeta !== null && item.gananciaNeta !== null
+        ? prev.gananciaNeta + item.gananciaNeta
+        : null;
       map.set(cat, prev);
     }
 
     const result = Array.from(map.values()).map((c) => {
-      const margen = c.totalVentas === 0 ? 0 : Math.round((c.gananciaNeta / c.totalVentas) * 10000) / 100;
+      const margen = c.totalVentas === 0 || c.gananciaNeta === null
+        ? null
+        : Math.round((c.gananciaNeta / c.totalVentas) * 10000) / 100;
       return { ...c, margenPorcentaje: margen };
     });
 
-    return result.sort((a, b) => b.gananciaNeta - a.gananciaNeta);
+    return result.sort((a, b) => (b.gananciaNeta ?? Number.NEGATIVE_INFINITY) - (a.gananciaNeta ?? Number.NEGATIVE_INFINITY));
   });
 
   protected readonly rentabilidadCatPage = signal<number>(1);
@@ -169,8 +175,8 @@ export class ReportesComponent implements OnInit {
     const totales = this.rentabilidadResponse()?.totales;
     return {
       totalVentas: totales?.revenue ?? 0,
-      totalGasto: totales?.cogs ?? 0,
-      gananciaTotal: totales?.gananciaNeta ?? 0,
+      totalGasto: totales?.cogs ?? null,
+      gananciaTotal: totales?.gananciaNeta ?? null,
       unidadesVendidas: this.rentabilidadItems().reduce((total, item) => total + item.unidadesVendidas, 0),
       margenGlobal: totales?.margenPorcentaje ?? 0,
       totalProductosCount: this.rentabilidadItems().length,

@@ -23,16 +23,16 @@ export interface RentabilidadLinea {
   unidadesVendidas: number;
   ventaCount: number;
   revenue: number;
-  cogs: number;
-  gananciaNeta: number;
+  cogs: number | null;
+  gananciaNeta: number | null;
   margenPorcentaje: number | null;
   completitud: CompletitudRentabilidad;
 }
 
 export interface RentabilidadTotales {
   revenue: number;
-  cogs: number;
-  gananciaNeta: number;
+  cogs: number | null;
+  gananciaNeta: number | null;
   margenPorcentaje: number | null;
   ventaCount: number;
   productosConCostoFaltante: number;

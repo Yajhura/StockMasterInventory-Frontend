@@ -6,7 +6,7 @@ Align frontend role labels, report contract, Kardex export safety, and productio
 
 ## Tasks
 
-- [ ] SAFE-01: Support `Vendedor` during role transition.
+- [x] SAFE-01: Support `Vendedor` during role transition.
 - [x] SAFE-05: Consume WAC profitability response wrapper in legacy reports.
 - [x] SAFE-04: Warn rather than silently truncate oversized Kardex export.
 - [x] SAFE-06: Track and verify production environment configuration.

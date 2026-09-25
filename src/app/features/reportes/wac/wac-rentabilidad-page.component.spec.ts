@@ -103,6 +103,26 @@ describe('WacRentabilidadPageComponent (WAC-03)', () => {
     expect(rowBravo!.textContent).toContain('—');
   }));
 
+  it('renders null COGS and profit as unavailable instead of zero', fakeAsync(() => {
+    const unavailable = structuredClone(mockResponse);
+    unavailable.totales.cogs = null;
+    unavailable.totales.gananciaNeta = null;
+    unavailable.lineas[0].cogs = null;
+    unavailable.lineas[0].gananciaNeta = null;
+
+    fixture.detectChanges();
+    tick(DEBOUNCE);
+    httpTesting.expectOne(matchRentabilidad).flush(unavailable);
+    tick();
+    fixture.detectChanges();
+
+    for (const selector of ['[data-testid="wac-cogs-total"]', '[data-testid="wac-profit-total"]', '[data-testid="wac-cogs-line"]', '[data-testid="wac-profit-line"]']) {
+      const text = (fixture.nativeElement.querySelector(selector) as HTMLElement).textContent ?? '';
+      expect(text).toContain('No disponible');
+      expect(text).not.toContain('0.00');
+    }
+  }));
+
   it('aplica wac-row-warning a filas con completitud=ConQuarentena', fakeAsync(() => {
     cargar(fixture, httpTesting);
     const rowBravo: HTMLElement | null = fixture.nativeElement.querySelector('[data-producto-id="200"]');
