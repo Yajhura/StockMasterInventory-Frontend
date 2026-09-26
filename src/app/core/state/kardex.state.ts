@@ -58,9 +58,23 @@ export class KardexState {
     this._kardexMovimientos.set([]);
   }
 
+  /**
+   * Kardex-by-product single-snapshot loader.
+   *
+   * REPORT-AUDIT-03: the endpoint is now paginated. We ask for a single
+   * page of `size = 50` (matches the previous unbounded consumer) and
+   * return only the items array so the call-site signature stays
+   * stable. The full `PaginatedResponse` is intentionally discarded —
+   * `abrirKardexModal` does not need pagination metadata for the
+   * current UX, and exposing more here would invite consumers to
+   * assume pagination that the modal does not yet implement.
+   */
   async obtenerKardex(productoId: number): Promise<Movimiento[]> {
     try {
-      return await firstValueFrom(this.apiMovimientos.kardex(productoId));
+      const response = await firstValueFrom(
+        this.apiMovimientos.kardex(productoId, { page: 1, size: 50 }),
+      );
+      return response.items;
     } catch (e: unknown) {
       this.shell.error.set(this.toMessage(e));
       return [];
