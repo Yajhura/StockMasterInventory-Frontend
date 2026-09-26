@@ -157,6 +157,57 @@ describe('WacRentabilidadPageComponent (WAC-03)', () => {
     second.flush(mockResponse);
   }));
 
+  // RENT-BREAKDOWN-02: el botón "Ver costos" de cada fila dispara el
+  // modal de composición con el productoId correcto.
+  it('renderiza botón "Ver costos" por fila y abre el modal al hacer click', fakeAsync(() => {
+    cargar(fixture, httpTesting);
+
+    const buttons: NodeListOf<HTMLButtonElement> = fixture.nativeElement.querySelectorAll(
+      '[data-testid="btn-ver-costos"]',
+    );
+    expect(buttons.length).toBe(2, 'one button per rentabilidad row');
+
+    const firstButton = buttons[0];
+    expect(firstButton.getAttribute('data-producto-id')).toBe('100');
+
+    // Click → abre modal. La modal emite su propio GET.
+    firstButton.click();
+    fixture.detectChanges();
+    tick();
+
+    const inst = component as unknown as {
+      composicionOpen: () => boolean;
+      composicionProductoId: () => number | null;
+    };
+    expect(inst.composicionOpen()).toBeTrue();
+    expect(inst.composicionProductoId()).toBe(100);
+
+    // El modal hace GET a /api/reportes/rentabilidad/{id}/composicion.
+    const composicionReq = httpTesting.expectOne(
+      (r) => r.url === `${environment.apiBaseUrl}/api/reportes/rentabilidad/100/composicion`
+          && r.method === 'GET',
+    );
+    expect(composicionReq.request.params.get('desde')).toBeTruthy();
+    expect(composicionReq.request.params.get('hasta')).toBeTruthy();
+    composicionReq.flush({
+      productoId: 100, productoCodigo: 'P-100', productoNombre: 'Producto Alfa',
+      desde: '2026-08-01', hasta: '2026-09-26', generadoEn: '2026-09-26T00:00:00Z',
+      ingresos: [], costosAplicados: [],
+      resumen: {
+        totalCostoCompras: 0, totalUnidadesIngresadas: 0,
+        totalCostoAplicadoVentas: 0, totalUnidadesVendidas: 0,
+        costoPromedioCalculado: null,
+        formulaAplicada: 'Costo promedio del período = Σ(PrecioUnitario × Cantidad) ÷ Σ(Cantidad)',
+      },
+      warnings: {
+        hasLegacyMovimientos: false, totalLegacyMovimientos: 0,
+        legacyIngresos: 0, legacyCostosAplicados: 0, mensaje: null,
+      },
+    });
+    tick();
+    fixture.detectChanges();
+  }));
+
   it('consulta el endpoint correcto en ngOnInit y guarda la respuesta', fakeAsync(() => {
     fixture.detectChanges();
     tick(DEBOUNCE);
