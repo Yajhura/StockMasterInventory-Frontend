@@ -8,6 +8,11 @@
  *   - `cerrarKardexModal()` resets both `kardexProductoId` and
  *     `kardexMovimientos` to null / empty.
  *   - `kardexCargando` toggles around the fetch.
+ *
+ * REPORT-AUDIT-03: the endpoint now returns a PaginatedResponse envelope
+ * (items/page/size/totalItems/totalPages/hasNext/hasPrevious). The state
+ * still flattens to a `Movimiento[]` for the modal but the test MUST
+ * exercise the new envelope so a regression on either side is loud.
  */
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
@@ -15,7 +20,7 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 
 import { KardexState } from './kardex.state';
 import { ShellState } from './shell.state';
-import { Movimiento } from '../models/inventario.models';
+import { Movimiento, PaginatedResponse } from '../models/inventario.models';
 import { environment } from '../../../environments/environment';
 
 const KARDEX_URL = `${environment.apiBaseUrl}/api/movimientos/kardex`;
@@ -37,6 +42,18 @@ function makeMovimiento(id: number): Movimiento {
     creadoPorId: null,
     creadoPorNombre: null,
     esStockInicial: false,
+  };
+}
+
+function wrapAsPaginated(items: Movimiento[], totalItems?: number): PaginatedResponse<Movimiento> {
+  return {
+    items,
+    page: 1,
+    size: items.length || 50,
+    totalItems: totalItems ?? items.length,
+    totalPages: Math.max(1, Math.ceil((totalItems ?? items.length) / (items.length || 50))),
+    hasNext: false,
+    hasPrevious: false,
   };
 }
 
@@ -71,9 +88,14 @@ describe('KardexState', () => {
     expect(kardex.kardexProductoId()).toBe(42);
     expect(kardex.kardexCargando()).toBe(true);
 
-    const req = httpTesting.expectOne((r) => r.url === KARDEX_URL && r.params.get('productoId') === '42');
+    const req = httpTesting.expectOne((r) =>
+      r.url === KARDEX_URL &&
+      r.params.get('productoId') === '42' &&
+      r.params.get('page') === '1' &&
+      r.params.get('size') === '50',
+    );
     expect(req.request.method).toBe('GET');
-    req.flush([makeMovimiento(1), makeMovimiento(2)]);
+    req.flush(wrapAsPaginated([makeMovimiento(1), makeMovimiento(2)]));
     await promise;
 
     expect(kardex.kardexCargando()).toBe(false);
@@ -83,7 +105,7 @@ describe('KardexState', () => {
 
   it('cerrarKardexModal() resets productoId and movimientos', async () => {
     const promise = kardex.abrirKardexModal(99);
-    httpTesting.expectOne((r) => r.url === KARDEX_URL).flush([makeMovimiento(1)]);
+    httpTesting.expectOne((r) => r.url === KARDEX_URL).flush(wrapAsPaginated([makeMovimiento(1)]));
     await promise;
 
     expect(kardex.kardexProductoId()).toBe(99);
@@ -101,8 +123,8 @@ describe('KardexState', () => {
     const secondRequest = kardex.abrirKardexModal(2);
     const secondHttpRequest = httpTesting.expectOne((r) => r.url === KARDEX_URL && r.params.get('productoId') === '2');
 
-    secondHttpRequest.flush([makeMovimiento(2)]);
-    firstHttpRequest.flush([makeMovimiento(1)]);
+    secondHttpRequest.flush(wrapAsPaginated([makeMovimiento(2)]));
+    firstHttpRequest.flush(wrapAsPaginated([makeMovimiento(1)]));
     await Promise.all([firstRequest, secondRequest]);
 
     expect(kardex.kardexProductoId()).toBe(2);
@@ -121,5 +143,26 @@ describe('KardexState', () => {
     await promise;
 
     expect(shell.error()).toBeTruthy();
+  });
+
+  // REPORT-AUDIT-03 regression: a paginated server response MUST be
+  // flattened to a plain Movimiento[] on the consumer side. This is the
+  // contract the kardex-modal.component.ts template relies on.
+  it('flattens the PaginatedResponse.items into the kardexMovimientos signal', async () => {
+    const promise = kardex.abrirKardexModal(11);
+    const req = httpTesting.expectOne((r) => r.url === KARDEX_URL);
+    req.flush({
+      items: [makeMovimiento(101), makeMovimiento(102), makeMovimiento(103)],
+      page: 1,
+      size: 50,
+      totalItems: 3,
+      totalPages: 1,
+      hasNext: false,
+      hasPrevious: false,
+    });
+    await promise;
+
+    expect(kardex.kardexMovimientos().length).toBe(3);
+    expect(kardex.kardexMovimientos().map((m) => m.id)).toEqual([101, 102, 103]);
   });
 });

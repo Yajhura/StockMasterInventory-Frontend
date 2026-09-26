@@ -32,11 +32,29 @@ export class ApiMovimientosService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiBaseUrl}/api/movimientos`;
 
-  kardex(productoId: number, desde?: string, hasta?: string): Observable<Movimiento[]> {
+  /**
+   * Kardex-by-product (REPORT-AUDIT-03).
+   *
+   * The endpoint is paginated server-side. We default to `size=50` and
+   * `page=1` to match the previous (unbounded) call sites that wanted a
+   * single-page snapshot — most consumers open this from a modal that
+   * only displays up to 50 rows. Callers that need the full history
+   * must page explicitly.
+   *
+   * Returns the standard `PaginatedResponse<Movimiento>` envelope; the
+   * `Movimiento[]`-shaped consumers in `KardexState` and
+   * `KardexModalComponent` now read `.items` from this envelope.
+   */
+  kardex(
+    productoId: number,
+    options: { desde?: string; hasta?: string; page?: number; size?: number } = {},
+  ): Observable<PaginatedResponse<Movimiento>> {
     let params = new HttpParams().set('productoId', String(productoId));
-    if (desde) params = params.set('desde', desde);
-    if (hasta) params = params.set('hasta', hasta);
-    return this.http.get<Movimiento[]>(`${this.base}/kardex`, { params });
+    if (options.desde) params = params.set('desde', options.desde);
+    if (options.hasta) params = params.set('hasta', options.hasta);
+    params = params.set('page', String(options.page ?? 1));
+    params = params.set('size', String(options.size ?? 50));
+    return this.http.get<PaginatedResponse<Movimiento>>(`${this.base}/kardex`, { params });
   }
 
   /**
