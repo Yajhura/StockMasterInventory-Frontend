@@ -14,6 +14,16 @@
     </div>
   </div>
 
+  @if (errorKpi() || errorRentabilidad() || errorTopVendidos() || errorTopClientes() || errorStock()) {
+    <div class="space-y-2" role="alert">
+      @if (errorKpi()) { <p class="rounded-lg bg-rose-50 p-3 text-sm text-rose-800">Resumen: {{ errorKpi() }}</p> }
+      @if (errorRentabilidad()) { <p class="rounded-lg bg-rose-50 p-3 text-sm text-rose-800">Rentabilidad: {{ errorRentabilidad() }}</p> }
+      @if (errorTopVendidos()) { <p class="rounded-lg bg-rose-50 p-3 text-sm text-rose-800">Top productos: {{ errorTopVendidos() }}</p> }
+      @if (errorTopClientes()) { <p class="rounded-lg bg-rose-50 p-3 text-sm text-rose-800">Top clientes: {{ errorTopClientes() }}</p> }
+      @if (errorStock()) { <p class="rounded-lg bg-rose-50 p-3 text-sm text-rose-800">Stock: {{ errorStock() }}</p> }
+    </div>
+  }
+
   <!-- 1. SECCIÓN: DIVS RESUMEN KPI (INGRESOS, SALIDAS, SALDO NETO) -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
     <!-- DIV INGRESOS -->

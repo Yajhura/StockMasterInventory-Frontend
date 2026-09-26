@@ -230,6 +230,7 @@ export class ReportesComponent implements OnInit {
     try {
       const data = await firstValueFrom(this.apiReportes.kpiResumen());
       this.kpiData.set(data);
+      this.errorKpi.set(null);
     } catch {
       this.errorKpi.set('No se pudo cargar el resumen. Reintentá.');
     }
@@ -240,6 +241,7 @@ export class ReportesComponent implements OnInit {
     try {
       const res = await firstValueFrom(this.apiReportes.stockCriticoEstancados(this.diasEstancado()));
       this.stockCriticoData.set(res);
+      this.errorStock.set(null);
       this.stockCriticoPage.set(1);
       this.stockEstancadoPage.set(1);
     } catch {
@@ -269,6 +271,7 @@ export class ReportesComponent implements OnInit {
         limit: this.topClientesLimit(),
       }));
       this.topClientesList.set(items);
+      this.errorTopClientes.set(null);
       this.topClientesPage.set(1);
     } catch {
       this.topClientesList.set([]);
@@ -318,6 +321,7 @@ export class ReportesComponent implements OnInit {
         categoriaId,
       }));
       this.rentabilidadResponse.set(response);
+      this.errorRentabilidad.set(null);
       this.rentabilidadItems.set(response.lineas);
       this.rentabilidadPage.set(1);
       this.rentabilidadCatPage.set(1);
@@ -350,6 +354,7 @@ export class ReportesComponent implements OnInit {
       }
       const res = await firstValueFrom(this.apiReportes.topVendidos({ limit: 100, desde: desdeISO, hasta: hastaISO }));
       this.topVendidos.set(res.items);
+      this.errorTopVendidos.set(null);
       this.topVendidosPage.set(1);
     } catch {
       this.topVendidos.set([]);
