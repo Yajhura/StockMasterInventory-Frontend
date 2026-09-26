@@ -12,6 +12,24 @@
       </h2>
       <p class="text-xs text-slate-500 mt-1">Dashboard gerencial con métricas de ventas, rentabilidad, stock crítico y ranking comercial.</p>
     </div>
+
+    <!-- RENT-NAV-01: discoverable entry-point to /reportes/rentabilidad-wac.
+         Honor the staged-rollout flag (same source as wacReportesGuard). -->
+    @if (reportesConWac) {
+      <a
+        routerLink="/reportes/rentabilidad-wac"
+        routerLinkActive="is-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="btn-secondary wac-nav-link self-start sm:self-auto"
+        data-testid="nav-rentabilidad-wac"
+        aria-label="Abrir Rentabilidad WAC"
+      >
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+        <span>Rentabilidad WAC</span>
+      </a>
+    }
   </div>
 
   @if (errorKpi() || errorRentabilidad() || errorTopVendidos() || errorTopClientes() || errorStock()) {

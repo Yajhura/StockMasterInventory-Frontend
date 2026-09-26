@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import * as ExcelJS from 'exceljs';
 import { firstValueFrom } from 'rxjs';
 import { CatalogosState } from '../../core/state/catalogos.state';
@@ -23,12 +23,14 @@ import { RentabilidadLinea, RentabilidadResponse } from './wac/rentabilidad.dtos
 import { ApiAuthService } from '../../core/api/api-auth.service';
 import { ModalOverlayComponent } from '../../core/components/modal-overlay.component';
 import { PaginadorComponent } from '../../core/components/paginador.component';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-reportes',
   standalone: true,
   templateUrl: './reportes.component.html',
-  imports: [CommonModule, FormsModule, RouterLink, ModalOverlayComponent, PaginadorComponent],
+  styleUrls: ['./reportes.component.css'],
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, ModalOverlayComponent, PaginadorComponent],
 })
 export class ReportesComponent implements OnInit {
   private readonly productosState = inject(ProductosState);
@@ -42,6 +44,10 @@ export class ReportesComponent implements OnInit {
   protected readonly marcas = this.catalogos.marcas;
   protected readonly categorias = this.catalogos.categorias;
   protected readonly usuarios = signal<Usuario[]>([]);
+
+  // RENT-NAV-01: staged-rollout flag mirrored from wacReportesGuard so the
+  // header nav stays aligned with the guard's allow/deny decision.
+  protected readonly reportesConWac = environment.reportesConWac;
 
   // Top Vendidos
   protected readonly topVendidos = signal<TopVendidoItem[]>([]);

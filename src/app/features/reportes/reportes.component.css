@@ -1,0 +1,14 @@
+/* RENT-NAV-01: active-state override for the WAC profitability nav link.
+   Mirror .btn-primary inside this scoped stylesheet so the link visually
+   reflects the currently-active sub-route without reaching for global
+   utility buckets. */
+.wac-nav-link.is-active {
+  background-color: #2563eb; /* bg-blue-600 */
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.wac-nav-link.is-active:hover {
+  background-color: #1d4ed8; /* bg-blue-700 */
+  border-color: #1d4ed8;
+}
