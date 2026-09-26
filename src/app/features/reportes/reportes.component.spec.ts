@@ -33,6 +33,7 @@ describe('ReportesComponent', () => {
           kpiResumen: () => of({}), topVendidos: () => of({ items: [] }), topClientes: () => of([]),
           stockCriticoEstancados: () => of({ stockCritico: [], productosEstancados: [] }),
           rentabilidad: () => of(unavailableResponse),
+          historialCliente: () => of({ clienteId: 1, clienteNombre: 'Customer', items: [], page: 1, size: 50, totalItems: 0 }),
         } },
       ],
     });
@@ -50,4 +51,25 @@ describe('ReportesComponent', () => {
       expect(text).not.toContain('0.00');
     }
   }));
+
+  it('renders the sale-level customer history contract', async () => {
+    const api = TestBed.inject(ApiReportesService) as unknown as { historialCliente: jasmine.Spy };
+    api.historialCliente = jasmine.createSpy().and.returnValue(of({
+      clienteId: 7,
+      clienteNombre: 'Customer',
+      items: [{ id: 11, fecha: '2026-09-26T10:00:00Z', montoTotal: 125.5, estadoPago: 'Pagado', esCredito: false, detalles: [] }],
+      page: 1,
+      size: 50,
+      totalItems: 1,
+    }));
+
+    await (fixture.componentInstance as any).verHistorialCliente(7, 'Customer');
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('125.50');
+    expect(text).toContain('Pagado');
+    expect(text).toContain('Contado');
+    expect(text).not.toContain('Producto Vendido');
+  });
 });

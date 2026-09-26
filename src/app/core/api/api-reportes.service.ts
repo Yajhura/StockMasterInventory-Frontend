@@ -57,7 +57,14 @@ export interface TopClienteItem {
   ultimaCompra: string;
 }
 
-export interface ClienteHistorialVenta { id: number; fecha: string; montoTotal: number; estadoPago: string; }
+export interface ClienteHistorialVenta {
+  id: number;
+  fecha: string;
+  montoTotal: number;
+  estadoPago: string;
+  esCredito: boolean;
+  detalles: Array<{ productoId: number; cantidad: number; precioUnitario: number; subtotal: number }>;
+}
 export interface ClienteHistorialResponse { clienteId: number; clienteNombre: string; items: ClienteHistorialVenta[]; page: number; size: number; totalItems: number; }
 
 export interface RentabilidadParams {

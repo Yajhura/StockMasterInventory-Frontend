@@ -14,6 +14,7 @@ import {
 } from '../../core/models/inventario.models';
 import {
   ApiReportesService,
+  ClienteHistorialVenta,
   TopVendidoItem,
   TopClienteItem,
   StockCriticoEstancadosResult,
@@ -71,7 +72,7 @@ export class ReportesComponent implements OnInit {
   // Modal Historial por Cliente
   protected readonly clienteModal = signal<string | null>(null);
   protected readonly clienteModalId = signal<number | null>(null);
-  protected readonly historialCliente = signal<any[]>([]);
+  protected readonly historialCliente = signal<ClienteHistorialVenta[]>([]);
   protected readonly cargandoHistorialCliente = signal<boolean>(false);
   protected readonly errorHistorialCliente = signal<string | null>(null);
   protected readonly errorKpi = signal<string | null>(null);
