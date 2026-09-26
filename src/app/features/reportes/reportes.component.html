@@ -137,13 +137,13 @@
 
       <div class="bg-rose-50/60 border border-rose-100 rounded-xl p-4">
         <span class="text-xs font-semibold uppercase tracking-wider text-rose-700 block">Costo Compras / Reposición</span>
-        <span class="text-xl font-extrabold text-rose-900 block mt-1 tabular-nums">S/. {{ rentabilidadKpis().totalGasto | number:'1.2-2' }}</span>
+        <span class="text-xl font-extrabold text-rose-900 block mt-1 tabular-nums" data-testid="legacy-cogs-total">@if (rentabilidadKpis().totalGasto === null) { No disponible } @else { S/. {{ rentabilidadKpis().totalGasto | number:'1.2-2' }} }</span>
         <span class="text-[11px] text-rose-700 mt-1 block">Inversión en mercadería</span>
       </div>
 
       <div class="bg-blue-50/60 border border-blue-100 rounded-xl p-4">
         <span class="text-xs font-semibold uppercase tracking-wider text-blue-700 block">Ganancia Neta</span>
-        <span class="text-xl font-extrabold text-blue-900 block mt-1 tabular-nums">S/. {{ rentabilidadKpis().gananciaTotal | number:'1.2-2' }}</span>
+        <span class="text-xl font-extrabold text-blue-900 block mt-1 tabular-nums" data-testid="legacy-profit-total">@if (rentabilidadKpis().gananciaTotal === null) { No disponible } @else { S/. {{ rentabilidadKpis().gananciaTotal | number:'1.2-2' }} }</span>
         <span class="text-[11px] text-blue-700 mt-1 block">Ventas − Inversión</span>
       </div>
 
@@ -163,7 +163,6 @@
                 <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                   <th class="px-4 py-3">Producto</th>
                   <th class="px-4 py-3">Categoría / Marca</th>
-                  <th class="px-4 py-3 text-right">Und. Compradas</th>
                   <th class="px-4 py-3 text-right">Und. Vendidas</th>
                   <th class="px-4 py-3 text-right">Inversión Gasto (S/)</th>
                   <th class="px-4 py-3 text-right">Venta Ingreso (S/)</th>
@@ -184,22 +183,21 @@
                       <span class="font-medium text-slate-700">{{ item.categoriaNombre || 'Sin Categoría' }}</span>
                       <span class="text-slate-400 block">{{ item.marcaNombre || 'Sin Marca' }}</span>
                     </td>
-                    <td class="px-4 py-3 text-right tabular-nums text-slate-700 font-semibold">{{ item.unidadesIngresadas }}</td>
                     <td class="px-4 py-3 text-right tabular-nums text-emerald-700 font-bold">{{ item.unidadesVendidas }}</td>
-                    <td class="px-4 py-3 text-right tabular-nums text-rose-600">S/. {{ item.totalGastoCompras | number:'1.2-2' }}</td>
-                    <td class="px-4 py-3 text-right tabular-nums text-emerald-600 font-semibold">S/. {{ item.totalIngresoVentas | number:'1.2-2' }}</td>
-                    <td class="px-4 py-3 text-right tabular-nums font-bold" [class.text-emerald-600]="item.gananciaNeta >= 0" [class.text-rose-600]="item.gananciaNeta < 0">
-                      S/. {{ item.gananciaNeta | number:'1.2-2' }}
+                    <td class="px-4 py-3 text-right tabular-nums text-rose-600" data-testid="legacy-cogs-line">@if (item.cogs === null) { No disponible } @else { S/. {{ item.cogs | number:'1.2-2' }} }</td>
+                    <td class="px-4 py-3 text-right tabular-nums text-emerald-600 font-semibold">S/. {{ item.revenue | number:'1.2-2' }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums font-bold" data-testid="legacy-profit-line" [class.text-emerald-600]="item.gananciaNeta !== null && item.gananciaNeta >= 0" [class.text-rose-600]="item.gananciaNeta !== null && item.gananciaNeta < 0">
+                      @if (item.gananciaNeta === null) { No disponible } @else { S/. {{ item.gananciaNeta | number:'1.2-2' }} }
                     </td>
                     <td class="px-4 py-3 text-center tabular-nums">
                       <span
                         class="px-2.5 py-1 rounded-full text-xs font-bold inline-block"
-                        [class.bg-emerald-100]="item.margenPorcentaje >= 30"
-                        [class.text-emerald-800]="item.margenPorcentaje >= 30"
-                        [class.bg-amber-100]="item.margenPorcentaje >= 10 && item.margenPorcentaje < 30"
-                        [class.text-amber-800]="item.margenPorcentaje >= 10 && item.margenPorcentaje < 30"
-                        [class.bg-rose-100]="item.margenPorcentaje < 10"
-                        [class.text-rose-800]="item.margenPorcentaje < 10"
+                        [class.bg-emerald-100]="(item.margenPorcentaje ?? 0) >= 30"
+                        [class.text-emerald-800]="(item.margenPorcentaje ?? 0) >= 30"
+                        [class.bg-amber-100]="(item.margenPorcentaje ?? 0) >= 10 && (item.margenPorcentaje ?? 0) < 30"
+                        [class.text-amber-800]="(item.margenPorcentaje ?? 0) >= 10 && (item.margenPorcentaje ?? 0) < 30"
+                        [class.bg-rose-100]="(item.margenPorcentaje ?? 0) < 10"
+                        [class.text-rose-800]="(item.margenPorcentaje ?? 0) < 10"
                       >
                         {{ item.margenPorcentaje }}%
                       </span>
@@ -243,22 +241,22 @@
                     <td class="px-4 py-3 font-bold text-slate-900">{{ cat.categoriaNombre }}</td>
                     <td class="px-4 py-3 text-center tabular-nums text-slate-600 font-semibold">{{ cat.productosCount }}</td>
                     <td class="px-4 py-3 text-right tabular-nums text-emerald-700 font-bold">{{ cat.unidadesVendidas }}</td>
-                    <td class="px-4 py-3 text-right tabular-nums text-rose-600">S/. {{ cat.totalGasto | number:'1.2-2' }}</td>
+                    <td class="px-4 py-3 text-right tabular-nums text-rose-600">@if (cat.totalGasto === null) { No disponible } @else { S/. {{ cat.totalGasto | number:'1.2-2' }} }</td>
                     <td class="px-4 py-3 text-right tabular-nums text-emerald-600 font-semibold">S/. {{ cat.totalVentas | number:'1.2-2' }}</td>
-                    <td class="px-4 py-3 text-right tabular-nums font-bold" [class.text-emerald-600]="cat.gananciaNeta >= 0" [class.text-rose-600]="cat.gananciaNeta < 0">
-                      S/. {{ cat.gananciaNeta | number:'1.2-2' }}
+                    <td class="px-4 py-3 text-right tabular-nums font-bold" [class.text-emerald-600]="cat.gananciaNeta !== null && cat.gananciaNeta >= 0" [class.text-rose-600]="cat.gananciaNeta !== null && cat.gananciaNeta < 0">
+                      @if (cat.gananciaNeta === null) { No disponible } @else { S/. {{ cat.gananciaNeta | number:'1.2-2' }} }
                     </td>
                     <td class="px-4 py-3 text-center tabular-nums">
                       <span
                         class="px-2.5 py-1 rounded-full text-xs font-bold inline-block"
-                        [class.bg-emerald-100]="cat.margenPorcentaje >= 30"
-                        [class.text-emerald-800]="cat.margenPorcentaje >= 30"
-                        [class.bg-amber-100]="cat.margenPorcentaje >= 10 && cat.margenPorcentaje < 30"
-                        [class.text-amber-800]="cat.margenPorcentaje >= 10 && cat.margenPorcentaje < 30"
-                        [class.bg-rose-100]="cat.margenPorcentaje < 10"
-                        [class.text-rose-800]="cat.margenPorcentaje < 10"
+                        [class.bg-emerald-100]="(cat.margenPorcentaje ?? 0) >= 30"
+                        [class.text-emerald-800]="(cat.margenPorcentaje ?? 0) >= 30"
+                        [class.bg-amber-100]="(cat.margenPorcentaje ?? 0) >= 10 && (cat.margenPorcentaje ?? 0) < 30"
+                        [class.text-amber-800]="(cat.margenPorcentaje ?? 0) >= 10 && (cat.margenPorcentaje ?? 0) < 30"
+                        [class.bg-rose-100]="(cat.margenPorcentaje ?? 0) < 10"
+                        [class.text-rose-800]="(cat.margenPorcentaje ?? 0) < 10"
                       >
-                        {{ cat.margenPorcentaje }}%
+                        @if (cat.margenPorcentaje === null) { — } @else { {{ cat.margenPorcentaje }}% }
                       </span>
                     </td>
                   </tr>

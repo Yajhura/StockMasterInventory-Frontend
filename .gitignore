@@ -23,8 +23,7 @@ Thumbs.db
 *.log
 npm-debug.log*
 
-# Environment (keep environment.ts, ignore environment.prod.ts with secrets)
-src/environments/environment.prod.ts
+# Environment
 
 # Vercel
 .vercel

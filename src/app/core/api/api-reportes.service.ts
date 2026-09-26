@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { PaginatedResponse } from '../models/inventario.models';
+import { RentabilidadResponse } from '../../features/reportes/wac/rentabilidad.dtos';
 
 export interface KpiResumenResult {
   unidadesIngresadas: number;
@@ -60,22 +61,6 @@ export interface RentabilidadParams {
   hasta?: string;
   marcaId?: number;
   categoriaId?: number;
-}
-
-export interface RentabilidadItem {
-  productoId: number;
-  productoNombre: string;
-  productoCodigo: string | null;
-  marcaId: number | null;
-  marcaNombre: string | null;
-  categoriaId: number | null;
-  categoriaNombre: string | null;
-  unidadesIngresadas: number;
-  unidadesVendidas: number;
-  totalGastoCompras: number;
-  totalIngresoVentas: number;
-  gananciaNeta: number;
-  margenPorcentaje: number;
 }
 
 export interface StockCriticoItem {
@@ -170,13 +155,13 @@ export class ApiReportesService {
     return this.http.get<TopClienteItem[]>(`${this.base}/top-clientes`, { params: p });
   }
 
-  rentabilidad(params: RentabilidadParams = {}): Observable<RentabilidadItem[]> {
+  rentabilidad(params: RentabilidadParams = {}): Observable<RentabilidadResponse> {
     let p = new HttpParams();
     if (params.desde)       p = p.set('desde', params.desde);
     if (params.hasta)       p = p.set('hasta', params.hasta);
     if (params.marcaId)     p = p.set('marcaId', String(params.marcaId));
     if (params.categoriaId) p = p.set('categoriaId', String(params.categoriaId));
-    return this.http.get<RentabilidadItem[]>(`${this.base}/rentabilidad`, { params: p });
+    return this.http.get<RentabilidadResponse>(`${this.base}/rentabilidad`, { params: p });
   }
 
   topVendidos(params: TopVendidoParams = {}): Observable<PaginatedResponse<TopVendidoItem>> {

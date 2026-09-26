@@ -88,6 +88,10 @@ export class KardexState {
     }
   }
 
+  exportarMovimientos(params: ListarMovimientosParams = {}) {
+    return this.apiMovimientos.exportar(params);
+  }
+
   private toMessage(e: unknown): string {
     return ErrorTranslator.translate(e);
   }

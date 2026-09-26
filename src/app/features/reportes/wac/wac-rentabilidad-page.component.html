@@ -81,8 +81,8 @@
   @if (respuesta(); as r) {
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4" data-testid="wac-totales">
       <div class="kpi-card"><span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 block">Revenue</span><span class="text-xl font-extrabold text-emerald-900 block mt-1 tabular-nums">S/. {{ r.totales.revenue | number:'1.2-2' }}</span></div>
-      <div class="kpi-card"><span class="text-[11px] font-bold uppercase tracking-wider text-rose-700 block">COGS</span><span class="text-xl font-extrabold text-rose-900 block mt-1 tabular-nums">S/. {{ r.totales.cogs | number:'1.2-2' }}</span></div>
-      <div class="kpi-card"><span class="text-[11px] font-bold uppercase tracking-wider text-blue-700 block">Ganancia Neta</span><span class="text-xl font-extrabold block mt-1 tabular-nums" [class.text-emerald-900]="r.totales.gananciaNeta >= 0" [class.text-rose-900]="r.totales.gananciaNeta < 0">S/. {{ r.totales.gananciaNeta | number:'1.2-2' }}</span></div>
+      <div class="kpi-card"><span class="text-[11px] font-bold uppercase tracking-wider text-rose-700 block">COGS</span><span class="text-xl font-extrabold text-rose-900 block mt-1 tabular-nums" data-testid="wac-cogs-total">@if (r.totales.cogs === null) { No disponible } @else { S/. {{ r.totales.cogs | number:'1.2-2' }} }</span></div>
+      <div class="kpi-card"><span class="text-[11px] font-bold uppercase tracking-wider text-blue-700 block">Ganancia Neta</span><span class="text-xl font-extrabold block mt-1 tabular-nums" data-testid="wac-profit-total" [class.text-emerald-900]="r.totales.gananciaNeta !== null && r.totales.gananciaNeta >= 0" [class.text-rose-900]="r.totales.gananciaNeta !== null && r.totales.gananciaNeta < 0">@if (r.totales.gananciaNeta === null) { No disponible } @else { S/. {{ r.totales.gananciaNeta | number:'1.2-2' }} }</span></div>
       <div class="kpi-card"><span class="text-[11px] font-bold uppercase tracking-wider text-amber-700 block">Margen</span><span class="text-xl font-extrabold text-amber-900 block mt-1 tabular-nums">@if (r.totales.margenPorcentaje === null) { — } @else { {{ r.totales.margenPorcentaje | number:'1.2-2' }}% }</span></div>
       <div class="kpi-card"><span class="text-[11px] font-bold uppercase tracking-wider text-slate-700 block">Ventas</span><span class="text-xl font-extrabold text-slate-900 block mt-1 tabular-nums">{{ r.totales.ventaCount | number }}</span></div>
     </section>
@@ -123,8 +123,8 @@
                   <td class="px-4 py-3 text-right tabular-nums text-emerald-700 font-bold">{{ linea.unidadesVendidas | number }}</td>
                   <td class="px-4 py-3 text-right tabular-nums text-slate-700 font-semibold">{{ linea.ventaCount | number }}</td>
                   <td class="px-4 py-3 text-right tabular-nums text-emerald-700 font-semibold">S/. {{ linea.revenue | number:'1.2-2' }}</td>
-                  <td class="px-4 py-3 text-right tabular-nums text-rose-600">S/. {{ linea.cogs | number:'1.2-2' }}</td>
-                  <td class="px-4 py-3 text-right tabular-nums font-bold" [class.text-emerald-700]="linea.gananciaNeta >= 0" [class.text-rose-700]="linea.gananciaNeta < 0">S/. {{ linea.gananciaNeta | number:'1.2-2' }}</td>
+                  <td class="px-4 py-3 text-right tabular-nums text-rose-600" data-testid="wac-cogs-line">@if (linea.cogs === null) { No disponible } @else { S/. {{ linea.cogs | number:'1.2-2' }} }</td>
+                  <td class="px-4 py-3 text-right tabular-nums font-bold" data-testid="wac-profit-line" [class.text-emerald-700]="linea.gananciaNeta !== null && linea.gananciaNeta >= 0" [class.text-rose-700]="linea.gananciaNeta !== null && linea.gananciaNeta < 0">@if (linea.gananciaNeta === null) { No disponible } @else { S/. {{ linea.gananciaNeta | number:'1.2-2' }} }</td>
                   <td class="px-4 py-3 text-center tabular-nums font-bold" [class.text-rose-700]="(linea.margenPorcentaje ?? 0) < 0">@if (linea.margenPorcentaje === null) { — } @else { {{ linea.margenPorcentaje | number:'1.2-2' }}% }</td>
                   <td class="px-4 py-3 text-center">
                     <span [class]="claseCompletitud(linea.completitud)" [title]="tooltipCompletitud(linea.completitud)">{{ etiquetaCompletitud(linea.completitud) }}</span>

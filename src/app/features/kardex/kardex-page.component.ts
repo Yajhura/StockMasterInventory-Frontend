@@ -377,42 +377,25 @@ export class KardexPageComponent implements OnInit {
   protected async exportarExcel(): Promise<void> {
     this.cargando.set(true);
     try {
-      const all: Movimiento[] = [];
-      let page = 1;
-      const size = 500;
-      while (true) {
-        const params: ListarMovimientosParams = {
-          page, size, sortBy: 'fecha', order: 'desc',
-        };
-        if (this.desde) {
-          params.desde = new Date(this.desde + 'T00:00:00').toISOString();
-        }
-        if (this.hasta) {
-          params.hasta = new Date(this.hasta + 'T23:59:59.999').toISOString();
-        }
-        if (this.tipoFiltro !== 0) params.tipo = this.tipoFiltro as 1 | 2;
-        if (this.productoFiltro !== null) params.productoId = this.productoFiltro;
-        if (this.marcaFiltro !== 'all' && this.marcaFiltro !== 'null') {
-          params.marcaId = this.marcaFiltro;
-        } else if (this.marcaFiltro === 'null') {
-          params.marcaId = null;
-        }
-        if (this.categoriaFiltro !== 'all' && this.categoriaFiltro !== 'null') {
-          params.categoriaId = this.categoriaFiltro;
-        } else if (this.categoriaFiltro === 'null') {
-          params.categoriaId = null;
-        }
-        if (this.usuarioFiltro !== null) params.creadoPorId = this.usuarioFiltro;
-        if (this.clienteFiltro.trim()) params.cliente = this.clienteFiltro.trim();
-        if (this.busqueda.trim()) params.q = this.busqueda.trim();
-
-        const r: PaginatedResponse<Movimiento> = await this.kardexState.listarMovimientos(params);
-        all.push(...r.items);
-        if (!r.hasNext) break;
-        page++;
-        if (page > 50) break;
-      }
-      await this.generarExcelProfesional(all);
+      const params: ListarMovimientosParams = { order: 'desc' };
+      if (this.desde) params.desde = new Date(this.desde + 'T00:00:00').toISOString();
+      if (this.hasta) params.hasta = new Date(this.hasta + 'T23:59:59.999').toISOString();
+      if (this.tipoFiltro !== 0) params.tipo = this.tipoFiltro;
+      if (this.productoFiltro !== null) params.productoId = this.productoFiltro;
+      if (this.marcaFiltro !== 'all') params.marcaId = this.marcaFiltro === 'null' ? null : this.marcaFiltro;
+      if (this.categoriaFiltro !== 'all') params.categoriaId = this.categoriaFiltro === 'null' ? null : this.categoriaFiltro;
+      if (this.usuarioFiltro !== null) params.creadoPorId = this.usuarioFiltro;
+      if (this.clienteFiltro.trim()) params.cliente = this.clienteFiltro.trim();
+      if (this.busqueda.trim()) params.q = this.busqueda.trim();
+      const blob = await firstValueFrom(this.kardexState.exportarMovimientos(params));
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `movimientos-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      this.notify.error('No se pudo generar la exportación completa. No se descargó ningún archivo.');
     } finally {
       this.cargando.set(false);
     }
