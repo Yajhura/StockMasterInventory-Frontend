@@ -14,6 +14,7 @@ import {
 } from '../../core/models/inventario.models';
 import {
   ApiReportesService,
+  ClienteHistorialVenta,
   TopVendidoItem,
   TopClienteItem,
   StockCriticoEstancadosResult,
@@ -70,8 +71,15 @@ export class ReportesComponent implements OnInit {
 
   // Modal Historial por Cliente
   protected readonly clienteModal = signal<string | null>(null);
-  protected readonly historialCliente = signal<Movimiento[]>([]);
+  protected readonly clienteModalId = signal<number | null>(null);
+  protected readonly historialCliente = signal<ClienteHistorialVenta[]>([]);
   protected readonly cargandoHistorialCliente = signal<boolean>(false);
+  protected readonly errorHistorialCliente = signal<string | null>(null);
+  protected readonly errorKpi = signal<string | null>(null);
+  protected readonly errorTopClientes = signal<string | null>(null);
+  protected readonly errorTopVendidos = signal<string | null>(null);
+  protected readonly errorStock = signal<string | null>(null);
+  protected readonly errorRentabilidad = signal<string | null>(null);
   protected readonly isClienteModalOpen = computed(() => this.clienteModal() !== null);
 
   // Stock Crítico y Productos Sin Movimiento (Estancados)
@@ -223,8 +231,9 @@ export class ReportesComponent implements OnInit {
     try {
       const data = await firstValueFrom(this.apiReportes.kpiResumen());
       this.kpiData.set(data);
+      this.errorKpi.set(null);
     } catch {
-      // conservar ceros si falla
+      this.errorKpi.set('No se pudo cargar el resumen. Reintentá.');
     }
   }
 
@@ -233,10 +242,12 @@ export class ReportesComponent implements OnInit {
     try {
       const res = await firstValueFrom(this.apiReportes.stockCriticoEstancados(this.diasEstancado()));
       this.stockCriticoData.set(res);
+      this.errorStock.set(null);
       this.stockCriticoPage.set(1);
       this.stockEstancadoPage.set(1);
     } catch {
       this.stockCriticoData.set(null);
+      this.errorStock.set('No se pudo cargar el stock. Reintentá.');
     } finally {
       this.cargandoStockCritico.set(false);
     }
@@ -261,29 +272,27 @@ export class ReportesComponent implements OnInit {
         limit: this.topClientesLimit(),
       }));
       this.topClientesList.set(items);
+      this.errorTopClientes.set(null);
       this.topClientesPage.set(1);
     } catch {
       this.topClientesList.set([]);
+      this.errorTopClientes.set('No se pudo cargar el ranking de clientes. Reintentá.');
     } finally {
       this.cargandoTopClientes.set(false);
     }
   }
 
-  protected async verHistorialCliente(clienteNombre: string): Promise<void> {
+  protected async verHistorialCliente(clienteId: number, clienteNombre: string): Promise<void> {
     this.clienteModal.set(clienteNombre);
+    this.clienteModalId.set(clienteId);
     this.cargandoHistorialCliente.set(true);
+    this.errorHistorialCliente.set(null);
     try {
-      const res = await this.kardex.listarMovimientos({
-        page: 1,
-        size: 200,
-        cliente: clienteNombre,
-        tipo: 2, // SALIDAS / VENTAS
-        sortBy: 'fecha',
-        order: 'desc',
-      });
+      const res = await firstValueFrom(this.apiReportes.historialCliente(clienteId));
       this.historialCliente.set(res.items);
     } catch {
       this.historialCliente.set([]);
+      this.errorHistorialCliente.set('No se pudo cargar el historial del cliente.');
     } finally {
       this.cargandoHistorialCliente.set(false);
     }
@@ -291,6 +300,7 @@ export class ReportesComponent implements OnInit {
 
   protected cerrarClienteModal(): void {
     this.clienteModal.set(null);
+    this.clienteModalId.set(null);
     this.historialCliente.set([]);
   }
 
@@ -312,12 +322,14 @@ export class ReportesComponent implements OnInit {
         categoriaId,
       }));
       this.rentabilidadResponse.set(response);
+      this.errorRentabilidad.set(null);
       this.rentabilidadItems.set(response.lineas);
       this.rentabilidadPage.set(1);
       this.rentabilidadCatPage.set(1);
     } catch {
       this.rentabilidadItems.set([]);
       this.rentabilidadResponse.set(null);
+      this.errorRentabilidad.set('No se pudo calcular la rentabilidad. Reintentá.');
     } finally {
       this.cargandoRentabilidad.set(false);
     }
@@ -343,9 +355,11 @@ export class ReportesComponent implements OnInit {
       }
       const res = await firstValueFrom(this.apiReportes.topVendidos({ limit: 100, desde: desdeISO, hasta: hastaISO }));
       this.topVendidos.set(res.items);
+      this.errorTopVendidos.set(null);
       this.topVendidosPage.set(1);
     } catch {
       this.topVendidos.set([]);
+      this.errorTopVendidos.set('No se pudo cargar el ranking de productos. Reintentá.');
     } finally {
       this.cargandoTop.set(false);
     }

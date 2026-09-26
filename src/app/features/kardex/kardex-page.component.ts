@@ -61,6 +61,8 @@ export class KardexPageComponent implements OnInit {
   protected readonly kardex = signal<Movimiento[]>([]);
   protected readonly totalMovimientos = signal<number>(0);
   protected readonly cargando = signal<boolean>(false);
+  protected readonly exportando = signal<boolean>(false);
+  protected readonly progresoExportacion = signal<string | null>(null);
   protected readonly vistaModo = signal<'cards' | 'tabla'>('cards');
 
   Math = Math;
@@ -375,9 +377,10 @@ export class KardexPageComponent implements OnInit {
   }
 
   protected async exportarExcel(): Promise<void> {
-    this.cargando.set(true);
+    if (this.exportando()) return;
+    this.exportando.set(true);
     try {
-      const params: ListarMovimientosParams = { order: 'desc' };
+      const params: ListarMovimientosParams = { sortBy: 'fecha', order: 'desc' };
       if (this.desde) params.desde = new Date(this.desde + 'T00:00:00').toISOString();
       if (this.hasta) params.hasta = new Date(this.hasta + 'T23:59:59.999').toISOString();
       if (this.tipoFiltro !== 0) params.tipo = this.tipoFiltro;
@@ -387,17 +390,33 @@ export class KardexPageComponent implements OnInit {
       if (this.usuarioFiltro !== null) params.creadoPorId = this.usuarioFiltro;
       if (this.clienteFiltro.trim()) params.cliente = this.clienteFiltro.trim();
       if (this.busqueda.trim()) params.q = this.busqueda.trim();
-      const blob = await firstValueFrom(this.kardexState.exportarMovimientos(params));
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `movimientos-${new Date().toISOString().slice(0, 10)}.csv`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      this.notify.error('No se pudo generar la exportación completa. No se descargó ningún archivo.');
+      this.progresoExportacion.set('Obteniendo página 1…');
+      const first = await this.kardexState.listarMovimientos({ ...params, page: 1, size: 200 });
+      if (first.totalItems > 100000) throw new Error('EXPORT_LIMIT_EXCEEDED');
+      const total = first.totalItems;
+      const movimientos = [...first.items];
+      const ids = new Set(movimientos.map(m => m.id));
+      if (ids.size !== movimientos.length) throw new Error('EXPORT_SOURCE_CHANGED');
+      const pages = Math.ceil(total / 200);
+      for (let page = 2; page <= pages; page++) {
+        this.progresoExportacion.set(`Obteniendo página ${page} de ${pages}…`);
+        const response = await this.kardexState.listarMovimientos({ ...params, page, size: 200 });
+        if (response.totalItems !== total || response.items.some(m => ids.has(m.id))) throw new Error('EXPORT_SOURCE_CHANGED');
+        response.items.forEach(m => ids.add(m.id));
+        movimientos.push(...response.items);
+      }
+      if (movimientos.length !== total) throw new Error('EXPORT_SOURCE_CHANGED');
+      await this.generarExcelProfesional(movimientos);
+    } catch (error: any) {
+      const code = error?.message;
+      this.notify.error(code === 'EXPORT_SOURCE_CHANGED'
+        ? 'Los datos cambiaron durante la exportación. Reintentá.'
+        : code === 'EXPORT_LIMIT_EXCEEDED'
+          ? 'La exportación supera el límite operativo.'
+          : 'No se pudo obtener un conjunto completo. No se descargó ningún archivo.');
     } finally {
-      this.cargando.set(false);
+      this.progresoExportacion.set(null);
+      this.exportando.set(false);
     }
   }
 

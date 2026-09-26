@@ -70,22 +70,9 @@ export class KardexState {
   async listarMovimientos(
     params: ListarMovimientosParams = {},
   ): Promise<PaginatedResponse<Movimiento>> {
-    try {
-      const result = await firstValueFrom(this.apiMovimientos.listar(params));
-      this.shell.error.set(null);
-      return result;
-    } catch (e: unknown) {
-      this.shell.error.set(this.toMessage(e));
-      return {
-        items: [],
-        page: 1,
-        size: 0,
-        totalItems: 0,
-        totalPages: 0,
-        hasNext: false,
-        hasPrevious: false,
-      };
-    }
+    const result = await firstValueFrom(this.apiMovimientos.listar(params));
+    this.shell.error.set(null);
+    return result;
   }
 
   exportarMovimientos(params: ListarMovimientosParams = {}) {

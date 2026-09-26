@@ -49,12 +49,23 @@ export interface TopClienteParams {
 }
 
 export interface TopClienteItem {
+  clienteId: number;
   clienteNombre: string;
   totalTransacciones: number;
   unidadesCompradas: number;
   montoTotalComprado: number;
   ultimaCompra: string;
 }
+
+export interface ClienteHistorialVenta {
+  id: number;
+  fecha: string;
+  montoTotal: number;
+  estadoPago: string;
+  esCredito: boolean;
+  detalles: Array<{ productoId: number; cantidad: number; precioUnitario: number; subtotal: number }>;
+}
+export interface ClienteHistorialResponse { clienteId: number; clienteNombre: string; items: ClienteHistorialVenta[]; page: number; size: number; totalItems: number; }
 
 export interface RentabilidadParams {
   desde?: string;
@@ -153,6 +164,11 @@ export class ApiReportesService {
     if (params.hasta) p = p.set('hasta', params.hasta);
     if (params.limit) p = p.set('limit', String(params.limit));
     return this.http.get<TopClienteItem[]>(`${this.base}/top-clientes`, { params: p });
+  }
+
+  historialCliente(clienteId: number, page = 1, size = 50): Observable<ClienteHistorialResponse> {
+    const params = new HttpParams().set('page', String(page)).set('size', String(size));
+    return this.http.get<ClienteHistorialResponse>(`${environment.apiBaseUrl}/api/clientes/${clienteId}/historial-reportes`, { params });
   }
 
   rentabilidad(params: RentabilidadParams = {}): Observable<RentabilidadResponse> {

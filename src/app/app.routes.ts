@@ -46,6 +46,11 @@ export const routes: Routes = [
           import('./features/reportes/wac/wac-rentabilidad-page.component').then((m) => m.WacRentabilidadPageComponent),
       },
       {
+        path: 'reportes/wac-cuarentena',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/reportes/wac/wac-quarantine-page.component').then((m) => m.WacQuarantinePageComponent),
+      },
+      {
         path: 'catalogo',
         loadComponent: () =>
           import('./features/catalogo/catalogo.component').then((m) => m.CatalogoComponent),
