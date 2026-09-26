@@ -1,0 +1,213 @@
+<app-modal-overlay
+  [open]="open()"
+  [containerClass]="'w-full max-w-4xl max-h-[90vh] overflow-hidden'"
+  (close)="onBackdropClose()">
+
+  <div class="flex flex-col h-full max-h-[90vh]">
+
+    <!-- HEADER -->
+    <header class="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-4">
+      <div class="min-w-0">
+        <h3 class="text-base font-bold text-slate-900 truncate">
+          Composición de costos WAC
+          @if (composicion(); as c) {
+            <span class="text-slate-500 font-medium"> · {{ c.productoNombre }}</span>
+          }
+        </h3>
+        @if (composicion(); as c) {
+          <p class="text-[11px] text-slate-500 mt-0.5">
+            Período {{ c.desde }} → {{ c.hasta }} ·
+            {{ c.resumen.totalUnidadesIngresadas }}u ingresadas ·
+            {{ c.resumen.totalUnidadesVendidas }}u vendidas
+          </p>
+        }
+      </div>
+      <button type="button" class="btn-icon" (click)="onBackdropClose()" aria-label="Cerrar">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </header>
+
+    <!-- BODY -->
+    <div class="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+
+      <!-- LEGACY WARNING BANNER -->
+      @if (composicion(); as c) {
+        @if (c.warnings.hasLegacyMovimientos) {
+          <div
+            class="flex items-start gap-3 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900"
+            data-testid="composicion-legacy-warning">
+            <svg class="w-5 h-5 mt-0.5 shrink-0 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+            <div class="text-xs leading-relaxed">
+              <div class="font-bold uppercase tracking-wider mb-1">
+                {{ c.warnings.totalLegacyMovimientos }} movimiento(s) sin FechaUtc normalizada
+              </div>
+              <div class="text-amber-800/90">
+                {{ c.warnings.mensaje }}
+              </div>
+              <div class="mt-1 text-amber-700/80 text-[11px]">
+                {{ c.warnings.legacyIngresos }} INGRESO(s) · {{ c.warnings.legacyCostosAplicados }} costo(s) aplicado(s) marcados como legacy abajo.
+              </div>
+            </div>
+          </div>
+        }
+      }
+
+      <!-- LOADING -->
+      @if (loading()) {
+        <div class="grid place-items-center py-10 text-sm text-slate-500">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 animate-spin text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+            Cargando composición...
+          </div>
+        </div>
+      }
+
+      <!-- ERROR -->
+      @if (errorMsg(); as msg) {
+        <div class="px-3 py-2 rounded-md bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold" data-testid="composicion-error">
+          {{ msg }}
+        </div>
+      }
+
+      <!-- EMPTY -->
+      @if (composicion(); as c) {
+        @if (!loading() && !errorMsg() && !hasData()) {
+          <div class="p-6 text-center border-2 border-dashed border-slate-200 rounded-xl text-sm text-slate-500">
+            No hay compras ni costos aplicados para este producto en el período seleccionado.
+          </div>
+        }
+      }
+
+      <!-- COMPRAS (INGRESOS) -->
+      @if (composicion(); as c) {
+        @if (c.ingresos.length > 0) {
+          <section class="surface-card overflow-hidden">
+            <header class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Compras del período (INGRESOs)
+              </h4>
+              <span class="text-[10px] text-slate-500 tabular-nums">
+                {{ c.ingresos.length }} movimiento(s)
+              </span>
+            </header>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead class="bg-slate-50 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                  <tr>
+                    <th class="px-3 py-2">Fecha</th>
+                    <th class="px-3 py-2 text-right">Cant.</th>
+                    <th class="px-3 py-2 text-right">Precio unit.</th>
+                    <th class="px-3 py-2 text-right">Costo total</th>
+                    <th class="px-3 py-2 text-center">Estado</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  @for (ingreso of c.ingresos; track trackIngreso($index, ingreso)) {
+                    <tr [class.legacy-row]="ingreso.esLegacy" data-testid="composicion-ingreso-row">
+                      <td class="px-3 py-2 tabular-nums text-slate-700">{{ formatearFechaCorta(ingreso.fecha) }}</td>
+                      <td class="px-3 py-2 text-right tabular-nums font-semibold">{{ formatearNumero(ingreso.cantidad) }}</td>
+                      <td class="px-3 py-2 text-right tabular-nums">{{ formatearMoneda(ingreso.precioUnitario) }}</td>
+                      <td class="px-3 py-2 text-right tabular-nums font-bold text-blue-700">{{ formatearMoneda(ingreso.costoTotal) }}</td>
+                      <td class="px-3 py-2 text-center">
+                        <span [class]="claseLegacy(ingreso.esLegacy)" [title]="ingreso.esLegacy ? 'FechaUtc o FechaUtcNormalizadaEn sin completar (WAC-F1)' : 'FechaUtc normalizada'">
+                          {{ etiquetaLegacy(ingreso.esLegacy) }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        }
+
+        <!-- COSTOS APLICADOS A VENTAS -->
+        @if (c.costosAplicados.length > 0) {
+          <section class="surface-card overflow-hidden">
+            <header class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Costos aplicados a ventas (SALIDAs confirmadas)
+              </h4>
+              <span class="text-[10px] text-slate-500 tabular-nums">
+                {{ c.costosAplicados.length }} movimiento(s)
+              </span>
+            </header>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead class="bg-slate-50 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                  <tr>
+                    <th class="px-3 py-2">Fecha</th>
+                    <th class="px-3 py-2 text-right">Cant.</th>
+                    <th class="px-3 py-2 text-right">Precio venta</th>
+                    <th class="px-3 py-2 text-right">Costo aplicado</th>
+                    <th class="px-3 py-2">Venta</th>
+                    <th class="px-3 py-2 text-center">Estado</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  @for (costo of c.costosAplicados; track trackCostoAplicado($index, costo)) {
+                    <tr [class.legacy-row]="costo.esLegacy" data-testid="composicion-costo-row">
+                      <td class="px-3 py-2 tabular-nums text-slate-700">{{ formatearFechaCorta(costo.fecha) }}</td>
+                      <td class="px-3 py-2 text-right tabular-nums font-semibold">{{ formatearNumero(costo.cantidad) }}</td>
+                      <td class="px-3 py-2 text-right tabular-nums">{{ formatearMoneda(costo.precioUnitario) }}</td>
+                      <td class="px-3 py-2 text-right tabular-nums font-bold text-rose-700">{{ formatearMoneda(costo.costoTotal) }}</td>
+                      <td class="px-3 py-2 tabular-nums text-slate-600">
+                        @if (costo.ventaId !== null) {
+                          #{{ costo.ventaId }}
+                        } @else {
+                          <span class="text-slate-400 italic">pre-WAC</span>
+                        }
+                      </td>
+                      <td class="px-3 py-2 text-center">
+                        <span [class]="claseLegacy(costo.esLegacy)" [title]="costo.esLegacy ? 'FechaUtc o FechaUtcNormalizadaEn sin completar (WAC-F1)' : 'FechaUtc normalizada'">
+                          {{ etiquetaLegacy(costo.esLegacy) }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        }
+      }
+
+      <!-- RESUMEN + FÓRMULA -->
+      @if (composicion(); as c) {
+        <section class="surface-card p-4">
+          <header class="mb-3">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Resumen WAC del período</h4>
+          </header>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4" data-testid="composicion-resumen">
+            <div>
+              <div class="text-[10px] font-bold uppercase tracking-wider text-blue-700">Costo compras</div>
+              <div class="text-sm font-extrabold text-blue-900 tabular-nums">{{ formatearMoneda(c.resumen.totalCostoCompras) }}</div>
+            </div>
+            <div>
+              <div class="text-[10px] font-bold uppercase tracking-wider text-rose-700">Costo aplicado a ventas</div>
+              <div class="text-sm font-extrabold text-rose-900 tabular-nums">{{ formatearMoneda(c.resumen.totalCostoAplicadoVentas) }}</div>
+            </div>
+            <div>
+              <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Costo promedio calculado</div>
+              <div class="text-sm font-extrabold text-emerald-900 tabular-nums" data-testid="composicion-costo-promedio">{{ costoPromedioVisual(c) }}</div>
+            </div>
+            <div>
+              <div class="text-[10px] font-bold uppercase tracking-wider text-slate-700">Unidades (ingresadas / vendidas)</div>
+              <div class="text-sm font-extrabold text-slate-900 tabular-nums">
+                {{ formatearNumero(c.resumen.totalUnidadesIngresadas) }} / {{ formatearNumero(c.resumen.totalUnidadesVendidas) }}
+              </div>
+            </div>
+          </div>
+          <div class="px-3 py-2 rounded-md bg-slate-50 border border-slate-200 text-[11px] text-slate-600 leading-relaxed" data-testid="composicion-formula">
+            <span class="font-bold text-slate-700">Fórmula aplicada:</span> {{ c.resumen.formulaAplicada }}
+          </div>
+        </section>
+      }
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="px-5 py-3 border-t border-slate-200 flex items-center justify-end gap-2 bg-slate-50/50">
+      <button type="button" class="btn-secondary" (click)="onBackdropClose()">Cerrar</button>
+    </footer>
+  </div>
+</app-modal-overlay>

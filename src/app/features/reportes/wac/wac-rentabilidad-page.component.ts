@@ -16,6 +16,7 @@ import {
   CompletitudRentabilidad,
   RentabilidadResponse,
 } from './rentabilidad.dtos';
+import { WacRentabilidadComposicionModalComponent } from './wac-rentabilidad-composicion-modal.component';
 
 type Preset = 'ultimoMes' | 'ytd' | 'anioPasado' | 'personalizado';
 
@@ -30,7 +31,7 @@ type Preset = 'ultimoMes' | 'ytd' | 'anioPasado' | 'personalizado';
   standalone: true,
   templateUrl: './wac-rentabilidad-page.component.html',
   styleUrls: ['./wac-rentabilidad-page.component.css'],
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, WacRentabilidadComposicionModalComponent],
 })
 export class WacRentabilidadPageComponent implements OnInit {
   private readonly service = inject(RentabilidadService);
@@ -54,6 +55,20 @@ export class WacRentabilidadPageComponent implements OnInit {
     const r = this.respuesta();
     return !!r && (r.totales.productosCuarentenados > 0 || r.totales.productosConCostoFaltante > 0);
   });
+
+  // RENT-BREAKDOWN-02: drilldown state for the cost composition modal.
+  protected readonly composicionOpen = signal<boolean>(false);
+  protected readonly composicionProductoId = signal<number | null>(null);
+
+  protected abrirComposicion(productoId: number): void {
+    this.composicionProductoId.set(productoId);
+    this.composicionOpen.set(true);
+  }
+
+  protected cerrarComposicion(): void {
+    this.composicionOpen.set(false);
+    this.composicionProductoId.set(null);
+  }
 
   private readonly filtrosSubject = new Subject<void>();
 

@@ -108,6 +108,7 @@
                 <th class="px-4 py-3 text-right">Ganancia (S/.)</th>
                 <th class="px-4 py-3 text-center">Margen</th>
                 <th class="px-4 py-3 text-center">Completitud</th>
+                <th class="px-4 py-3 text-center">Detalle</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-sm">
@@ -128,6 +129,17 @@
                   <td class="px-4 py-3 text-center tabular-nums font-bold" [class.text-rose-700]="(linea.margenPorcentaje ?? 0) < 0">@if (linea.margenPorcentaje === null) { — } @else { {{ linea.margenPorcentaje | number:'1.2-2' }}% }</td>
                   <td class="px-4 py-3 text-center">
                     <span [class]="claseCompletitud(linea.completitud)" [title]="tooltipCompletitud(linea.completitud)">{{ etiquetaCompletitud(linea.completitud) }}</span>
+                  </td>
+                  <td class="px-4 py-3 text-center">
+                    <button
+                      type="button"
+                      class="btn-secondary"
+                      [attr.data-producto-id]="linea.productoId"
+                      data-testid="btn-ver-costos"
+                      (click)="abrirComposicion(linea.productoId)">
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      Ver costos
+                    </button>
                   </td>
                 </tr>
               }
@@ -153,3 +165,13 @@
     <div class="surface-card p-6 text-center text-sm text-slate-500">Seleccioná un rango de fechas para empezar.</div>
   }
 </div>
+
+<!-- RENT-BREAKDOWN-02: composition modal mounted at the page root so the
+     open/close state lives next to the grid that triggers it. -->
+<app-wac-rentabilidad-composicion-modal
+  [open]="composicionOpen()"
+  [productoId]="composicionProductoId()"
+  [desde]="filtrosForm.getRawValue().desde"
+  [hasta]="filtrosForm.getRawValue().hasta"
+  (close)="cerrarComposicion()">
+</app-wac-rentabilidad-composicion-modal>
