@@ -100,7 +100,9 @@
               placeholder="0"
             />
             @if (formMovimiento.get('cantidad')?.invalid && formMovimiento.get('cantidad')?.touched) {
-              <p class="text-[11px] text-rose-600 mt-1 font-semibold">La cantidad debe ser mayor a 0.</p>
+              <p class="text-[11px] text-rose-600 mt-1 font-semibold">
+                {{ formMovimiento.get('cantidad')?.errors?.['server'] || 'La cantidad debe ser mayor a 0.' }}
+              </p>
             }
           </div>
           <div>
@@ -114,7 +116,9 @@
               placeholder="S/. 0.00"
             />
             @if (formMovimiento.get('precioUnitario')?.invalid && formMovimiento.get('precioUnitario')?.touched) {
-              <p class="text-[11px] text-rose-600 mt-1 font-semibold">El precio unitario debe ser mayor o igual a 0.</p>
+              <p class="text-[11px] text-rose-600 mt-1 font-semibold">
+                {{ formMovimiento.get('precioUnitario')?.errors?.['server'] || 'El precio unitario debe ser mayor o igual a 0.' }}
+              </p>
             }
           </div>
         </div>

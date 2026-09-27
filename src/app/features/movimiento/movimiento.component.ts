@@ -42,6 +42,10 @@ export class MovimientoComponent implements OnInit {
   private readonly catalogos = inject(CatalogosState);
   protected readonly notify = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
+
+  // B-6 audit: descarta respuestas tardias cuando el usuario cambia
+  // de producto rapidamente. Mismo patron que KardexPageComponent.
+  private historialRequestSeq = 0;
   private readonly destroyRef = inject(DestroyRef);
 
   // Parámetros de tabla
@@ -243,10 +247,41 @@ export class MovimientoComponent implements OnInit {
       });
       this.onFormChange();
       this.refrescarHistorial();
-    } catch {
+    } catch (e: unknown) {
+      // A-4 audit: si el backend devuelve ValidationProblem, pintamos el
+      // mensaje al lado del campo correspondiente. Mapeamos PascalCase
+      // (Cantidad, PrecioUnitario) -> camelCase del FormControl.
+      this.aplicarErroresServidor(e);
       this.notify.error(this.shell.error() ?? 'No se pudo registrar el movimiento.');
     } finally {
       this.procesando.set(false);
+    }
+  }
+
+  /**
+   * Mapea errores de validación del backend (RFC 7807 ValidationProblem)
+   * a `setErrors({ server: msg })` en el FormControl correspondiente.
+   * Asi el HTML puede mostrar el mensaje al lado del input ademas del toast.
+   */
+  private aplicarErroresServidor(e: unknown): void {
+    const err = (e as { error?: { errors?: Record<string, string[] | string> } } | null)?.error;
+    if (!err?.errors || typeof err.errors !== 'object') return;
+
+    // Mapa PascalCase backend -> camelCase formControl.
+    const fieldMap: Record<string, string> = {
+      ProductoId: 'productoId',
+      TipoMovimientoId: 'tipoMovimientoId',
+      Cantidad: 'cantidad',
+      PrecioUnitario: 'precioUnitario',
+      Observacion: 'observacion',
+    };
+
+    for (const [backendField, msgs] of Object.entries(err.errors)) {
+      const formField = fieldMap[backendField] ?? backendField.toLowerCase();
+      const control = this.formMovimiento.get(formField);
+      if (!control) continue;
+      const msg = Array.isArray(msgs) ? msgs[0] : String(msgs);
+      control.setErrors({ ...(control.errors ?? {}), server: msg });
     }
   }
 
@@ -259,7 +294,12 @@ export class MovimientoComponent implements OnInit {
       return;
     }
     this.sinProductoSeleccionado.set(false);
+    const requestId = ++this.historialRequestSeq;
     const movs = await this.kardex.obtenerKardex(Number(productoId));
+    if (requestId !== this.historialRequestSeq) {
+      // Respuesta obsoleta: el usuario ya pidio otro producto.
+      return;
+    }
     this.productoSinMovimientos.set(movs.length === 0);
     this.historialReciente.set(movs.slice(0, 5).map((m) => this.mapFila(m)));
   }
