@@ -232,14 +232,15 @@ export class PuntoVentaComponent implements OnInit {
     return this.clientes().find(c => c.id === Number(id)) ?? null;
   });
 
-  // --- Computed: deuda actual del cliente seleccionado ---
-  protected readonly saldoActualCliente = computed<number>(() => {
-    const cli = this.clienteSeleccionado();
-    if (!cli) return 0;
-    return this.ventas()
-      .filter(v => v.clienteId === cli.id && v.estadoPago !== 'Pagado')
-      .reduce((acc, v) => this.round2(acc + (Number(v.saldoPendiente) || 0)), 0);
-  });
+  // C-1 audit: el saldo del cliente viene del endpoint dedicado
+  // GET /api/clientes/{id}/estado-cuenta (server-side, sin filtros aplicados).
+  // Antes era un computed sobre this.ventas() que filtraba por el filtro del
+  // listado del POS — si el operador activo "estadoPago=Parcial", una venta
+  // "Pendiente" del mismo cliente quedaba oculta y el saldo mostrado era
+  // menor al real.
+  private readonly _estadoCuenta = signal<number>(0);
+  protected readonly saldoActualCliente = this._estadoCuenta.asReadonly();
+  private estadoCuentaRequest = 0;
 
   /** Redondeo a 2 decimales — evita drift acumulado de floating-point
    *  (33.33 + 33.33 + 33.34 debería ser exactamente 100.00). */
@@ -287,6 +288,29 @@ export class PuntoVentaComponent implements OnInit {
       });
 
       onCleanup(() => sub.unsubscribe());
+    }, { allowSignalWrites: true });
+
+    // Effect: cuando cambia el cliente seleccionado, fetch el estado de cuenta
+    // real desde el backend (no usar this.ventas() filtrada — C-1 audit).
+    // requestId descarta respuestas tardias si el usuario cambia de cliente
+    // rapidamente.
+    effect(() => {
+      const cli = this.clienteSeleccionado();
+      if (!cli) {
+        this._estadoCuenta.set(0);
+        return;
+      }
+      const requestId = ++this.estadoCuentaRequest;
+      this.apiClientes.obtenerEstadoCuenta(cli.id).subscribe({
+        next: (ec) => {
+          if (requestId !== this.estadoCuentaRequest) return;
+          this._estadoCuenta.set(this.round2(Number(ec.deudaActual) || 0));
+        },
+        error: () => {
+          if (requestId !== this.estadoCuentaRequest) return;
+          this._estadoCuenta.set(0);
+        }
+      });
     }, { allowSignalWrites: true });
   }
 
