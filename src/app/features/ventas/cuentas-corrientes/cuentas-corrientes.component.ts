@@ -10,6 +10,8 @@ import { Cliente } from '../../../core/models/cliente.models';
 import { Venta, CrearAbonoPayload, VentaDetallada, Cuota, KpiCobranza, VentaFiltros, Abono, EstadoPago, MetodoPago } from '../../../core/models/venta.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
 import { ConfirmDialogComponent } from '../../../core/components/confirm-dialog.component';
+import { DateRangePickerComponent, DateRange } from '../../../core/components/date-range-picker.component';
+import { TABLA_COMPONENTS } from '../../../core/components/tabla.component';
 
 interface CuotaConVencida extends Cuota {
   vencida: boolean;
@@ -29,7 +31,14 @@ interface CuotaAfectada {
 @Component({
   selector: 'app-cuentas-corrientes',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DropdownComponent, ConfirmDialogComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    DropdownComponent,
+    ConfirmDialogComponent,
+    DateRangePickerComponent,
+    ...TABLA_COMPONENTS
+  ],
   templateUrl: './cuentas-corrientes.component.html',
 })
 export class CuentasCorrientesComponent implements OnInit, OnDestroy {
@@ -67,6 +76,9 @@ export class CuentasCorrientesComponent implements OnInit, OnDestroy {
   protected readonly metodosPago = signal<MetodoPago[]>([]);
 
   // Filtros (signal reactivo con debounce al backend)
+  protected desde = '';
+  protected hasta = '';
+
   protected readonly filtros = signal<VentaFiltros>({
     desde: null,
     hasta: null,
@@ -373,24 +385,52 @@ export class CuentasCorrientesComponent implements OnInit, OnDestroy {
     });
   }
 
+  protected cambiarPagina(nuevaPagina: number): void {
+    this.filtros.update(f => ({ ...f, page: nuevaPagina }));
+    this.cargarDeudas();
+  }
+
+  protected onRangoFechasChange(rango: DateRange): void {
+    this.desde = rango.desde;
+    this.hasta = rango.hasta;
+    this.filtros.update(f => ({
+      ...f,
+      desde: rango.desde || null,
+      hasta: rango.hasta || null,
+      page: 1
+    }));
+    this.scheduleReload();
+  }
+
+  protected onClienteSearch(term: string): void {
+    const trimmed = (term ?? '').trim();
+    this.clientesStore.cargar({ q: trimmed || undefined, page: 1, size: 50 }).then((data) => {
+      this.clientes.set(data.items);
+    }).catch(() => {});
+  }
+
   protected onFiltroFechaChange(campo: 'desde' | 'hasta', event: Event) {
     const valor = (event.target as HTMLInputElement).value;
-    this.filtros.update(f => ({ ...f, [campo]: valor || null }));
+    if (campo === 'desde') this.desde = valor;
+    if (campo === 'hasta') this.hasta = valor;
+    this.filtros.update(f => ({ ...f, [campo]: valor || null, page: 1 }));
     this.scheduleReload();
   }
 
   protected onFiltroClienteChange(value: unknown) {
     const id = value == null ? null : Number(value);
-    this.filtros.update(f => ({ ...f, clienteId: Number.isFinite(id as number) ? id : null }));
+    this.filtros.update(f => ({ ...f, clienteId: Number.isFinite(id as number) ? id : null, page: 1 }));
     this.scheduleReload();
   }
 
   protected onFiltroEstadoChange(value: unknown) {
-    this.filtros.update(f => ({ ...f, estadoPago: (value as EstadoPago | null) ?? null }));
+    this.filtros.update(f => ({ ...f, estadoPago: (value as EstadoPago | null) ?? null, page: 1 }));
     this.scheduleReload();
   }
 
   protected limpiarFiltros() {
+    this.desde = '';
+    this.hasta = '';
     this.filtros.set({ desde: null, hasta: null, clienteId: null, estadoPago: null, page: 1, size: 50 });
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
