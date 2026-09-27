@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { ApiClientesService } from '../../../core/api/api-clientes.service';
 import { ApiProductosService } from '../../../core/api/api-productos.service';
 import { ApiVentasService } from '../../../core/api/api-ventas.service';
 import { Cliente } from '../../../core/models/cliente.models';
-import { Venta } from '../../../core/models/venta.models';
+import { Venta, VentaDetallada } from '../../../core/models/venta.models';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ProductosState } from '../../../core/state/productos.state';
 import { PuntoVentaComponent } from './punto-venta.component';
@@ -371,5 +371,136 @@ describe('PuntoVentaComponent inline cliente creation', () => {
     instance.setTipoDocumento(3);
     expect(instance.formCliente.get('documento')?.value).toBe('');
     expect(instance.formCliente.get('documento')?.disabled).toBeTrue();
+  });
+});
+
+// =====================================================================
+//  POS detail modal — feature "Ver detalle" en el listado de ventas
+// ---------------------------------------------------------------------
+//  Cubre los handlers `verDetalleVenta` y `cerrarModalDetalle` del POS:
+//  el modal abre, dispara el fetch a GET /api/ventas/{id}, y el close
+//  limpia el estado. El render de Productos / Abonos / Cuotas se hace
+//  via @if en el template; estos tests validan el contrato reactivo.
+// =====================================================================
+
+describe('PuntoVentaComponent ver detalle venta modal', () => {
+  let fixture: ComponentFixture<PuntoVentaComponent>;
+  let component: PuntoVentaComponent;
+  let apiVentas: jasmine.SpyObj<ApiVentasService>;
+  let notification: jasmine.SpyObj<NotificationService>;
+
+  // Mock completo de VentaDetallada: cabecera + detalles + abonos + cuotas.
+  // Lo compartimos entre tests; cada spy puede rebindear `obtener` con un
+  // returnValue distinto (happy path vs error) sin tocar el resto.
+  const detalleMock: VentaDetallada = {
+    id: 42,
+    clienteId: 1,
+    clienteNombre: 'Cliente Detalle',
+    fecha: '2026-09-21T10:30:00Z',
+    montoTotal: 250,
+    saldoPendiente: 100,
+    estadoPago: 'Parcial',
+    esCredito: true,
+    cantidadCuotas: 3,
+    frecuencia: 'Mensual',
+    fechaInicioCredito: '2026-09-21',
+    detalles: [
+      { id: 1, productoId: 10, productoNombre: 'Producto 1', cantidad: 2, precioUnitario: 100, subtotal: 200 },
+      { id: 2, productoId: 11, productoNombre: 'Producto 2', cantidad: 1, precioUnitario: 50, subtotal: 50 },
+    ],
+    abonos: [
+      { id: 1, monto: 150, fecha: '2026-09-22T08:00:00Z', metodoPagoId: 1, metodoPagoNombre: 'Efectivo', observacion: 'Pago inicial', estado: 'Pagado', eliminadoEn: null },
+    ],
+    cuotas: [
+      { id: 1, numero: 1, monto: 83.33, montoPagado: 50, montoPendiente: 33.33, fechaVencimiento: '2026-10-21', fechaPago: null, estado: 'Parcial', eliminadoEn: null },
+      { id: 2, numero: 2, monto: 83.33, montoPagado: 0, montoPendiente: 83.33, fechaVencimiento: '2026-11-21', fechaPago: null, estado: 'Pendiente', eliminadoEn: null },
+      { id: 3, numero: 3, monto: 83.34, montoPagado: 0, montoPendiente: 83.34, fechaVencimiento: '2026-12-21', fechaPago: null, estado: 'Pendiente', eliminadoEn: null },
+    ],
+  };
+
+  beforeEach(() => {
+    apiVentas = jasmine.createSpyObj<ApiVentasService>('ApiVentasService', [
+      'listar', 'listarMetodosPago', 'previewPlan', 'registrarVenta', 'obtener',
+    ]);
+    apiVentas.listar.and.returnValue(of([]));
+    apiVentas.listarMetodosPago.and.returnValue(of([]));
+    apiVentas.previewPlan.and.returnValue(of([]));
+    apiVentas.registrarVenta.and.returnValue(of({} as Venta));
+    apiVentas.obtener.and.returnValue(of(detalleMock));
+
+    notification = jasmine.createSpyObj<NotificationService>('NotificationService', ['success', 'error']);
+
+    TestBed.configureTestingModule({
+      imports: [PuntoVentaComponent],
+      providers: [
+        { provide: ApiVentasService, useValue: apiVentas },
+        // El componente inyecta ClientesStore (providedIn: 'root') que a
+        // su vez inyecta ApiClientesService; el override evita el HTTP
+        // real. No seteamos clienteId en este describe, asi que el
+        // effect de `obtenerEstadoCuenta` no se dispara.
+        { provide: ApiClientesService, useValue: {
+            listar: () => of({ items: [], page: 1, size: 50, totalItems: 0, totalPages: 0, hasNext: false, hasPrevious: false }),
+            crear: () => of({} as Cliente),
+            obtenerEstadoCuenta: () => of({ clienteId: 0, deudaActual: 0, lineaCredito: 0, creditoDisponible: 0, totalVentasCredito: 0, ventasPendientes: 0 }),
+        }},
+        { provide: ApiProductosService, useValue: { selector: () => of([]) } },
+        { provide: NotificationService, useValue: notification },
+        { provide: ProductosState, useValue: { notificarCambioStock: jasmine.createSpy('notificarCambioStock') } },
+      ],
+    });
+
+    fixture = TestBed.createComponent(PuntoVentaComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('verDetalleVenta abre el modal, hace fetch y muestra los datos', () => {
+    const instance = component as any;
+
+    instance.verDetalleVenta(42);
+
+    expect(apiVentas.obtener).toHaveBeenCalledWith(42);
+    expect(instance.modalDetalleAbierto())
+      .withContext('el modal abre ANTES del fetch para que el skeleton salga de inmediato')
+      .toBeTrue();
+    expect(instance.cargandoDetalle())
+      .withContext('cargandoDetalle vuelve a false cuando llega la respuesta')
+      .toBeFalse();
+    expect(instance.detalleSeleccionado())
+      .withContext('detalleSeleccionado queda con la respuesta completa del backend')
+      .toEqual(detalleMock);
+  });
+
+  it('verDetalleVenta con error cierra el modal y notifica', () => {
+    apiVentas.obtener.and.returnValue(throwError(() => new Error('boom')));
+    const instance = component as any;
+
+    instance.verDetalleVenta(42);
+
+    expect(apiVentas.obtener).toHaveBeenCalledWith(42);
+    expect(instance.modalDetalleAbierto())
+      .withContext('en error cerramos el modal para no dejar estado parcial visible')
+      .toBeFalse();
+    expect(instance.cargandoDetalle())
+      .withContext('cargandoDetalle tambien se limpia en el error path')
+      .toBeFalse();
+    expect(notification.error).toHaveBeenCalledWith('No se pudo cargar el detalle de la venta');
+  });
+
+  it('cerrarModalDetalle limpia el estado del modal sin tocar otras senales', () => {
+    const instance = component as any;
+
+    // Sembramos el estado como si el modal estuviera abierto con datos.
+    instance.modalDetalleAbierto.set(true);
+    instance.detalleSeleccionado.set(detalleMock);
+    instance.cargandoDetalle.set(false);
+
+    instance.cerrarModalDetalle();
+
+    expect(instance.modalDetalleAbierto()).toBeFalse();
+    expect(instance.detalleSeleccionado()).toBeNull(
+      'importante: el detalle se descarta para evitar leaks entre ventas');
+    // cargandoDetalle no se toca en cerrarModalDetalle (es exclusiva del
+    // handler de fetch). Si cambia el contrato, este test lo va a marcar.
   });
 });

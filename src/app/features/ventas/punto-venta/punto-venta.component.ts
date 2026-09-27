@@ -11,7 +11,7 @@ import { ProductosState } from '../../../core/state/productos.state';
 import { ClientesStore } from '../../../core/state/clientes.store';
 import { ProductoSelectorItem } from '../../../core/models/inventario.models';
 import { Cliente, CrearClientePayload, ClienteFiltros } from '../../../core/models/cliente.models';
-import { CrearVentaPayload, PagoInicial, Venta, VentaFiltros, KpiVentas, EstadoPago, MetodoPago, CuotaPreview } from '../../../core/models/venta.models';
+import { CrearVentaPayload, PagoInicial, Venta, VentaFiltros, KpiVentas, EstadoPago, MetodoPago, CuotaPreview, VentaDetallada } from '../../../core/models/venta.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
 @Component({
   selector: 'app-punto-venta',
@@ -148,6 +148,15 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
   // Modal Cliente
   protected modalClienteAbierto = signal(false);
   protected guardandoCliente = signal(false);
+
+  // Modal Detalle de Venta (POS)
+  // Replica el patron ya usado en `cuentas-corrientes.component.ts`.
+  // El modal abre ANTES del fetch para que el skeleton salga de una;
+  // `detalleSeleccionado` se popula cuando llega la respuesta y se
+  // limpia en `cerrarModalDetalle` para evitar leaks entre ventas.
+  protected readonly modalDetalleAbierto = signal<boolean>(false);
+  protected readonly detalleSeleccionado = signal<VentaDetallada | null>(null);
+  protected readonly cargandoDetalle = signal<boolean>(false);
   protected formCliente = this.fb.group({
     tipoDocumentoId: [1],
     nombre: ['', [Validators.required, Validators.maxLength(150)]],
@@ -549,6 +558,36 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
 
   protected cerrarModalCliente() {
     this.modalClienteAbierto.set(false);
+  }
+
+  /**
+   * Abre el modal de detalle y dispara el fetch de la venta detallada.
+   * Patron copiado de `cuentas-corrientes.component.ts` (`verDetalles`).
+   * Si la API falla, cerramos el modal y notificamos — sin estado
+   * parcial. El subscribe es fire-and-forget porque el componente
+   * se desuscribe al destruirse (la peticion es one-shot via
+   * `apiVentas.obtener`).
+   */
+  protected verDetalleVenta(id: number): void {
+    this.modalDetalleAbierto.set(true);
+    this.cargandoDetalle.set(true);
+    this.detalleSeleccionado.set(null);
+    this.apiVentas.obtener(id).subscribe({
+      next: (detalle) => {
+        this.detalleSeleccionado.set(detalle);
+        this.cargandoDetalle.set(false);
+      },
+      error: () => {
+        this.notify.error('No se pudo cargar el detalle de la venta');
+        this.cargandoDetalle.set(false);
+        this.modalDetalleAbierto.set(false);
+      }
+    });
+  }
+
+  protected cerrarModalDetalle(): void {
+    this.modalDetalleAbierto.set(false);
+    this.detalleSeleccionado.set(null);
   }
 
   protected setTipoDocumento(tipoId: number) {
