@@ -13,10 +13,21 @@ import { ProductoSelectorItem } from '../../../core/models/inventario.models';
 import { Cliente, CrearClientePayload, ClienteFiltros } from '../../../core/models/cliente.models';
 import { CrearVentaPayload, PagoInicial, Venta, VentaFiltros, KpiVentas, EstadoPago, MetodoPago, CuotaPreview, VentaDetallada, Cuota } from '../../../core/models/venta.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
+import { DateRangePickerComponent, DateRange } from '../../../core/components/date-range-picker.component';
+import { TABLA_COMPONENTS } from '../../../core/components/tabla.component';
+
 @Component({
   selector: 'app-punto-venta',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, DropdownComponent, OnlyNumbersDirective],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    FormsModule,
+    DropdownComponent,
+    DateRangePickerComponent,
+    ...TABLA_COMPONENTS,
+    OnlyNumbersDirective
+  ],
   templateUrl: './punto-venta.component.html',
 })
 export class PuntoVentaComponent implements OnInit {
@@ -97,18 +108,37 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
   );
 
   protected readonly opcionesEstadoPago: DropdownOption<EstadoPago | null>[] = [
+    { value: null, label: 'Todos los estados' },
     { value: 'Pagado', label: 'Pagado' },
     { value: 'Parcial', label: 'Parcial' },
     { value: 'Pendiente', label: 'Pendiente' }
   ];
 
   // --- Filtros del listado ---
+  protected desde = '';
+  protected hasta = '';
+
   protected readonly filtros = signal<VentaFiltros>({
     desde: null,
     hasta: null,
     clienteId: null,
     estadoPago: null
   });
+
+  // --- Paginación del listado ---
+  protected readonly page = signal<number>(1);
+  protected readonly pageSize = signal<number>(10);
+  protected readonly totalPages = computed<number>(() =>
+    Math.ceil(this.ventas().length / this.pageSize()) || 1
+  );
+  protected readonly ventasPaginadas = computed<Venta[]>(() => {
+    const start = (this.page() - 1) * this.pageSize();
+    return this.ventas().slice(start, start + this.pageSize());
+  });
+
+  protected cambiarPagina(nuevaPagina: number): void {
+    this.page.set(nuevaPagina);
+  }
 
   protected readonly opcionesFiltroCliente = computed<DropdownOption<number | null>[]>(() => [
     { value: null, label: 'Todos los clientes', sublabel: 'Sin filtro' },
@@ -392,29 +422,49 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
     });
   }
 
+  protected onRangoFechasChange(rango: DateRange): void {
+    this.desde = rango.desde;
+    this.hasta = rango.hasta;
+    this.filtros.update(f => ({
+      ...f,
+      desde: rango.desde || null,
+      hasta: rango.hasta || null,
+    }));
+    this.page.set(1);
+    this.scheduleReload();
+  }
+
   protected onFiltroFechaChange(campo: 'desde' | 'hasta', event: Event) {
     const valor = (event.target as HTMLInputElement).value;
+    if (campo === 'desde') this.desde = valor;
+    if (campo === 'hasta') this.hasta = valor;
     this.filtros.update(f => ({ ...f, [campo]: valor || null }));
+    this.page.set(1);
     this.scheduleReload();
   }
 
   protected onFiltroClienteChange(value: unknown) {
     const id = value == null ? null : Number(value);
     this.filtros.update(f => ({ ...f, clienteId: Number.isFinite(id as number) ? id : null }));
+    this.page.set(1);
     this.scheduleReload();
   }
 
   protected onFiltroEstadoChange(value: unknown) {
     this.filtros.update(f => ({ ...f, estadoPago: (value as EstadoPago | null) ?? null }));
+    this.page.set(1);
     this.scheduleReload();
   }
 
   protected limpiarFiltros() {
+    this.desde = '';
+    this.hasta = '';
     this.filtros.set({ desde: null, hasta: null, clienteId: null, estadoPago: null });
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
       this.debounceTimer = null;
     }
+    this.page.set(1);
     this.cargarVentas();
   }
 
