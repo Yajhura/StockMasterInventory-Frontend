@@ -147,7 +147,7 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
     nombre: ['', [Validators.required, Validators.maxLength(150)]],
     // A-1 / B-1 audit (fix #6): el pattern se ajusta dinamicamente segun
     // el tipoDocumentoId (DNI 8 dig / RUC 11 dig). El default es DNI (1).
-    documento: ['', [Validators.maxLength(50)]],
+    documento: ['', [Validators.maxLength(20)]],
     telefono: ['', Validators.maxLength(50)],
     email: ['', [Validators.email, Validators.maxLength(100)]],
     direccion: ['', Validators.maxLength(250)]
@@ -556,7 +556,7 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
     const docCtrl = this.formCliente.get('documento');
     if (!docCtrl) return;
     docCtrl.clearValidators();
-    docCtrl.addValidators([Validators.maxLength(50)]);
+    docCtrl.addValidators([Validators.maxLength(20)]);
     if (tipoId === 1) docCtrl.addValidators([Validators.pattern(/^\d{8}$/)]);
     else if (tipoId === 2) docCtrl.addValidators([Validators.pattern(/^\d{11}$/)]);
     docCtrl.updateValueAndValidity();
