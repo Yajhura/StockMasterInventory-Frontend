@@ -539,8 +539,11 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
 
   protected abrirModalCliente() {
     this.formCliente.reset({ tipoDocumentoId: 1 });
-    // A-1 / B-1 audit (fix #6): aplicar validator DNI por default.
-    this.aplicarValidadorDocumento(1);
+    // El campo `documento` es opcional. La validacion de formato
+    // (DNI = 8 digitos, RUC = 11 digitos) la hace el backend al submit y
+    // el handler de errores la surfacea al operador; no aplicamos
+    // `Validators.pattern` en el cliente para que el modal acepte
+    // documento vacio tanto con DNI como con RUC.
     this.modalClienteAbierto.set(true);
   }
 
@@ -556,24 +559,6 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
     } else {
       this.formCliente.get('documento')?.enable();
     }
-    // A-1 / B-1 audit (fix #6): aplicar pattern de documento segun el tipo.
-    this.aplicarValidadorDocumento(tipoId);
-  }
-
-  /**
-   * A-1 / B-1 audit (fix #6): DNI = exactamente 8 digitos, RUC = 11.
-   * Sin doc. (3) no lleva pattern. Si el valor actual no cumple el nuevo
-   * pattern, marcamos el control como touched para que el usuario vea el error.
-   */
-  private aplicarValidadorDocumento(tipoId: number): void {
-    const docCtrl = this.formCliente.get('documento');
-    if (!docCtrl) return;
-    docCtrl.clearValidators();
-    docCtrl.addValidators([Validators.maxLength(20)]);
-    if (tipoId === 1) docCtrl.addValidators([Validators.pattern(/^\d{8}$/)]);
-    else if (tipoId === 2) docCtrl.addValidators([Validators.pattern(/^\d{11}$/)]);
-    docCtrl.updateValueAndValidity();
-    if (docCtrl.invalid && docCtrl.value) docCtrl.markAsTouched();
   }
 
   protected intentarGuardarClienteRapido() {

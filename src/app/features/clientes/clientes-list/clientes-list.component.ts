@@ -156,21 +156,16 @@ export class ClientesListComponent implements OnInit, OnDestroy {
   });
 
   /**
-   * A-1 / B-1 audit (fix #6): mensaje de error inline para el campo
-   * documento segun el tipo y el motivo del fallo.
+   * Mensaje de error inline para el campo documento. El campo es
+   * opcional — solo se reporta si el backend rechazo el formato. La
+   * validacion de formato la hace el servidor al submit (DNI = 8 digitos,
+   * RUC = 11 digitos), asi que este getter rara vez se dispara; queda por
+   * si en el futuro agregamos validators locales.
    */
   protected readonly mensajeErrorDocumento = computed<string>(() => {
     const ctrl = this.formCliente.get('documento');
     if (!ctrl || !ctrl.errors) return '';
-    const tipo = this.formCliente.get('tipoDocumentoId')?.value;
-    if (tipo === 1) {
-      if (ctrl.errors['required']) return 'El DNI es obligatorio.';
-      if (ctrl.errors['pattern']) return 'El DNI debe tener exactamente 8 digitos.';
-    }
-    if (tipo === 2) {
-      if (ctrl.errors['required']) return 'El RUC es obligatorio.';
-      if (ctrl.errors['pattern']) return 'El RUC debe tener exactamente 11 digitos.';
-    }
+    if (ctrl.errors['maxlength']) return 'El documento es demasiado largo.';
     return 'Documento invalido.';
   });
 
@@ -210,41 +205,10 @@ export class ClientesListComponent implements OnInit, OnDestroy {
       this.documento$.next((val ?? '').toString());
     });
 
-    // A-1 / B-1 audit (fix #6): ajustar validators de `documento` segun
-    // el `tipoDocumentoId`. DNI = 8 digitos, RUC = 11 digitos, Sin doc.
-    // = null/empty (campo opcional). valueChanges dispara cuando el usuario
-    // cambia el dropdown o cuando cargarTiposDocumento re-asigna defaults.
-    this.formCliente.get('tipoDocumentoId')?.valueChanges.subscribe((tipo) => {
-      this.aplicarValidadorDocumento(tipo);
-    });
-    // Aplicar el inicial por si el default (3) ya estaba al construir el form.
-    this.aplicarValidadorDocumento(this.formCliente.get('tipoDocumentoId')?.value);
-  }
-
-  /**
-   * A-1 / B-1 audit (fix #6): agrega o remueve el `Validators.pattern`
-   * del campo `documento` segun el TipoDocumentoId. DNI = exactamente 8
-   * digitos, RUC = exactamente 11, Sin doc. = documento vacio (sin pattern).
-   * Si el valor actual no cumple el nuevo pattern, lo borra y marca el
-   * control como touched para que el error sea visible al usuario.
-   */
-  private aplicarValidadorDocumento(tipoId: number | null | undefined): void {
-    const docCtrl = this.formCliente.get('documento');
-    if (!docCtrl) return;
-    // Siempre limpiamos validators custom y luego re-aplicamos segun tipo.
-    docCtrl.clearValidators();
-    if (tipoId === 1) {
-      docCtrl.addValidators([Validators.pattern(/^\d{8}$/)]);
-    } else if (tipoId === 2) {
-      docCtrl.addValidators([Validators.pattern(/^\d{11}$/)]);
-    }
-    // Sin doc. (3) o tipo desconocido: sin pattern, sigue siendo opcional.
-    docCtrl.updateValueAndValidity();
-    // Si el valor actual no matchea el nuevo pattern, no lo limpiamos
-    // automaticamente — el usuario lo vera en rojo y lo corregira.
-    if (docCtrl.invalid && docCtrl.value) {
-      docCtrl.markAsTouched();
-    }
+    // El campo `documento` es opcional. NO aplicamos `Validators.pattern`
+    // en el cliente segun el TipoDocumentoId: la validacion de formato
+    // (DNI = 8 digitos, RUC = 11 digitos) la hace el backend al submit y
+    // el handler de errores (commit 3a8bc32) la surfacea al operador.
   }
 
   ngOnInit(): void {

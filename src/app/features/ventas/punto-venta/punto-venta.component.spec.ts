@@ -176,14 +176,18 @@ describe('PuntoVentaComponent credit sales', () => {
 //  J-3 audit — POS inline cliente creation (modal rapido del POS).
 // ---------------------------------------------------------------------
 //  Cubre el camino:
-//    - abrirModalCliente() deja formCliente.reset() con DNI default
-//      y aplica el pattern validator
+//    - abrirModalCliente() deja formCliente.reset() con DNI default.
+//      El campo `documento` es opcional: la validacion de formato
+//      (DNI = 8 digitos, RUC = 11 digitos) la hace el backend al submit
+//      y el handler de errores la surfacea. El cliente NO aplica
+//      `Validators.pattern` segun el TipoDocumentoId.
 //    - intentarGuardarClienteRapido() con similitud >= umbral: el modal
 //      de "posible duplicado" se abre con el score del backend
 //    - elegirClienteSimilar() parcha clienteId en formVenta y cierra
 //    - ejecutarGuardarClienteRapido() crea via API y agrega al signal
 //      `clientes`, ademas de patchear formVenta
-//    - validacion DNI/RUC se ajusta segun TipoDocumentoId
+//    - documento vacio es valido para cualquier TipoDocumentoId; solo
+//      `setTipoDocumento(3)` lo deshabilita visualmente
 // =====================================================================
 
 describe('PuntoVentaComponent inline cliente creation', () => {
@@ -263,7 +267,7 @@ describe('PuntoVentaComponent inline cliente creation', () => {
     expect(instance.formCliente.get('nombre')?.value).not.toBe('preload');
     expect(instance.formCliente.get('documento')?.value).not.toBe('99999999');
     expect(instance.formCliente.get('tipoDocumentoId')?.value).toBe(1,
-      'DNI (1) is the default so the pattern validator kicks in immediately');
+      'DNI (1) sigue siendo el default del modal para no romper el flujo del POS');
   });
 
   it('intentarGuardarClienteRapido con similitud abre el modal de confirmacion', () => {
@@ -282,7 +286,6 @@ describe('PuntoVentaComponent inline cliente creation', () => {
       tipoDocumentoId: 1,
       direccion: '',
     });
-    instance.aplicarValidadorDocumento(1);
 
     instance.intentarGuardarClienteRapido();
 
@@ -309,7 +312,6 @@ describe('PuntoVentaComponent inline cliente creation', () => {
       tipoDocumentoId: 1,
       direccion: '',
     });
-    instance.aplicarValidadorDocumento(1);
     instance.modalClienteAbierto.set(true);
 
     instance.ejecutarGuardarClienteRapido();
@@ -330,40 +332,43 @@ describe('PuntoVentaComponent inline cliente creation', () => {
     expect(notification.success).toHaveBeenCalledWith('Cliente creado y seleccionado');
   });
 
-  it('validacion DNI se aplica cuando tipoDocumentoId=1 y RUC cuando tipoDocumentoId=2', () => {
+  it('documento es opcional para cualquier TipoDocumentoId; solo Sin doc. (3) lo deshabilita', () => {
     const instance = component as any;
 
-    // Default state — DNI, document empty. Should pass required-check
-    // (not apply pattern to empty string when no doc required).
+    // Default state — DNI, document empty. documento es OPCIONAL, asi
+    // que el control arranca valido aunque este vacio. La validacion de
+    // formato (8 vs 11 digitos) la hace el backend al submit.
     instance.abrirModalCliente();
-    // Jasmine's toBeTrue/toBeFalse don't accept a reason; we just assert
-    // and add a comment for the human reader.
     expect(instance.formCliente.get('documento')?.valid).toBeTrue();
 
-    // DNI: 8 digitos exactos.
+    // DNI: documento con 8 digitos sigue siendo valido en el cliente
+    // (formato OK), pero el backend tambien lo aceptaria.
     instance.formCliente.patchValue({ documento: '12345678' });
     expect(instance.formCliente.get('documento')?.valid).toBeTrue();
 
-    // DNI: 7 digitos — falla el pattern.
+    // DNI: 7 digitos ya NO falla el form del cliente — antes se aplicaba
+    // Validators.pattern. La razon: el operador puede tipear y el submit
+    // va a salir con el documento; el backend rechaza con 400 si el
+    // formato no matchea y el handler de errores lo muestra.
     instance.formCliente.patchValue({ documento: '1234567' });
-    expect(instance.formCliente.get('documento')?.valid).toBeFalse();
+    expect(instance.formCliente.get('documento')?.valid).toBeTrue();
 
-    // Switch a RUC.
+    // Switch a RUC: el documento vacio sigue valido.
     instance.setTipoDocumento(2);
-    // El valor preexistente (7 dig) no cumple el pattern de 11.
-    expect(instance.formCliente.get('documento')?.valid).toBeFalse();
+    instance.formCliente.patchValue({ documento: '' });
+    expect(instance.formCliente.get('documento')?.valid).toBeTrue();
 
-    // RUC: 11 digitos exactos.
+    // RUC: 11 digitos valido en el cliente (formato OK).
     instance.formCliente.patchValue({ documento: '20123456789' });
     expect(instance.formCliente.get('documento')?.valid).toBeTrue();
 
-    // RUC: 12 digitos — falla.
+    // RUC: 12 digitos tambien valido en el cliente — la validacion de
+    // formato es 100% backend ahora.
     instance.formCliente.patchValue({ documento: '201234567890' });
-    expect(instance.formCliente.get('documento')?.valid).toBeFalse();
+    expect(instance.formCliente.get('documento')?.valid).toBeTrue();
 
-    // Switch a Sin doc. (3): documento debe quedar vacio.
+    // Switch a Sin doc. (3): documento se limpia y se deshabilita.
     instance.setTipoDocumento(3);
-    // setTipoDocumento limpia documento y lo deshabilita.
     expect(instance.formCliente.get('documento')?.value).toBe('');
     expect(instance.formCliente.get('documento')?.disabled).toBeTrue();
   });
