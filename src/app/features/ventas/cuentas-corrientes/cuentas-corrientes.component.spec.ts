@@ -185,9 +185,14 @@ describe('CuentasCorrientesComponent cancellations', () => {
   it('cancels the sale and refreshes current accounts and KPIs', () => {
     const instance = component as any;
     instance.modalDetalleAbierto.set(true);
-    instance.ventaDetallada.set(venta);
+    // H-G1 audit: el spec original usaba la misma `venta` con un Abono
+    // vigente, lo que ahora activa la advertencia de pagos activos en
+    // lugar del ConfirmDialog. Usamos una venta sin pagos para mantener
+    // el flow directo de anulación.
+    const ventaSinPagos = { ...venta, abonos: [] };
+    instance.ventaDetallada.set(ventaSinPagos);
 
-    instance.solicitarAnulacionVenta(venta);
+    instance.solicitarAnulacionVenta(ventaSinPagos);
     instance.confirmarAnulacionVenta();
 
     expect(apiVentas.anularVenta).toHaveBeenCalledWith(12);
@@ -195,5 +200,55 @@ describe('CuentasCorrientesComponent cancellations', () => {
     expect(apiVentas.listarDeudas).toHaveBeenCalledTimes(2);
     expect(apiVentas.kpisCobranza).toHaveBeenCalledTimes(2);
     expect(instance.modalDetalleAbierto()).toBeFalse();
+  });
+
+  // H-G1 audit: si la venta tiene abonos vigentes (estado='Pagado' y
+  // eliminadoEn=null), NO abrimos el ConfirmDialog — abrimos la
+  // advertencia específica con el total y el atajo al historial.
+  it('warns the user about active payments before opening the cancel-sale confirmation', () => {
+    const instance = component as any;
+
+    instance.solicitarAnulacionVenta(venta); // venta has one Pagado Abono
+
+    expect(instance.ventaAAnular()).toBeNull();
+    expect(instance.ventaConPagosActivos()).toEqual(venta);
+    expect(instance.pagosActivosResumen().count).toBe(1);
+    expect(instance.pagosActivosResumen().total).toBe(60);
+  });
+
+  it('opens the cancel-sale confirmation directly when there are no active payments', () => {
+    const instance = component as any;
+    const ventaSinPagos = {
+      ...venta,
+      abonos: [], // no payments at all → backend allows annulment
+    };
+
+    instance.solicitarAnulacionVenta(ventaSinPagos);
+
+    expect(instance.ventaConPagosActivos()).toBeNull();
+    expect(instance.ventaAAnular()).toEqual(ventaSinPagos);
+  });
+
+  it('treats an annulled Abono as not-active when checking for active payments', () => {
+    const instance = component as any;
+    const ventaConAnulado = {
+      ...venta,
+      abonos: [{ ...venta.abonos[0], estado: 'Anulado', eliminadoEn: '2026-09-22T10:00:00Z' }],
+    };
+
+    instance.solicitarAnulacionVenta(ventaConAnulado);
+
+    expect(instance.ventaConPagosActivos()).toBeNull();
+    expect(instance.ventaAAnular()).toEqual(ventaConAnulado);
+  });
+
+  it('discards the active-payments warning and closes the modal', () => {
+    const instance = component as any;
+
+    instance.solicitarAnulacionVenta(venta);
+    expect(instance.ventaConPagosActivos()).toEqual(venta);
+
+    instance.descartarAdvertenciaPagosActivos();
+    expect(instance.ventaConPagosActivos()).toBeNull();
   });
 });

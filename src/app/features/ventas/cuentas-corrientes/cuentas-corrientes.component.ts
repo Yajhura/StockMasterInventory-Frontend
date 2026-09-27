@@ -140,6 +140,22 @@ export class CuentasCorrientesComponent implements OnInit {
   protected readonly ventaAAnular = signal<VentaDetallada | null>(null);
   protected readonly procesandoAnulacion = signal<boolean>(false);
 
+  // H-G1 audit: cuando una venta tiene pagos activos al intentar anular,
+  // mostramos una advertencia específica (cantidad + monto total) y un
+  // atajo "Ir al historial de pagos" en lugar del ConfirmDialog genérico.
+  // El backend igual rechazaría con 400; acá le damos contexto accionable
+  // antes de que intente.
+  protected readonly ventaConPagosActivos = signal<VentaDetallada | null>(null);
+  protected readonly pagosActivosResumen = computed(() => {
+    const v = this.ventaConPagosActivos();
+    if (!v) return { count: 0, total: 0 };
+    const activos = (v.abonos ?? []).filter(a => a.estado === 'Pagado' && !a.eliminadoEn);
+    return {
+      count: activos.length,
+      total: activos.reduce((acc, a) => acc + a.monto, 0)
+    };
+  });
+
   // Cronograma de cuotas con flag "vencida"
   protected readonly cronogramaConVencida = computed<CuotaConVencida[]>(() => {
     const d = this.ventaDetallada();
@@ -424,11 +440,49 @@ export class CuentasCorrientesComponent implements OnInit {
   }
 
   protected solicitarAnulacionVenta(venta: VentaDetallada) {
+    // H-G1 audit: si la venta tiene abonos vigentes (Pagado y no
+    // eliminados), el backend rechaza con 400 — le mostramos al usuario
+    // el motivo concreto (cantidad + monto total) y lo mandamos al
+    // historial de pagos para que anule primero cada uno. Sin pagos
+    // activos, el ConfirmDialog habitual confirma la cancelación.
+    const pagosActivos = (venta.abonos ?? [])
+      .filter(a => a.estado === 'Pagado' && !a.eliminadoEn);
+    if (pagosActivos.length > 0) {
+      this.ventaConPagosActivos.set(venta);
+      return;
+    }
     this.ventaAAnular.set(venta);
   }
 
   protected cancelarAnulacionVenta() {
     if (!this.procesandoAnulacion()) this.ventaAAnular.set(null);
+  }
+
+  /**
+   * H-G1 audit: el usuario ya está viendo el detalle de la venta cuando
+   * hace click en "Anular venta" — así que "ir al historial" simplemente
+   * cierra el warning y scrollea el modal de detalle hasta la sección de
+   * abonos. Si la invocación viniera de otro contexto (futuro), esto se
+   * podría extender para abrir el modal de detalle primero.
+   */
+  protected irAlHistorialDePagos() {
+    const venta = this.ventaConPagosActivos();
+    this.ventaConPagosActivos.set(null);
+    if (!venta) return;
+    // Si el detalle abierto es el mismo, scrollear; si no, abrirlo.
+    if (this.ventaDetallada()?.id === venta.id) {
+      setTimeout(() => {
+        document.getElementById('seccion-historial-pagos')?.scrollIntoView({
+          behavior: 'smooth', block: 'start'
+        });
+      }, 100);
+    } else {
+      this.verDetalles(venta.id);
+    }
+  }
+
+  protected descartarAdvertenciaPagosActivos() {
+    this.ventaConPagosActivos.set(null);
   }
 
   protected confirmarAnulacionVenta() {
