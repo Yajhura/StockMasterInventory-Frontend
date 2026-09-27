@@ -54,7 +54,10 @@ describe('CuentasCorrientesComponent cancellations', () => {
     apiVentas = jasmine.createSpyObj<ApiVentasService>('ApiVentasService', [
       'listarDeudas', 'kpisCobranza', 'obtener', 'registrarAbono', 'anularAbono', 'anularVenta', 'listarMetodosPago',
     ]);
-    apiVentas.listarDeudas.and.returnValue(of([]));
+    // H-F1 audit: el endpoint ahora devuelve PaginatedResponse<Venta>; los
+    // tests que antes esperaban un array vacío ahora esperan un envelope
+    // paginado vacío.
+    apiVentas.listarDeudas.and.returnValue(of({ items: [], page: 1, size: 50, totalItems: 0, totalPages: 0, hasNext: false, hasPrevious: false }));
     apiVentas.kpisCobranza.and.returnValue(of({ deudaTotal: 0, clientesConDeuda: 0, deudaVencida: 0, cuotasVencenProximas: 0 }));
     apiVentas.obtener.and.returnValue(of(venta));
     apiVentas.anularAbono.and.returnValue(of(void 0));

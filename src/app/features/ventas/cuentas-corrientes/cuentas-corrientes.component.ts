@@ -38,6 +38,13 @@ export class CuentasCorrientesComponent implements OnInit {
   protected readonly ventas = signal<Venta[]>([]);
   protected readonly cargando = signal<boolean>(true);
 
+  // H-F1 audit: estado de paginación del listado de deudas.
+  // page=1 + size=50 son los defaults del backend; el backend clamp a 1..200.
+  protected readonly page = signal<number>(1);
+  protected readonly pageSize = signal<number>(50);
+  protected readonly totalItems = signal<number>(0);
+  protected readonly totalPages = signal<number>(0);
+
   // KPIs de cobranza (endpoint dedicado, no depende de los filtros del listado)
   protected readonly kpisCobranza = signal<KpiCobranza>({
     deudaTotal: 0,
@@ -55,7 +62,9 @@ export class CuentasCorrientesComponent implements OnInit {
     desde: null,
     hasta: null,
     clienteId: null,
-    estadoPago: null
+    estadoPago: null,
+    page: 1,
+    size: 50
   });
 
   // Catálogo de clientes para popular el dropdown de filtro
@@ -79,6 +88,17 @@ export class CuentasCorrientesComponent implements OnInit {
   // Las "deudas" ya vienen filtradas del backend (EstadoPago != 'Pagado' && !Eliminado).
   // No hace falta aplicar filtros client-side adicionales.
   protected readonly deudas = computed(() => this.ventas());
+
+  // H-F1 audit: rango de filas mostrado (1-based, inclusivo).
+  // Usado por el paginador "Mostrando X-Y de Z".
+  protected readonly rangoInicio = computed(() =>
+    this.totalItems() === 0 ? 0 : (this.page() - 1) * this.pageSize() + 1
+  );
+  protected readonly rangoFin = computed(() =>
+    Math.min(this.page() * this.pageSize(), this.totalItems())
+  );
+  protected readonly hayPaginaAnterior = computed(() => this.page() > 1);
+  protected readonly hayPaginaSiguiente = computed(() => this.page() < this.totalPages());
 
   // Modal de Abono
   protected readonly modalAbonoAbierto = signal<boolean>(false);
@@ -164,7 +184,12 @@ export class CuentasCorrientesComponent implements OnInit {
     this.cargando.set(true);
     this.apiVentas.listarDeudas(this.filtros()).subscribe({
       next: (data) => {
-        this.ventas.set(data);
+        // H-F1 audit: el backend ahora devuelve PaginatedResponse<Venta>.
+        this.ventas.set(data.items);
+        this.totalItems.set(data.totalItems);
+        this.totalPages.set(data.totalPages);
+        this.page.set(data.page);
+        this.pageSize.set(data.size);
         this.cargando.set(false);
       },
       error: () => {
@@ -172,6 +197,18 @@ export class CuentasCorrientesComponent implements OnInit {
         this.cargando.set(false);
       }
     });
+  }
+
+  protected irAPaginaAnterior() {
+    if (!this.hayPaginaAnterior()) return;
+    this.filtros.update(f => ({ ...f, page: this.page() - 1 }));
+    this.cargarDeudas();
+  }
+
+  protected irAPaginaSiguiente() {
+    if (!this.hayPaginaSiguiente()) return;
+    this.filtros.update(f => ({ ...f, page: this.page() + 1 }));
+    this.cargarDeudas();
   }
 
   private cargarClientes() {
@@ -211,7 +248,7 @@ export class CuentasCorrientesComponent implements OnInit {
   }
 
   protected limpiarFiltros() {
-    this.filtros.set({ desde: null, hasta: null, clienteId: null, estadoPago: null });
+    this.filtros.set({ desde: null, hasta: null, clienteId: null, estadoPago: null, page: 1, size: 50 });
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
       this.debounceTimer = null;
@@ -223,6 +260,9 @@ export class CuentasCorrientesComponent implements OnInit {
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     this.debounceTimer = setTimeout(() => {
       this.debounceTimer = null;
+      // H-F1 audit: cualquier cambio de filtro vuelve a página 1 para no
+      // dejar al usuario en una página vacía fuera del nuevo subset.
+      this.filtros.update(f => ({ ...f, page: 1 }));
       this.cargarDeudas();
     }, 300);
   }

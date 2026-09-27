@@ -186,12 +186,15 @@ describe('ApiVentasService (REQ-TEST-004)', () => {
     req.flush([]);
   });
 
-  it('listar_deudas_sends_the_payment_status_filter', () => {
-    service.listarDeudas({ desde: null, hasta: null, clienteId: null, estadoPago: 'Parcial' }).subscribe();
+  it('listar_deudas_sends_the_payment_status_filter_with_pagination', () => {
+    service.listarDeudas({ desde: null, hasta: null, clienteId: null, estadoPago: 'Parcial', page: 1, size: 50 }).subscribe();
 
-    const req = httpTesting.expectOne(`${API_VENTAS}/deudas?estadoPago=Parcial`);
+    // H-F1 audit: el endpoint /deudas ahora exige page+size; el helper manda ambos.
+    const req = httpTesting.expectOne(`${API_VENTAS}/deudas?estadoPago=Parcial&page=1&size=50`);
     expect(req.request.method).toBe('GET');
-    req.flush([]);
+    expect(req.request.params.get('page')).toBe('1');
+    expect(req.request.params.get('size')).toBe('50');
+    req.flush({ items: [], page: 1, size: 50, totalItems: 0, totalPages: 0, hasNext: false, hasPrevious: false });
   });
 
   it('post_anular_abono_uses_finalized_cancellation_contract', () => {

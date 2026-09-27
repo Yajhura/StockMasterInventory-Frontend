@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { PaginatedResponse } from '../models/inventario.models';
 import { Venta, VentaDetallada, CrearVentaPayload, CrearAbonoPayload, Abono, VentaFiltros, KpiCobranza, MetodoPago, CuotaPreview } from '../models/venta.models';
 
 @Injectable({ providedIn: 'root' })
@@ -22,13 +23,20 @@ export class ApiVentasService {
     return this.http.get<KpiCobranza>(`${this.url}/kpis-cobranza`);
   }
 
-  listarDeudas(filtros?: VentaFiltros): Observable<Venta[]> {
+  /**
+   * H-F1 audit: el endpoint devuelve una respuesta paginada (no un array).
+   * El cliente debe leer `response.items`. Default `page=1`, `size=50`
+   * (el backend clamp a 1..200 para evitar OOM por un cliente hostil).
+   */
+  listarDeudas(filtros?: VentaFiltros): Observable<PaginatedResponse<Venta>> {
     let params = new HttpParams();
     if (filtros?.desde) params = params.set('desde', filtros.desde);
     if (filtros?.hasta) params = params.set('hasta', filtros.hasta);
     if (filtros?.clienteId != null) params = params.set('clienteId', String(filtros.clienteId));
     if (filtros?.estadoPago) params = params.set('estadoPago', filtros.estadoPago);
-    return this.http.get<Venta[]>(`${this.url}/deudas`, { params });
+    params = params.set('page', String(filtros?.page ?? 1));
+    params = params.set('size', String(filtros?.size ?? 50));
+    return this.http.get<PaginatedResponse<Venta>>(`${this.url}/deudas`, { params });
   }
 
   obtener(id: number): Observable<VentaDetallada> {
