@@ -409,11 +409,20 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Teléfono</label>
-              <input type="text" formControlName="telefono" class="input-base w-full" placeholder="Opcional">
+              <input type="text" formControlName="telefono" class="input-base w-full" placeholder="Opcional" maxlength="50">
+              <!-- B-3 audit: telefono es texto libre (no validamos formato),
+                   asi que no agregamos inline error aca — el operador lo deja
+                   vacio si quiere y listo. -->
             </div>
             <div>
               <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Email</label>
-              <input type="email" formControlName="email" class="input-base w-full" placeholder="Opcional">
+              <input type="email" formControlName="email" class="input-base w-full" placeholder="Opcional" maxlength="100">
+              <!-- B-3 audit: inline validation. El campo es opcional pero si
+                   el operador tipea algo, Validators.email lo valida. Mostramos
+                   el mensaje apenas el control pierda foco + sea invalido. -->
+              @if (formCliente.get('email')?.invalid && formCliente.get('email')?.touched) {
+                <p class="text-[10px] text-rose-600 mt-1 font-semibold">El email no tiene un formato válido.</p>
+              }
             </div>
           </div>
 

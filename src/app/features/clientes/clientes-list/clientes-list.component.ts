@@ -133,9 +133,12 @@ export class ClientesListComponent implements OnInit, OnDestroy {
     nombre: ['', Validators.required],
     documento: [''],
     telefono: [''],
-    email: [''],
+    // B-3 audit: Validators.email + maxLength. El campo es opcional (no
+    // required), asi que Validators.email solo dispara cuando el operador
+    // tipea algo — empty string lo deja valido.
+    email: ['', [Validators.email, Validators.maxLength(100)]],
     tipoDocumentoId: [3 as number | null, Validators.required],
-    direccion: [''],
+    direccion: ['', Validators.maxLength(250)],
   });
 
   // --- Debounce para recarga cuando cambian filtros ---
