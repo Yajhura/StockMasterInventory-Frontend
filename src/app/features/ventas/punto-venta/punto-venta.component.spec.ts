@@ -27,6 +27,23 @@ describe('PuntoVentaComponent credit sales', () => {
     tipoDocumentoNombre: 'DNI',
     creadoEn: '2026-09-21T00:00:00Z',
     tieneDeuda: true,
+    // L-5 audit: completar los campos opcionales para que el mock
+    // matchee exactamente la interface Cliente. Si agregamos un campo
+    // nuevo al model y lo referenciamos desde el template, TS nos
+    // avisa aca (en vez de fallar silenciosamente en runtime).
+    creadoPorId: null,
+    creadoPorNombre: null,
+    modificadoEn: null,
+    modificadoPorId: null,
+    modificadoPorNombre: null,
+    eliminadoEn: null,
+    eliminadoPorId: null,
+    eliminadoPorNombre: null,
+    // L-2 audit (fix #22): contadores de actividad comercial que el
+    // backend popula en el response single-cliente. En este mock los
+    // dejamos en 0/null para reflejar el caso 'cliente sin ventas'.
+    cantidadVentas: 0,
+    cantidadAbonos: 0,
   };
 
   beforeEach(() => {
