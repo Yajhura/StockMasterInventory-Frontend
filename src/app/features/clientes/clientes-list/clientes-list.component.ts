@@ -23,6 +23,7 @@ import {
   PaginatedClientes,
 } from '../../../core/models/cliente.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-clientes-list',
@@ -34,6 +35,12 @@ export class ClientesListComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly apiClientes = inject(ApiClientesService);
   private readonly notify = inject(NotificationService);
+  // H-2 audit: papelera y restaurar son Admin-only en el backend
+  // (RequireAuthorization("Admin")). Escondemos los controles en el FE
+  // para que un Operador no los vea ni intente usarlos — el backend
+  // rechazaria el request con 403 igualmente, pero evitamos el ruido.
+  // `protected` para que el template pueda leer esAdmin().
+  protected readonly auth = inject(AuthService);
 
   // --- Estado general ---
   protected readonly clientes = signal<Cliente[]>([]);
