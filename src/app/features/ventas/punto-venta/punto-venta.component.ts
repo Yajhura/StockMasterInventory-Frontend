@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, inject, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, effect } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
@@ -11,7 +11,7 @@ import { ProductosState } from '../../../core/state/productos.state';
 import { ClientesStore } from '../../../core/state/clientes.store';
 import { ProductoSelectorItem } from '../../../core/models/inventario.models';
 import { Cliente, CrearClientePayload, ClienteFiltros } from '../../../core/models/cliente.models';
-import { CrearVentaPayload, PagoInicial, Venta, VentaFiltros, KpiVentas, EstadoPago, MetodoPago, CuotaPreview, VentaDetallada } from '../../../core/models/venta.models';
+import { CrearVentaPayload, PagoInicial, Venta, VentaFiltros, KpiVentas, EstadoPago, MetodoPago, CuotaPreview, VentaDetallada, Cuota } from '../../../core/models/venta.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
 @Component({
   selector: 'app-punto-venta',
@@ -157,6 +157,17 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
   protected readonly modalDetalleAbierto = signal<boolean>(false);
   protected readonly detalleSeleccionado = signal<VentaDetallada | null>(null);
   protected readonly cargandoDetalle = signal<boolean>(false);
+
+  protected readonly cronogramaDetalleConVencida = computed<(Cuota & { vencida: boolean })[]>(() => {
+    const d = this.detalleSeleccionado();
+    if (!d || !d.esCredito) return [];
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    return (d.cuotas ?? []).map(c => ({
+      ...c,
+      vencida: c.montoPendiente > 0 && new Date(c.fechaVencimiento) < hoy
+    }));
+  });
   protected formCliente = this.fb.group({
     tipoDocumentoId: [1],
     nombre: ['', [Validators.required, Validators.maxLength(150)]],
