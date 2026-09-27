@@ -13,6 +13,7 @@ import { ProductoSelectorItem } from '../../../core/models/inventario.models';
 import { Cliente, CrearClientePayload, ClienteFiltros } from '../../../core/models/cliente.models';
 import { CrearVentaPayload, PagoInicial, Venta, VentaFiltros, KpiVentas, EstadoPago, MetodoPago, CuotaPreview, VentaDetallada, Cuota } from '../../../core/models/venta.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
+import { DatePickerComponent } from '../../../core/components/date-picker.component';
 import { DateRangePickerComponent, DateRange } from '../../../core/components/date-range-picker.component';
 import { TABLA_COMPONENTS } from '../../../core/components/tabla.component';
 
@@ -24,6 +25,7 @@ import { TABLA_COMPONENTS } from '../../../core/components/tabla.component';
     ReactiveFormsModule,
     FormsModule,
     DropdownComponent,
+    DatePickerComponent,
     DateRangePickerComponent,
     ...TABLA_COMPONENTS,
     OnlyNumbersDirective
@@ -59,6 +61,12 @@ export class PuntoVentaComponent implements OnInit {
   // Frecuencia del plan. Default 'Mensual' (coincide con el backend cuando
   // el campo viene null o no se manda).
   protected readonly frecuencias: Array<{ value: 'Diario' | 'Semanal' | 'Quincenal' | 'Mensual'; label: string }> = [
+    { value: 'Diario', label: 'Diaria' },
+    { value: 'Semanal', label: 'Semanal' },
+    { value: 'Quincenal', label: 'Quincenal' },
+    { value: 'Mensual', label: 'Mensual' }
+  ];
+  protected readonly opcionesFrecuencia: DropdownOption<'Diario' | 'Semanal' | 'Quincenal' | 'Mensual'>[] = [
     { value: 'Diario', label: 'Diaria' },
     { value: 'Semanal', label: 'Semanal' },
     { value: 'Quincenal', label: 'Quincenal' },
