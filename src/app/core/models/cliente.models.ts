@@ -47,6 +47,10 @@ export interface ClienteFiltros {
   // service para no obligar al componente a setearlos siempre.
   page?: number;
   size?: number;
+  // F-1 / A-6 audit: cuando true, el backend bypasea el HasQueryFilter
+  // y devuelve clientes activos + soft-deleted. La UI lo usa para
+  // implementar el toggle "papelera".
+  incluirEliminados?: boolean;
 }
 
 export interface EstadoCuentaCliente {

@@ -22,6 +22,11 @@ export class ApiClientesService {
    * PaginatedResponse&lt;ClienteResponse&gt; en lugar de un array plano.
    * Los filtros de paginacion tienen defaults (page=1, size=50) para no
    * obligar al componente a setearlos siempre.
+   *
+   * F-1 / A-6 audit: cuando el FE quiere ver la papelera, manda
+   * `incluirEliminados: true` y el backend ignora el HasQueryFilter
+   * y devuelve tanto clientes activos como soft-deleted. Asi el
+   * toggle de papelera no requiere un endpoint separado.
    */
   listar(filtros?: ClienteFiltros): Observable<PaginatedClientes> {
     let params = new HttpParams()
@@ -31,6 +36,7 @@ export class ApiClientesService {
     if (filtros?.hasta) params = params.set('hasta', filtros.hasta);
     if (filtros?.tipoDocumentoId != null) params = params.set('tipoDocumentoId', String(filtros.tipoDocumentoId));
     if (filtros?.estadoDeuda) params = params.set('estadoDeuda', filtros.estadoDeuda);
+    if (filtros?.incluirEliminados) params = params.set('incluirEliminados', 'true');
     return this.http.get<PaginatedClientes>(this.url, { params });
   }
 
@@ -52,6 +58,15 @@ export class ApiClientesService {
 
   eliminar(id: number): Observable<void> {
     return this.http.delete<void>(`${this.url}/${id}`);
+  }
+
+  /**
+   * F-1 / A-6 audit: revierte el soft delete de un cliente. Solo Admin.
+   * El backend limpia Eliminado/EliminadoEn/EliminadoPor y actualiza
+   * ModificadoPor/ModificadoEn via ICurrentUser.
+   */
+  restaurar(id: number): Observable<void> {
+    return this.http.post<void>(`${this.url}/${id}/restaurar`, {});
   }
 
   exportarExcel(): Observable<Blob> {
