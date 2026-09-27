@@ -44,7 +44,7 @@ describe('PuntoVentaComponent credit sales', () => {
       imports: [PuntoVentaComponent],
       providers: [
         { provide: ApiVentasService, useValue: apiVentas },
-        { provide: ApiClientesService, useValue: { listar: () => of([]), crear: () => of(client) } },
+        { provide: ApiClientesService, useValue: { listar: () => of({ items: [], page: 1, size: 50, totalItems: 0, totalPages: 0, hasNext: false, hasPrevious: false }), crear: () => of(client) } },
         { provide: ApiProductosService, useValue: { selector: () => of([]) } },
         { provide: NotificationService, useValue: notification },
         { provide: ProductosState, useValue: { notificarCambioStock: jasmine.createSpy('notificarCambioStock') } },

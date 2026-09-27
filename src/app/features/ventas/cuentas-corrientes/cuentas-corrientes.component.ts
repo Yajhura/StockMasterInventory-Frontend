@@ -302,8 +302,10 @@ export class CuentasCorrientesComponent implements OnInit, OnDestroy {
   }
 
   private cargarClientes() {
-    this.apiClientes.listar().subscribe({
-      next: (data) => this.clientes.set(data),
+    // C-4 audit: el dropdown de filtro consume la primera pagina. 200 es
+    // suficiente para el set realista de clientes que usan POS + cobranza.
+    this.apiClientes.listar({ page: 1, size: 200 }).subscribe({
+      next: (data) => this.clientes.set(data.items),
       error: () => {
         // Si falla, el filtro de cliente queda solo con "Todos los clientes".
       }

@@ -206,11 +206,16 @@
 
               <div class="flex gap-2">
                 <div class="flex-1">
+                  <!-- G-1 / C-1 audit (fix #9): opciones vienen del cache
+                       `clientesBusqueda` (server-side) en lugar de la lista
+                       completa. searchChange dispara el debounce +
+                       request al backend con `q`. -->
                   <app-dropdown
                     formControlName="clienteId"
                     [options]="opcionesCliente()"
                     placeholder="Seleccione un cliente"
                     [searchable]="true"
+                    (searchChange)="onClienteSearch($event)"
                   />
                 </div>
                 <button type="button" (click)="abrirModalCliente()"

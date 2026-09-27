@@ -54,13 +54,21 @@ export class PuntoVentaComponent implements OnInit {
   protected readonly pagoInicialCredito = signal<number>(0);
   protected readonly metodoPagoInicialId = signal<number>(1);
 
-  protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
-    this.clientes().map(c => ({
-      value: c.id,
-      label: c.nombre,
-      sublabel: c.documento ? `Doc: ${c.documento}` : 'Sin documento'
-    }))
-  );
+  // G-1 / C-1 audit (fix #9): cache local de resultados de busqueda. Cada
+// vez que el usuario escribe en el dropdown searchable del POS, el handler
+// `onClienteSearch` llama al backend con `q` y reemplaza esta lista.
+// Mantener el cache evita parpadeos cuando el usuario borra el termino
+// y queremos volver a la seleccion actual. opcionesCliente deriva de este
+// cache (no de `clientes()` que ya no se hidrata al iniciar).
+protected readonly clientesBusqueda = signal<Cliente[]>([]);
+
+protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
+  this.clientesBusqueda().map(c => ({
+    value: c.id,
+    label: c.nombre,
+    sublabel: c.documento ? `Doc: ${c.documento}` : 'Sin documento'
+  }))
+);
 
   protected readonly opcionesProducto = computed<DropdownOption[]>(() =>
     this.productos().map(p => ({
@@ -137,7 +145,9 @@ export class PuntoVentaComponent implements OnInit {
   protected formCliente = this.fb.group({
     tipoDocumentoId: [1],
     nombre: ['', [Validators.required, Validators.maxLength(150)]],
-    documento: ['', Validators.maxLength(50)],
+    // A-1 / B-1 audit (fix #6): el pattern se ajusta dinamicamente segun
+    // el tipoDocumentoId (DNI 8 dig / RUC 11 dig). El default es DNI (1).
+    documento: ['', [Validators.maxLength(50)]],
     telefono: ['', Validators.maxLength(50)],
     email: ['', [Validators.email, Validators.maxLength(100)]],
     direccion: ['', Validators.maxLength(250)]
@@ -402,8 +412,17 @@ export class PuntoVentaComponent implements OnInit {
   }
 
   private async cargarDatos() {
-    this.apiClientes.listar().subscribe({
-      next: (res) => this.clientes.set(res),
+    // G-1 / C-1 audit (fix #9): ya no bajamos TODOS los clientes del
+    // backend al iniciar. La seleccion del cliente en el POS usa
+    // busqueda server-side (mismo handler `onClienteSearch`) que
+    // pide una pagina pequena (size=50) por cada termino tipeado.
+    // Cargamos una pagina inicial "vacia" para que el dropdown tenga
+    // algo que mostrar antes del primer keystroke.
+    this.apiClientes.listar({ page: 1, size: 50 }).subscribe({
+      next: (res) => {
+        this.clientes.set(res.items);
+        this.clientesBusqueda.set(res.items);
+      },
       error: () => this.notify.error('Error al cargar clientes')
     });
 
@@ -411,6 +430,33 @@ export class PuntoVentaComponent implements OnInit {
       next: (res) => this.productos.set(res),
       error: () => this.notify.error('Error al cargar productos')
     });
+  }
+
+  /**
+   * G-1 / C-1 audit (fix #9): debounce 200ms + cancel-in-flight para la
+   * busqueda de clientes en el dropdown del POS. Cada termino cancela
+   * el request anterior (switchMap manual) y reemplaza el cache.
+   */
+  private clienteSearchTimer: ReturnType<typeof setTimeout> | null = null;
+  private clienteSearchRequest = 0;
+
+  protected onClienteSearch(term: string): void {
+    if (this.clienteSearchTimer) clearTimeout(this.clienteSearchTimer);
+    const trimmed = (term ?? '').trim();
+    this.clienteSearchTimer = setTimeout(() => {
+      this.clienteSearchTimer = null;
+      const requestId = ++this.clienteSearchRequest;
+      this.apiClientes.listar({ q: trimmed || undefined, page: 1, size: 50 }).subscribe({
+        next: (res) => {
+          if (requestId !== this.clienteSearchRequest) return;
+          this.clientesBusqueda.set(res.items);
+        },
+        error: () => {
+          if (requestId !== this.clienteSearchRequest) return;
+          // Silencioso: el dropdown muestra "Sin resultados".
+        }
+      });
+    }, 200);
   }
 
   protected onProductoSeleccionado(id: unknown) {
@@ -479,7 +525,9 @@ export class PuntoVentaComponent implements OnInit {
   }
 
   protected abrirModalCliente() {
-    this.formCliente.reset();
+    this.formCliente.reset({ tipoDocumentoId: 1 });
+    // A-1 / B-1 audit (fix #6): aplicar validator DNI por default.
+    this.aplicarValidadorDocumento(1);
     this.modalClienteAbierto.set(true);
   }
 
@@ -495,6 +543,24 @@ export class PuntoVentaComponent implements OnInit {
     } else {
       this.formCliente.get('documento')?.enable();
     }
+    // A-1 / B-1 audit (fix #6): aplicar pattern de documento segun el tipo.
+    this.aplicarValidadorDocumento(tipoId);
+  }
+
+  /**
+   * A-1 / B-1 audit (fix #6): DNI = exactamente 8 digitos, RUC = 11.
+   * Sin doc. (3) no lleva pattern. Si el valor actual no cumple el nuevo
+   * pattern, marcamos el control como touched para que el usuario vea el error.
+   */
+  private aplicarValidadorDocumento(tipoId: number): void {
+    const docCtrl = this.formCliente.get('documento');
+    if (!docCtrl) return;
+    docCtrl.clearValidators();
+    docCtrl.addValidators([Validators.maxLength(50)]);
+    if (tipoId === 1) docCtrl.addValidators([Validators.pattern(/^\d{8}$/)]);
+    else if (tipoId === 2) docCtrl.addValidators([Validators.pattern(/^\d{11}$/)]);
+    docCtrl.updateValueAndValidity();
+    if (docCtrl.invalid && docCtrl.value) docCtrl.markAsTouched();
   }
 
   protected intentarGuardarClienteRapido() {
@@ -540,14 +606,28 @@ export class PuntoVentaComponent implements OnInit {
     this.guardandoCliente.set(true);
     this.apiClientes.crear(payload).subscribe({
       next: (cliente) => {
+        // G-1 audit (fix #9): sincronizamos tanto el cache de seleccion
+        // (`clientesBusqueda`, alimenta el dropdown) como el cache completo
+        // (`clientes`, alimenta los lookups internos).
         this.clientes.update(c => [...c, cliente]);
+        this.clientesBusqueda.update(c => [...c, cliente]);
         this.formVenta.patchValue({ clienteId: cliente.id });
         this.notify.success('Cliente creado y seleccionado');
         this.cerrarModalCliente();
         this.guardandoCliente.set(false);
       },
-      error: () => {
-        this.notify.error('Error al crear cliente');
+      // G-4 audit (fix #12): leer el motivo real del backend
+      // (err.error.error o err.error.title) en lugar del mensaje generico
+      // anterior. Cuando el handler rechaza por DNI/RUC invalido, el FE
+      // ahora muestra el texto exacto, no "Error al crear cliente".
+      error: (err: any) => {
+        const mensaje = err?.error?.error
+          || err?.error?.title
+          || 'Error al crear cliente';
+        const texto = typeof mensaje === 'string'
+          ? mensaje
+          : 'Error al crear cliente';
+        this.notify.error(texto);
         this.guardandoCliente.set(false);
       }
     });

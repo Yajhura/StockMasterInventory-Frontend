@@ -15,6 +15,23 @@
           (input)="onFiltroBusquedaChange($event)"
         >
       </div>
+      <!-- F-1 audit: toggle de papelera. Cuando esta activo, las acciones
+           disponibles en cada fila cambian a "Restaurar" en lugar de
+           "Editar / Eliminar". -->
+      <button
+        type="button"
+        (click)="togglePapelera()"
+        [class.bg-amber-50]="mostrarPapelera()"
+        [class.border-amber-400]="mostrarPapelera()"
+        [class.text-amber-700]="mostrarPapelera()"
+        [class.bg-white]="!mostrarPapelera()"
+        [class.border-slate-200]="!mostrarPapelera()"
+        [class.text-slate-600]="!mostrarPapelera()"
+        class="px-3 py-2 border-2 font-bold text-sm rounded-xl transition-all flex items-center gap-2 flex-shrink-0"
+        [title]="mostrarPapelera() ? 'Ocultar papelera' : 'Mostrar papelera'">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        {{ mostrarPapelera() ? 'Ocultar papelera' : 'Papelera' }}
+      </button>
       <button type="button" (click)="exportarExcel()" class="px-4 py-2 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-bold text-sm rounded-xl transition-all flex items-center gap-2 flex-shrink-0">
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
         Exportar Excel
@@ -123,7 +140,7 @@
                 <p class="text-sm text-slate-500 mt-1">Intenta con otra búsqueda o registra uno nuevo.</p>
               </td>
             </tr>
-          } @else {
+          }           @else {
             @for (c of clientesFiltrados(); track c.id) {
               <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors group">
                 <td class="py-3.5 px-4 text-sm font-mono text-slate-400">#{{ c.id }}</td>
@@ -153,15 +170,22 @@
                 </td>
                 <td class="py-3.5 px-4 text-right opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                   <div class="flex items-center justify-end gap-1">
-                    <button type="button" (click)="verCuenta(c.id)" class="p-2 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors" title="Ver cuenta">
-                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                    </button>
-                    <button type="button" (click)="abrirModalEditar(c)" class="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="Editar">
-                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                    </button>
-                    <button type="button" (click)="confirmarEliminar(c)" class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors" title="Eliminar">
-                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                    </button>
+                    @if (mostrarPapelera()) {
+                      <!-- F-1 audit: vista papelera -> unico boton relevante es Restaurar. -->
+                      <button type="button" (click)="confirmarRestaurar(c)" class="p-2 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors" title="Restaurar">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                      </button>
+                    } @else {
+                      <button type="button" (click)="verCuenta(c.id)" class="p-2 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors" title="Ver cuenta">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                      </button>
+                      <button type="button" (click)="abrirModalEditar(c)" class="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="Editar">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                      </button>
+                      <button type="button" (click)="confirmarEliminar(c)" class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors" title="Eliminar">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                      </button>
+                    }
                   </div>
                 </td>
               </tr>
@@ -170,6 +194,35 @@
         </tbody>
       </table>
     </div>
+
+    <!-- C-4 / K-4 audit: paginacion client-side basica. Botones Anterior/Siguiente
+         + indicador "Pagina X de Y". El backend ya clamp-eya size a 1..200. -->
+    @if (totalClientes() > 0) {
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-t border-slate-200 bg-slate-50/40">
+        <p class="text-xs font-medium text-slate-500">
+          Mostrando <span class="font-bold text-slate-700 tabular-nums">{{ clientes().length }}</span>
+          de <span class="font-bold text-slate-700 tabular-nums">{{ totalClientes() }}</span> clientes
+          (pagina <span class="font-bold text-slate-700 tabular-nums">{{ page() }}</span>
+          de <span class="font-bold text-slate-700 tabular-nums">{{ totalPages() }}</span>)
+        </p>
+        <div class="flex items-center gap-2">
+          <button type="button"
+            (click)="irAPagina(page() - 1)"
+            [disabled]="!hayPaginaAnterior()"
+            class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
+            Anterior
+          </button>
+          <button type="button"
+            (click)="irAPagina(page() + 1)"
+            [disabled]="!hayPaginaSiguiente()"
+            class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5">
+            Siguiente
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+    }
   </div>
 </div>
 
@@ -224,13 +277,23 @@
         </div>
         <div class="surface-card p-3">
           <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500"># Ventas</p>
-          <p class="text-base font-bold text-slate-900 tabular-nums mt-1">{{ ec.cantidadVentas }}</p>
+          <!-- E-2 audit (fix #7): mostramos el total sin paginar y, abajo,
+               el contador "Mostrando N de M" para que el operador sepa
+               que puede pedir mas. -->
+          <p class="text-base font-bold text-slate-900 tabular-nums mt-1">{{ ec.cantidadVentasTotal }}</p>
         </div>
       </section>
 
       <!-- Lista de ventas -->
       <section class="flex-1 overflow-y-auto p-4">
-        <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">Historial de ventas</h4>
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Historial de ventas</h4>
+          <!-- E-2 audit (fix #7): contador "Mostrando N de M" para que el
+               operador sepa cuanto falta por cargar. -->
+          <span class="text-[10px] text-slate-500 tabular-nums font-semibold">
+            Mostrando {{ ec.cantidadVentasMostradas }} de {{ ec.cantidadVentasTotal }}
+          </span>
+        </div>
         @if (ec.ventas.length > 0) {
           <div class="space-y-2">
             @for (v of ec.ventas; track v.id) {
@@ -252,6 +315,14 @@
                   }
                 </div>
               </div>
+            }
+            @if (hayMasVentas()) {
+              <!-- E-2 audit (fix #7): "Ver mas" pide la siguiente pagina al
+                   backend. -->
+              <button type="button" (click)="cargarMasVentas()"
+                class="w-full py-2 mt-2 border border-dashed border-slate-300 rounded-lg text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-400 text-[12px] font-semibold transition-colors flex items-center justify-center gap-1.5">
+                Ver mas ventas
+              </button>
             }
           </div>
         } @else {
@@ -314,7 +385,13 @@
             </div>
             <div>
               <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Documento / DNI</label>
-              <input type="text" formControlName="documento" class="input-base w-full" placeholder="Opcional">
+              <input type="text" formControlName="documento" class="input-base w-full"
+                [placeholder]="placeholderDocumento()">
+              <!-- A-1 / B-1 audit (fix #6): mensaje de error especifico segun
+                   el TipoDocumentoId seleccionado. -->
+              @if (formCliente.get('documento')?.invalid && formCliente.get('documento')?.touched) {
+                <p class="text-[10px] text-rose-600 mt-1 font-semibold">{{ mensajeErrorDocumento() }}</p>
+              }
             </div>
           </div>
 
