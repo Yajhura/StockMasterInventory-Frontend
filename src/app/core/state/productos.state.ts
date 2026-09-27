@@ -99,6 +99,20 @@ export class ProductosState {
    */
   readonly productosRev = signal<number>(0);
 
+  /**
+   * Bump manual del contador de revision. Pensado para que mutaciones
+   * iniciadas FUERA de ProductosState (ventas en /punto-venta,
+   * anulaciones en /cuentas-corrientes) invaliden caches downstream
+   * que escuchan `productosRev` — KpisState en particular re-fetchea
+   * los KPIs agregados.
+   *
+   * No refresca el cache local de `_productos`; eso lo hace
+   * `cargarProductos()` cuando el caller lo necesita. Ver audit C-4.
+   */
+  notificarCambioStock(): void {
+    this.productosRev.update((n) => n + 1);
+  }
+
   // =====================================================
   //   Producto list loaders
   // =====================================================

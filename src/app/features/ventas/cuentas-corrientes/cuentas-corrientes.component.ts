@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ApiVentasService } from '../../../core/api/api-ventas.service';
 import { ApiClientesService } from '../../../core/api/api-clientes.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { ProductosState } from '../../../core/state/productos.state';
 import { Cliente } from '../../../core/models/cliente.models';
 import { Venta, CrearAbonoPayload, VentaDetallada, Cuota, KpiCobranza, VentaFiltros, Abono, EstadoPago, MetodoPago } from '../../../core/models/venta.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
@@ -31,6 +32,7 @@ export class CuentasCorrientesComponent implements OnInit {
   private readonly apiClientes = inject(ApiClientesService);
   private readonly notify = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
+  private readonly productosState = inject(ProductosState);
 
   // Estado general
   protected readonly ventas = signal<Venta[]>([]);
@@ -397,6 +399,9 @@ export class CuentasCorrientesComponent implements OnInit {
     this.apiVentas.anularVenta(venta.id).subscribe({
       next: () => {
         this.notify.success('Venta anulada exitosamente');
+        // La anulacion genera INGRESOs compensadores en backend -> stockActual cambia.
+        // Bumpear productosRev invalida caches downstream (KpisState).
+        this.productosState.notificarCambioStock();
         this.ventaAAnular.set(null);
         this.procesandoAnulacion.set(false);
         this.cerrarModalDetalle();

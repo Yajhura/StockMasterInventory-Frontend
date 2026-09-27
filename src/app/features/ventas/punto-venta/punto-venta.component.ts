@@ -7,6 +7,7 @@ import { ApiVentasService } from '../../../core/api/api-ventas.service';
 import { ApiClientesService } from '../../../core/api/api-clientes.service';
 import { ApiProductosService } from '../../../core/api/api-productos.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { ProductosState } from '../../../core/state/productos.state';
 import { ProductoSelectorItem } from '../../../core/models/inventario.models';
 import { Cliente, CrearClientePayload } from '../../../core/models/cliente.models';
 import { CrearVentaPayload, PagoInicial, Venta, VentaFiltros, KpiVentas, EstadoPago, MetodoPago, CuotaPreview } from '../../../core/models/venta.models';
@@ -23,6 +24,7 @@ export class PuntoVentaComponent implements OnInit {
   private readonly apiClientes = inject(ApiClientesService);
   private readonly apiProductos = inject(ApiProductosService);
   private readonly notify = inject(NotificationService);
+  private readonly productosState = inject(ProductosState);
 
   protected readonly procesando = signal<boolean>(false);
 
@@ -606,6 +608,9 @@ export class PuntoVentaComponent implements OnInit {
     this.apiVentas.registrarVenta(payload).subscribe({
       next: () => {
         this.notify.success('Venta registrada exitosamente');
+        // La venta genera SALIDAs en backend -> stockActual cambia.
+        // Bumpear productosRev invalida caches downstream (KpisState).
+        this.productosState.notificarCambioStock();
         this.procesando.set(false);
         this.cerrarPOS();
         this.cargarVentas();

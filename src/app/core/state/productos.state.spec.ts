@@ -271,6 +271,14 @@ describe('ProductosState', () => {
       expect(apiProductos.buscar).toHaveBeenCalled();
       expect(productos.productosRev()).toBe(revBefore + 1);
     });
+
+    it('notificarCambioStock bumps productosRev (audit C-4 — used by ventas/anulaciones cross-feature)', async () => {
+      const revBefore = productos.productosRev();
+
+      productos.notificarCambioStock();
+
+      expect(productos.productosRev()).toBe(revBefore + 1);
+    });
   });
 
   describe('error fallback to ShellState', () => {
