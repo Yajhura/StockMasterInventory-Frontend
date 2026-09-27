@@ -339,12 +339,17 @@ export class ProductosState {
   }
 
   /**
-   * Updates an existing movimiento and refreshes all product-derived state.
+   * Updates an existing movimiento and refreshes the product-derived state
+   * that actually changes after a movimiento edit (stock levels).
+   *
+   * I-5 audit: NO llama a `cargarProductos()` (trae TODOS los productos con
+   * atributos EAV + imagenes base64). Solo refrescamos el selector liviano
+   * y la vista paginada — la lista completa solo se usa para resolver
+   * nombres en el Kardex, y los nombres no cambian al editar un movimiento.
    */
   async actualizarMovimiento(id: number, payload: ActualizarMovimientoPayload): Promise<Movimiento> {
     try {
       const movActualizado = await firstValueFrom(this.apiMovimientos.actualizar(id, payload));
-      await this.cargarProductos();
       await this.cargarSelectorProductos(true);
       await this.recargarProductosPaginados();
       this.productosRev.update((n) => n + 1);
@@ -358,12 +363,14 @@ export class ProductosState {
   }
 
   /**
-   * Deletes an existing movimiento and refreshes all product-derived state.
+   * Deletes an existing movimiento and refreshes the product-derived state
+   * that actually changes (stock levels).
+   *
+   * I-5 audit: ver actualizarMovimiento — misma justificacion.
    */
   async eliminarMovimiento(id: number): Promise<void> {
     try {
       await firstValueFrom(this.apiMovimientos.eliminar(id));
-      await this.cargarProductos();
       await this.cargarSelectorProductos(true);
       await this.recargarProductosPaginados();
       this.productosRev.update((n) => n + 1);
