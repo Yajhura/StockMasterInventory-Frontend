@@ -145,7 +145,19 @@
               <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors group">
                 <td class="py-3.5 px-4 text-sm font-mono text-slate-400">#{{ c.id }}</td>
                 <td class="py-3.5 px-4">
-                  <div class="text-sm font-bold text-slate-800">{{ c.nombre }}</div>
+                  <div class="text-sm font-bold text-slate-800">
+                    {{ c.nombre }}
+                    <!-- L-2 audit (fix #22): chip de actividad comercial si el
+                         backend lo devuelve. Solo se popula en el response
+                         individual (GET /api/clientes/{id}); en el listado
+                         paginado viene null. Mostrarlo en cada fila aqui es
+                         'gratis' si el FE ya hace drilldown via drawer. -->
+                    @if (c.cantidadVentas != null && c.cantidadVentas > 0) {
+                      <span class="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 align-middle">
+                        {{ c.cantidadVentas }} {{ c.cantidadVentas === 1 ? 'venta' : 'ventas' }}
+                      </span>
+                    }
+                  </div>
                   @if (c.email) {
                     <div class="text-[11px] text-slate-400 mt-0.5">{{ c.email }}</div>
                   }
