@@ -7,6 +7,7 @@ import { ApiVentasService } from '../../../core/api/api-ventas.service';
 import { Cliente } from '../../../core/models/cliente.models';
 import { Venta } from '../../../core/models/venta.models';
 import { NotificationService } from '../../../core/services/notification.service';
+import { ProductosState } from '../../../core/state/productos.state';
 import { PuntoVentaComponent } from './punto-venta.component';
 
 describe('PuntoVentaComponent credit sales', () => {
@@ -46,6 +47,7 @@ describe('PuntoVentaComponent credit sales', () => {
         { provide: ApiClientesService, useValue: { listar: () => of([]), crear: () => of(client) } },
         { provide: ApiProductosService, useValue: { selector: () => of([]) } },
         { provide: NotificationService, useValue: notification },
+        { provide: ProductosState, useValue: { notificarCambioStock: jasmine.createSpy('notificarCambioStock') } },
       ],
     });
 

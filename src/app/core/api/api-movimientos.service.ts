@@ -69,10 +69,10 @@ export class ApiMovimientosService {
     if (params.productoId !== undefined && params.productoId !== null)
                           httpParams = httpParams.set('productoId', String(params.productoId));
     if (params.marcaId === null) httpParams = httpParams.set('marcaId', 'null');
-    else if (params.marcaId !== undefined && params.marcaId !== 'all')
+    else if (params.marcaId !== undefined && params.marcaId !== 'all' && params.marcaId !== '')
                           httpParams = httpParams.set('marcaId', String(params.marcaId));
     if (params.categoriaId === null) httpParams = httpParams.set('categoriaId', 'null');
-    else if (params.categoriaId !== undefined && params.categoriaId !== 'all')
+    else if (params.categoriaId !== undefined && params.categoriaId !== 'all' && params.categoriaId !== '')
                           httpParams = httpParams.set('categoriaId', String(params.categoriaId));
     if (params.creadoPorId !== undefined && params.creadoPorId !== null)
                           httpParams = httpParams.set('creadoPorId', String(params.creadoPorId));
@@ -92,9 +92,9 @@ export class ApiMovimientosService {
     if (params.tipo) httpParams = httpParams.set('tipo', String(params.tipo));
     if (params.productoId != null) httpParams = httpParams.set('productoId', String(params.productoId));
     if (params.marcaId === null) httpParams = httpParams.set('marcaId', 'null');
-    else if (params.marcaId != null && params.marcaId !== 'all') httpParams = httpParams.set('marcaId', String(params.marcaId));
+    else if (params.marcaId != null && params.marcaId !== 'all' && params.marcaId !== '') httpParams = httpParams.set('marcaId', String(params.marcaId));
     if (params.categoriaId === null) httpParams = httpParams.set('categoriaId', 'null');
-    else if (params.categoriaId != null && params.categoriaId !== 'all') httpParams = httpParams.set('categoriaId', String(params.categoriaId));
+    else if (params.categoriaId != null && params.categoriaId !== 'all' && params.categoriaId !== '') httpParams = httpParams.set('categoriaId', String(params.categoriaId));
     if (params.creadoPorId != null) httpParams = httpParams.set('creadoPorId', String(params.creadoPorId));
     if (params.cliente) httpParams = httpParams.set('cliente', params.cliente);
     if (params.q) httpParams = httpParams.set('q', params.q);

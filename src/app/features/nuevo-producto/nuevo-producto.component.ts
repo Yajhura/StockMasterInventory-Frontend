@@ -64,7 +64,7 @@ export class NuevoProductoComponent implements OnInit {
     stockMinimo: [10, [Validators.min(0)]],
     // Stock inicial: 0 = sin ingreso inicial. >0 registra un INGRESO atomico.
     stockInicial: [0, [Validators.min(0)]],
-    stockInicialPrecioUnitario: [0, [Validators.min(0)]],
+    stockInicialPrecioUnitario: [0, [Validators.min(0.01)]],
     stockInicialObservacion: [''],
   });
 

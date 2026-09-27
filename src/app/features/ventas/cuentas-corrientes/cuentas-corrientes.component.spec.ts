@@ -5,6 +5,7 @@ import { ApiClientesService } from '../../../core/api/api-clientes.service';
 import { ApiVentasService } from '../../../core/api/api-ventas.service';
 import { VentaDetallada } from '../../../core/models/venta.models';
 import { NotificationService } from '../../../core/services/notification.service';
+import { ProductosState } from '../../../core/state/productos.state';
 import { CuentasCorrientesComponent } from './cuentas-corrientes.component';
 
 describe('CuentasCorrientesComponent cancellations', () => {
@@ -67,6 +68,7 @@ describe('CuentasCorrientesComponent cancellations', () => {
         { provide: ApiVentasService, useValue: apiVentas },
         { provide: ApiClientesService, useValue: { listar: () => of([]) } },
         { provide: NotificationService, useValue: notification },
+        { provide: ProductosState, useValue: { notificarCambioStock: jasmine.createSpy('notificarCambioStock') } },
       ],
     });
 

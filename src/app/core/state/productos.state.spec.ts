@@ -241,7 +241,7 @@ describe('ProductosState', () => {
       expect(productos.productosRev()).toBe(revBefore + 1);
     });
 
-    it('actualizarMovimiento refreshes product state and bumps productosRev', async () => {
+    it('actualizarMovimiento refreshes selector + paginated and bumps productosRev (I-5: no full listar)', async () => {
       apiMovimientos.actualizar.and.returnValue(of(SAMPLE_MOVIMIENTO));
       const revBefore = productos.productosRev();
       const payload: ActualizarMovimientoPayload = {
@@ -254,21 +254,31 @@ describe('ProductosState', () => {
       await productos.actualizarMovimiento(7, payload);
 
       expect(apiMovimientos.actualizar).toHaveBeenCalledWith(7, payload);
-      expect(apiProductos.listar).toHaveBeenCalled();
+      // I-5 audit: NO debe llamar apiProductos.listar (carga pesada con EAV + imagenes).
+      expect(apiProductos.listar).not.toHaveBeenCalled();
       expect(apiProductos.selector).toHaveBeenCalledWith(undefined, 500);
       expect(apiProductos.buscar).toHaveBeenCalled();
       expect(productos.productosRev()).toBe(revBefore + 1);
     });
 
-    it('eliminarMovimiento refreshes product state and bumps productosRev', async () => {
+    it('eliminarMovimiento refreshes selector + paginated and bumps productosRev (I-5: no full listar)', async () => {
       apiMovimientos.eliminar.and.returnValue(of(undefined));
       const revBefore = productos.productosRev();
 
       await productos.eliminarMovimiento(7);
 
-      expect(apiProductos.listar).toHaveBeenCalled();
+      // I-5 audit: NO debe llamar apiProductos.listar (carga pesada con EAV + imagenes).
+      expect(apiProductos.listar).not.toHaveBeenCalled();
       expect(apiProductos.selector).toHaveBeenCalledWith(undefined, 500);
       expect(apiProductos.buscar).toHaveBeenCalled();
+      expect(productos.productosRev()).toBe(revBefore + 1);
+    });
+
+    it('notificarCambioStock bumps productosRev (audit C-4 — used by ventas/anulaciones cross-feature)', async () => {
+      const revBefore = productos.productosRev();
+
+      productos.notificarCambioStock();
+
       expect(productos.productosRev()).toBe(revBefore + 1);
     });
   });

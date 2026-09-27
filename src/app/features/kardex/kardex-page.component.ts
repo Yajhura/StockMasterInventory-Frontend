@@ -25,6 +25,7 @@ import { TABLA_COMPONENTS } from '../../core/components/tabla.component';
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
+import { ErrorTranslator } from '../../core/errors/error-translator';
 
 @Component({
   selector: 'app-kardex-page',
@@ -309,8 +310,8 @@ export class KardexPageComponent implements OnInit {
       this.cerrarModalEdicion();
       this.recargarKardex();
       this.notify.success('Movimiento actualizado y Kardex recalculado correctamente.');
-    } catch (e: any) {
-      this.notify.error(e.message || 'Error al actualizar el movimiento');
+    } catch (e: unknown) {
+      this.notify.error(ErrorTranslator.translate(e) || 'Error al actualizar el movimiento');
     } finally {
       this.editGuardando = false;
     }
@@ -334,8 +335,8 @@ export class KardexPageComponent implements OnInit {
       this.cerrarModalEliminar();
       this.recargarKardex();
       this.notify.success('Movimiento eliminado y Kardex recalculado correctamente.');
-    } catch (e: any) {
-      this.notify.error(e.message || 'Error al eliminar el movimiento');
+    } catch (e: unknown) {
+      this.notify.error(ErrorTranslator.translate(e) || 'Error al eliminar el movimiento');
       this.cargando.set(false);
     }
   }
