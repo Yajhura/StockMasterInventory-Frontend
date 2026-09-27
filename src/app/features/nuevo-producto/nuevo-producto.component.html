@@ -157,7 +157,7 @@
             <div>
               <label class="block text-[11px] font-medium text-slate-700 mb-1">Costo unitario</label>
               <input type="number" min="0.01" step="0.01" formControlName="stockInicialPrecioUnitario" class="input-base tabular-nums" placeholder="0.00" />
-              @if (formProducto.get('stockInicialPrecioUnitario')?.invalid && formProducto.get('stockInicialPrecioUnitario')?.touched) {
+              @if (form.get('stockInicialPrecioUnitario')?.invalid && form.get('stockInicialPrecioUnitario')?.touched) {
                 <p class="text-[11px] text-rose-600 mt-1 font-semibold">El costo unitario debe ser mayor a 0.</p>
               }
             </div>
