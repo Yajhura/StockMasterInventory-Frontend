@@ -8,8 +8,9 @@ import { ApiClientesService } from '../../../core/api/api-clientes.service';
 import { ApiProductosService } from '../../../core/api/api-productos.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ProductosState } from '../../../core/state/productos.state';
+import { ClientesStore } from '../../../core/state/clientes.store';
 import { ProductoSelectorItem } from '../../../core/models/inventario.models';
-import { Cliente, CrearClientePayload } from '../../../core/models/cliente.models';
+import { Cliente, CrearClientePayload, ClienteFiltros } from '../../../core/models/cliente.models';
 import { CrearVentaPayload, PagoInicial, Venta, VentaFiltros, KpiVentas, EstadoPago, MetodoPago, CuotaPreview } from '../../../core/models/venta.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
 @Component({
@@ -25,6 +26,11 @@ export class PuntoVentaComponent implements OnInit {
   private readonly apiProductos = inject(ApiProductosService);
   private readonly notify = inject(NotificationService);
   private readonly productosState = inject(ProductosState);
+  // G-2 audit (fix #21): cache compartido de clientes (root-scoped).
+  // Antes este componente llamaba apiClientes.listar(...) directo en
+  // ngOnInit + onClienteSearch; ahora va por el store que dedup-ea
+  // entre pestañas y entre componentes.
+  private readonly clientesStore = inject(ClientesStore);
 
   protected readonly procesando = signal<boolean>(false);
 
@@ -147,7 +153,7 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
     nombre: ['', [Validators.required, Validators.maxLength(150)]],
     // A-1 / B-1 audit (fix #6): el pattern se ajusta dinamicamente segun
     // el tipoDocumentoId (DNI 8 dig / RUC 11 dig). El default es DNI (1).
-    documento: ['', [Validators.maxLength(50)]],
+    documento: ['', [Validators.maxLength(20)]],
     telefono: ['', Validators.maxLength(50)],
     email: ['', [Validators.email, Validators.maxLength(100)]],
     direccion: ['', Validators.maxLength(250)]
@@ -155,6 +161,13 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
 
   protected confirmarDuplicadosAbierto = signal(false);
   protected clientesDuplicados = signal<Cliente[]>([]);
+  // G-3 / N-1 audit: lista de candidatos similares con su score
+  // JaroWinkler, para mostrar en el modal de "posible duplicado" el
+  // badge % similitud. La lista ahora viene del backend
+  // (/api/clientes/similares) en lugar de un substring.includes
+  // local — el audit midio FPs ("juan" matcheaba "juana") y FNs
+  // ("Juan Perez" vs "Juan  Perez" por el doble espacio).
+  protected clientesSimilares = signal<import('../../../core/api/api-clientes.service').ClienteSimilar[]>([]);
 
   get detallesArray(): FormArray {
     return this.formVenta.get('detalles') as FormArray;
@@ -416,15 +429,15 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
     // backend al iniciar. La seleccion del cliente en el POS usa
     // busqueda server-side (mismo handler `onClienteSearch`) que
     // pide una pagina pequena (size=50) por cada termino tipeado.
-    // Cargamos una pagina inicial "vacia" para que el dropdown tenga
-    // algo que mostrar antes del primer keystroke.
-    this.apiClientes.listar({ page: 1, size: 50 }).subscribe({
-      next: (res) => {
-        this.clientes.set(res.items);
-        this.clientesBusqueda.set(res.items);
-      },
-      error: () => this.notify.error('Error al cargar clientes')
-    });
+    // G-2 audit (fix #21): vamos por el store compartido — si
+    // cuentas-corrientes ya cargo esta pagina, la reutilizamos.
+    try {
+      const res = await this.clientesStore.cargar({ page: 1, size: 50 });
+      this.clientes.set(res.items);
+      this.clientesBusqueda.set(res.items);
+    } catch {
+      this.notify.error('Error al cargar clientes');
+    }
 
     this.apiProductos.selector().subscribe({
       next: (res) => this.productos.set(res),
@@ -436,6 +449,8 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
    * G-1 / C-1 audit (fix #9): debounce 200ms + cancel-in-flight para la
    * busqueda de clientes en el dropdown del POS. Cada termino cancela
    * el request anterior (switchMap manual) y reemplaza el cache.
+   * G-2 audit (fix #21): la peticion pasa por el store compartido; el
+   * dedupe se hace por (q, page, size, incluirEliminados).
    */
   private clienteSearchTimer: ReturnType<typeof setTimeout> | null = null;
   private clienteSearchRequest = 0;
@@ -446,15 +461,13 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
     this.clienteSearchTimer = setTimeout(() => {
       this.clienteSearchTimer = null;
       const requestId = ++this.clienteSearchRequest;
-      this.apiClientes.listar({ q: trimmed || undefined, page: 1, size: 50 }).subscribe({
-        next: (res) => {
-          if (requestId !== this.clienteSearchRequest) return;
-          this.clientesBusqueda.set(res.items);
-        },
-        error: () => {
-          if (requestId !== this.clienteSearchRequest) return;
-          // Silencioso: el dropdown muestra "Sin resultados".
-        }
+      const filtros: ClienteFiltros = { q: trimmed || undefined, page: 1, size: 50 };
+      this.clientesStore.cargar(filtros).then((res) => {
+        if (requestId !== this.clienteSearchRequest) return;
+        this.clientesBusqueda.set(res.items);
+      }).catch(() => {
+        if (requestId !== this.clienteSearchRequest) return;
+        // Silencioso: el dropdown muestra "Sin resultados".
       });
     }, 200);
   }
@@ -526,8 +539,11 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
 
   protected abrirModalCliente() {
     this.formCliente.reset({ tipoDocumentoId: 1 });
-    // A-1 / B-1 audit (fix #6): aplicar validator DNI por default.
-    this.aplicarValidadorDocumento(1);
+    // El campo `documento` es opcional. La validacion de formato
+    // (DNI = 8 digitos, RUC = 11 digitos) la hace el backend al submit y
+    // el handler de errores la surfacea al operador; no aplicamos
+    // `Validators.pattern` en el cliente para que el modal acepte
+    // documento vacio tanto con DNI como con RUC.
     this.modalClienteAbierto.set(true);
   }
 
@@ -543,24 +559,6 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
     } else {
       this.formCliente.get('documento')?.enable();
     }
-    // A-1 / B-1 audit (fix #6): aplicar pattern de documento segun el tipo.
-    this.aplicarValidadorDocumento(tipoId);
-  }
-
-  /**
-   * A-1 / B-1 audit (fix #6): DNI = exactamente 8 digitos, RUC = 11.
-   * Sin doc. (3) no lleva pattern. Si el valor actual no cumple el nuevo
-   * pattern, marcamos el control como touched para que el usuario vea el error.
-   */
-  private aplicarValidadorDocumento(tipoId: number): void {
-    const docCtrl = this.formCliente.get('documento');
-    if (!docCtrl) return;
-    docCtrl.clearValidators();
-    docCtrl.addValidators([Validators.maxLength(50)]);
-    if (tipoId === 1) docCtrl.addValidators([Validators.pattern(/^\d{8}$/)]);
-    else if (tipoId === 2) docCtrl.addValidators([Validators.pattern(/^\d{11}$/)]);
-    docCtrl.updateValueAndValidity();
-    if (docCtrl.invalid && docCtrl.value) docCtrl.markAsTouched();
   }
 
   protected intentarGuardarClienteRapido() {
@@ -569,21 +567,65 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
       return;
     }
 
-    const nombre = this.formCliente.get('nombre')?.value?.toLowerCase().trim() || '';
+    const nombre = this.formCliente.get('nombre')?.value?.trim() || '';
     const documento = this.formCliente.get('documento')?.value?.trim() || '';
 
-    const coincidencias = this.clientes().filter(c => {
-      const matchNombre = c.nombre.toLowerCase().includes(nombre);
-      const matchDoc = documento !== '' && c.documento === documento;
-      return matchNombre || matchDoc;
-    });
+    // G-3 / N-1 audit: el audit recomendo reemplazar el substring
+    // match local por una llamada al endpoint /similares del backend.
+    // El substring tenia falsos positivos ("juan" matcheaba "juana") y
+    // falsos negativos ("Juan Perez" vs "Juan  Perez" por el doble
+    // espacio). Ademas, si el documento es no vacio, tambien checkamos
+    // duplicado exacto por documento — ese sigue siendo local porque la
+    // unicidad por documento esta blindada por el indice unico del DB.
+    const docDuplicado = documento !== ''
+      ? this.clientes().find(c => c.documento === documento)
+      : undefined;
 
-    if (coincidencias.length > 0) {
-      this.clientesDuplicados.set(coincidencias);
+    if (docDuplicado) {
+      this.clientesSimilares.set([{
+        id: docDuplicado.id,
+        nombre: docDuplicado.nombre,
+        documento: docDuplicado.documento,
+        similitud: 100,
+      }]);
       this.confirmarDuplicadosAbierto.set(true);
-    } else {
-      this.ejecutarGuardarClienteRapido();
+      return;
     }
+
+    // Si el nombre tiene < 3 chars, JaroWinkler backend devuelve 400.
+    // Salteamos el check y vamos directo a crear.
+    if (nombre.length < 3) {
+      this.ejecutarGuardarClienteRapido();
+      return;
+    }
+
+    this.apiClientes.buscarSimilares(nombre).subscribe({
+      next: (similares) => {
+        if (similares.length > 0) {
+          this.clientesSimilares.set(similares);
+          this.confirmarDuplicadosAbierto.set(true);
+        } else {
+          this.ejecutarGuardarClienteRapido();
+        }
+      },
+      error: () => {
+        // Si el endpoint falla, no bloquear al operador — crear igual.
+        this.ejecutarGuardarClienteRapido();
+      }
+    });
+  }
+
+  /**
+   * G-3 / N-1 audit: el operador eligio uno de los candidatos
+   * similares — parchamos el formVenta con su id y cerramos el
+   * modal sin crear nada nuevo.
+   */
+  protected elegirClienteSimilar(similar: import('../../../core/api/api-clientes.service').ClienteSimilar): void {
+    this.formVenta.patchValue({ clienteId: similar.id });
+    this.notify.success(`Cliente "${similar.nombre}" seleccionado (similitud ${similar.similitud.toFixed(0)}%).`);
+    this.confirmarDuplicadosAbierto.set(false);
+    this.clientesSimilares.set([]);
+    this.cerrarModalCliente();
   }
 
   protected cancelarGuardarDuplicado() {
@@ -609,8 +651,12 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
         // G-1 audit (fix #9): sincronizamos tanto el cache de seleccion
         // (`clientesBusqueda`, alimenta el dropdown) como el cache completo
         // (`clientes`, alimenta los lookups internos).
+        // G-2 audit (fix #21): tambien invalidamos el store compartido
+        // asi el siguiente cargar() en POS o cobranza refleja el nuevo
+        // cliente sin stale-while-revalidate raro.
         this.clientes.update(c => [...c, cliente]);
         this.clientesBusqueda.update(c => [...c, cliente]);
+        this.clientesStore.invalidate();
         this.formVenta.patchValue({ clienteId: cliente.id });
         this.notify.success('Cliente creado y seleccionado');
         this.cerrarModalCliente();

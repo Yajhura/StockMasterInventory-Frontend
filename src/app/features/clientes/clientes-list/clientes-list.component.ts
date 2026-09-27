@@ -11,7 +11,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { ApiClientesService } from '../../../core/api/api-clientes.service';
+import { ApiClientesService, ClienteSimilar } from '../../../core/api/api-clientes.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import {
   Cliente,
@@ -23,6 +23,7 @@ import {
   PaginatedClientes,
 } from '../../../core/models/cliente.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-clientes-list',
@@ -34,6 +35,12 @@ export class ClientesListComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly apiClientes = inject(ApiClientesService);
   private readonly notify = inject(NotificationService);
+  // H-2 audit: papelera y restaurar son Admin-only en el backend
+  // (RequireAuthorization("Admin")). Escondemos los controles en el FE
+  // para que un Operador no los vea ni intente usarlos — el backend
+  // rechazaria el request con 403 igualmente, pero evitamos el ruido.
+  // `protected` para que el template pueda leer esAdmin().
+  protected readonly auth = inject(AuthService);
 
   // --- Estado general ---
   protected readonly clientes = signal<Cliente[]>([]);
@@ -68,6 +75,44 @@ export class ClientesListComponent implements OnInit, OnDestroy {
     q: null,
   });
   protected readonly filtroBusqueda = signal<string>('');
+  // N-2 audit: ultima query de busqueda despues del debounce. La usamos
+  // para detectar match perfecto (case-insensitive equal contra `clientes()`)
+  // y esconder la seccion de similares cuando el operador ya encontro
+  // exactamente lo que buscaba.
+  protected readonly qActual = signal<string>('');
+
+  /**
+   * N-2 audit: candidatos con similitud JaroWinkler >= 70% contra el
+   * termino de busqueda. El directorio los muestra ARRIBA del listado
+   * principal como una pista para el operador cuando el termino es
+   * parecido a un nombre existente pero no matchea exacto (typos,
+   * acentos, dobles espacios, etc). El POS ya consume este mismo
+   * endpoint desde el bundle MEDIUM/LOW.
+   *
+   * requestId + subscripcion unica descartan respuestas tardias si el
+   * operador sigue tipeando (mismo patron que el POS en onClienteSearch).
+   */
+  protected readonly similares = signal<ClienteSimilar[]>([]);
+  private similaresSub?: Subscription;
+  private similaresRequest = 0;
+
+  /**
+   * N-2 audit: si la busqueda substring ya devolvio un cliente cuyo
+   * nombre es exactamente igual a `qActual` (case-insensitive), no
+   * tiene sentido mostrar la seccion de similares — seria redundante.
+   * El computed se re-evalua automaticamente cuando cambia `clientes()`
+   * (carga/refresh del listado) o cuando cambia `qActual` (debounce de
+   * busqueda).
+   */
+  protected readonly hayMatchExacto = computed<boolean>(() => {
+    const q = (this.qActual() ?? '').trim().toLowerCase();
+    if (!q) return false;
+    return this.clientes().some((c) => (c.nombre ?? '').trim().toLowerCase() === q);
+  });
+
+  protected readonly mostrarSimilares = computed<boolean>(
+    () => this.similares().length > 0 && !this.hayMatchExacto(),
+  );
 
   protected readonly opcionesTipoDocumento = computed<DropdownOption<number | null>[]>(() => [
     { value: null, label: 'Todos los tipos' },
@@ -111,21 +156,16 @@ export class ClientesListComponent implements OnInit, OnDestroy {
   });
 
   /**
-   * A-1 / B-1 audit (fix #6): mensaje de error inline para el campo
-   * documento segun el tipo y el motivo del fallo.
+   * Mensaje de error inline para el campo documento. El campo es
+   * opcional — solo se reporta si el backend rechazo el formato. La
+   * validacion de formato la hace el servidor al submit (DNI = 8 digitos,
+   * RUC = 11 digitos), asi que este getter rara vez se dispara; queda por
+   * si en el futuro agregamos validators locales.
    */
   protected readonly mensajeErrorDocumento = computed<string>(() => {
     const ctrl = this.formCliente.get('documento');
     if (!ctrl || !ctrl.errors) return '';
-    const tipo = this.formCliente.get('tipoDocumentoId')?.value;
-    if (tipo === 1) {
-      if (ctrl.errors['required']) return 'El DNI es obligatorio.';
-      if (ctrl.errors['pattern']) return 'El DNI debe tener exactamente 8 digitos.';
-    }
-    if (tipo === 2) {
-      if (ctrl.errors['required']) return 'El RUC es obligatorio.';
-      if (ctrl.errors['pattern']) return 'El RUC debe tener exactamente 11 digitos.';
-    }
+    if (ctrl.errors['maxlength']) return 'El documento es demasiado largo.';
     return 'Documento invalido.';
   });
 
@@ -133,9 +173,12 @@ export class ClientesListComponent implements OnInit, OnDestroy {
     nombre: ['', Validators.required],
     documento: [''],
     telefono: [''],
-    email: [''],
+    // B-3 audit: Validators.email + maxLength. El campo es opcional (no
+    // required), asi que Validators.email solo dispara cuando el operador
+    // tipea algo — empty string lo deja valido.
+    email: ['', [Validators.email, Validators.maxLength(100)]],
     tipoDocumentoId: [3 as number | null, Validators.required],
-    direccion: [''],
+    direccion: ['', Validators.maxLength(250)],
   });
 
   // --- Debounce para recarga cuando cambian filtros ---
@@ -162,41 +205,10 @@ export class ClientesListComponent implements OnInit, OnDestroy {
       this.documento$.next((val ?? '').toString());
     });
 
-    // A-1 / B-1 audit (fix #6): ajustar validators de `documento` segun
-    // el `tipoDocumentoId`. DNI = 8 digitos, RUC = 11 digitos, Sin doc.
-    // = null/empty (campo opcional). valueChanges dispara cuando el usuario
-    // cambia el dropdown o cuando cargarTiposDocumento re-asigna defaults.
-    this.formCliente.get('tipoDocumentoId')?.valueChanges.subscribe((tipo) => {
-      this.aplicarValidadorDocumento(tipo);
-    });
-    // Aplicar el inicial por si el default (3) ya estaba al construir el form.
-    this.aplicarValidadorDocumento(this.formCliente.get('tipoDocumentoId')?.value);
-  }
-
-  /**
-   * A-1 / B-1 audit (fix #6): agrega o remueve el `Validators.pattern`
-   * del campo `documento` segun el TipoDocumentoId. DNI = exactamente 8
-   * digitos, RUC = exactamente 11, Sin doc. = documento vacio (sin pattern).
-   * Si el valor actual no cumple el nuevo pattern, lo borra y marca el
-   * control como touched para que el error sea visible al usuario.
-   */
-  private aplicarValidadorDocumento(tipoId: number | null | undefined): void {
-    const docCtrl = this.formCliente.get('documento');
-    if (!docCtrl) return;
-    // Siempre limpiamos validators custom y luego re-aplicamos segun tipo.
-    docCtrl.clearValidators();
-    if (tipoId === 1) {
-      docCtrl.addValidators([Validators.pattern(/^\d{8}$/)]);
-    } else if (tipoId === 2) {
-      docCtrl.addValidators([Validators.pattern(/^\d{11}$/)]);
-    }
-    // Sin doc. (3) o tipo desconocido: sin pattern, sigue siendo opcional.
-    docCtrl.updateValueAndValidity();
-    // Si el valor actual no matchea el nuevo pattern, no lo limpiamos
-    // automaticamente — el usuario lo vera en rojo y lo corregira.
-    if (docCtrl.invalid && docCtrl.value) {
-      docCtrl.markAsTouched();
-    }
+    // El campo `documento` es opcional. NO aplicamos `Validators.pattern`
+    // en el cliente segun el TipoDocumentoId: la validacion de formato
+    // (DNI = 8 digitos, RUC = 11 digitos) la hace el backend al submit y
+    // el handler de errores (commit 3a8bc32) la surfacea al operador.
   }
 
   ngOnInit(): void {
@@ -217,8 +229,35 @@ export class ClientesListComponent implements OnInit, OnDestroy {
         // set de resultados cambia. Si el usuario esta en la pagina 5 y
         // escribe un termino que solo tiene 2 paginas, queremos que vea
         // la primera pagina de los resultados filtrados.
-        this.filtros.update((f) => ({ ...f, q: q.trim() || null }));
+        const trimmed = q.trim();
+        this.qActual.set(trimmed);
+        this.filtros.update((f) => ({ ...f, q: trimmed || null }));
         this.page.set(1);
+        // N-2 audit: en paralelo con la busqueda substring, pedimos
+        // candidatos similares al backend (JaroWinkler >= 70%). Si la
+        // query tiene menos de 3 chars, JaroWinkler no es util y el
+        // backend devolveria 400 — limpiamos el resultado y listo.
+        // requestId descarta respuestas tardias si el operador sigue
+        // tipeando antes de que llegue el response.
+        this.similaresSub?.unsubscribe();
+        if (trimmed.length < 3) {
+          this.similares.set([]);
+          return;
+        }
+        const requestId = ++this.similaresRequest;
+        this.similaresSub = this.apiClientes.buscarSimilares(trimmed, 70).subscribe({
+          next: (result) => {
+            if (requestId !== this.similaresRequest) return;
+            this.similares.set(result);
+          },
+          error: () => {
+            if (requestId !== this.similaresRequest) return;
+            // Silencioso: si el endpoint falla, simplemente no mostramos
+            // la seccion de similares. La busqueda substring sigue
+            // funcionando y los KPIs no se ven afectados.
+            this.similares.set([]);
+          },
+        });
       });
 
     // Debounce 300ms para validar duplicado
@@ -233,6 +272,7 @@ export class ClientesListComponent implements OnInit, OnDestroy {
     this.filtrosSub?.unsubscribe();
     this.busquedaSub?.unsubscribe();
     this.documentoSub?.unsubscribe();
+    this.similaresSub?.unsubscribe();
   }
 
   private cargarTiposDocumento(): void {
@@ -307,6 +347,11 @@ export class ClientesListComponent implements OnInit, OnDestroy {
   protected limpiarFiltros(): void {
     this.filtros.set({ desde: null, hasta: null, tipoDocumentoId: null, estadoDeuda: null, q: null });
     this.filtroBusqueda.set('');
+    // N-2 audit: al limpiar los filtros tambien limpiamos la seccion de
+    // similares (no tiene sentido mostrarla sin un termino de busqueda).
+    this.qActual.set('');
+    this.similaresSub?.unsubscribe();
+    this.similares.set([]);
     // Reset a la primera pagina para que el usuario vea todo el catalogo
     // despues de limpiar. El effect() del constructor re-disparara la carga.
     this.page.set(1);

@@ -26,6 +26,12 @@ export interface Cliente {
   eliminadoEn?: string | null;
   eliminadoPorId?: number | null;
   eliminadoPorNombre?: string | null;
+  // L-2 audit (fix #22): contadores de actividad comercial. Solo se
+  // populan en el response de un cliente individual (GET /api/clientes/{id});
+  // el listado paginado los omite (null) para no caer en N+1. El FE los
+  // consume opcionalmente — si no estan, simplemente no renderiza el chip.
+  cantidadVentas?: number | null;
+  cantidadAbonos?: number | null;
 }
 
 export interface CrearClientePayload {
