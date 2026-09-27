@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ApiVentasService } from '../../../core/api/api-ventas.service';
@@ -27,7 +27,7 @@ interface CuotaAfectada {
   imports: [CommonModule, ReactiveFormsModule, DropdownComponent, ConfirmDialogComponent],
   templateUrl: './cuentas-corrientes.component.html',
 })
-export class CuentasCorrientesComponent implements OnInit {
+export class CuentasCorrientesComponent implements OnInit, OnDestroy {
   private readonly apiVentas = inject(ApiVentasService);
   private readonly apiClientes = inject(ApiClientesService);
   private readonly notify = inject(NotificationService);
@@ -176,6 +176,22 @@ export class CuentasCorrientesComponent implements OnInit {
 
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // H-F2 audit: BroadcastChannel + storage-event fallback para sincronizar
+  // el listado entre pestañas. Si el operador tiene /cuentas-corrientes
+  // abierto en dos pestañas y registra/anula un abono en una, la otra se
+  // refresca automáticamente sin tener que recargar manualmente. Usamos el
+  // canal cuando está disponible (todos los browsers modernos) y caemos al
+  // evento `storage` cuando no — el evento storage NO se dispara en la
+  // pestaña que escribe, sólo en las demás, así que no hay doble-refresh.
+  private static readonly BROADCAST_KEY = 'stockmaster.cuentas-corrientes';
+  private bc: BroadcastChannel | null = null;
+  private readonly storageHandler = (e: StorageEvent) => {
+    if (e.key === CuentasCorrientesComponent.BROADCAST_KEY && e.newValue) {
+      this.cargarDeudas();
+      this.cargarKpisCobranza();
+    }
+  };
+
   constructor() {
     this.formAbono.controls.monto.valueChanges.subscribe(monto => this.montoAbono.set(Number(monto) || 0));
   }
@@ -185,6 +201,52 @@ export class CuentasCorrientesComponent implements OnInit {
     this.cargarKpisCobranza();
     this.cargarClientes();
     this.cargarMetodosPago();
+    this.iniciarBroadcastChannel();
+  }
+
+  ngOnDestroy(): void {
+    this.bc?.close();
+    this.bc = null;
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('storage', this.storageHandler);
+    }
+  }
+
+  private iniciarBroadcastChannel(): void {
+    if (typeof BroadcastChannel !== 'undefined') {
+      this.bc = new BroadcastChannel(CuentasCorrientesComponent.BROADCAST_KEY);
+      this.bc.onmessage = () => {
+        this.cargarDeudas();
+        this.cargarKpisCobranza();
+      };
+      return;
+    }
+    // Fallback para entornos sin BroadcastChannel.
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', this.storageHandler);
+    }
+  }
+
+  /**
+   * H-F2 audit: notifica a las demás pestañas que hubo un cambio de estado
+   * (abono registrado, anulado o venta anulada) para que refresquen su
+   * listado. La pestaña que originó el cambio ya actualizó su propia vista
+   * antes de emitir — el BroadcastChannel sólo sincroniza las pestañas
+   * restantes.
+   */
+  private emitirBroadcastCobranza(): void {
+    if (this.bc) {
+      this.bc.postMessage({ at: Date.now() });
+      return;
+    }
+    if (typeof localStorage !== 'undefined') {
+      // El evento `storage` se dispara en TODAS las pestañas menos la que
+      // escribió, así que evitamos auto-refrescarnos.
+      localStorage.setItem(
+        CuentasCorrientesComponent.BROADCAST_KEY,
+        String(Date.now())
+      );
+    }
   }
 
   protected cargarMetodosPago(): void {
@@ -393,6 +455,7 @@ export class CuentasCorrientesComponent implements OnInit {
         this.procesandoAbono.set(false);
         this.cargarDeudas();
         this.cargarKpisCobranza();
+        this.emitirBroadcastCobranza();
       },
       error: (err) => {
         this.notify.error(this.mensajeError(err, 'Error al registrar abono'));
@@ -443,6 +506,7 @@ export class CuentasCorrientesComponent implements OnInit {
         this.abonoAAnular.set(null);
         this.procesandoAnulacion.set(false);
         this.refrescarDespuesDeAnulacion(venta.id);
+        this.emitirBroadcastCobranza();
       },
       error: (err) => {
         this.notify.error(this.mensajeError(err, 'Error al anular abono'));
@@ -513,6 +577,7 @@ export class CuentasCorrientesComponent implements OnInit {
         this.cerrarModalDetalle();
         this.cargarDeudas();
         this.cargarKpisCobranza();
+        this.emitirBroadcastCobranza();
       },
       error: (err) => {
         this.notify.error(this.mensajeError(err, 'Error al anular venta'));
