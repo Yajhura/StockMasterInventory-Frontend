@@ -189,7 +189,19 @@ export class CuentasCorrientesComponent implements OnInit {
 
   protected cargarMetodosPago(): void {
     this.apiVentas.listarMetodosPago().subscribe({
-      next: (res) => this.metodosPago.set(res),
+      next: (res) => {
+        this.metodosPago.set(res);
+        // H-H2 audit: si el form tiene el default metodoPagoId=1 y ese
+        // método existe en la respuesta, lo dejamos. Si NO existe (porque
+        // el admin lo borró o desactivó), seteamos al primer método activo
+        // disponible. Esto evita que el submit mande un id inválido y el
+        // backend responda con un 400 confuso.
+        const currentId = this.formAbono.controls.metodoPagoId.value;
+        const existe = res.some(m => m.id === currentId);
+        if (!existe && res.length > 0) {
+          this.formAbono.patchValue({ metodoPagoId: res[0].id });
+        }
+      },
       error: () => {
         // Si falla, dejamos el dropdown vacío (no spameamos al usuario).
       }

@@ -302,6 +302,15 @@
                 <option [value]="m.value">{{ m.label }}</option>
               }
             </select>
+            <!-- H-H2 audit: si no hay métodos de pago activos (carga fallida o
+                 catálogo vacío), mostramos un aviso inline y deshabilitamos el
+                 submit. Antes el form quedaba con metodoPagoId=1 (default) y
+                 el backend tiraba un 400 confuso. -->
+            @if (metodosPago().length === 0) {
+              <p class="text-[11px] text-amber-700 mt-1.5 font-semibold">
+                No hay métodos de pago activos. Configurá al menos uno en Catálogos.
+              </p>
+            }
           </div>
 
           <div>
@@ -309,7 +318,7 @@
             <input type="text" formControlName="observacion" class="w-full px-3 py-2.5 bg-white border-2 border-slate-400 rounded-md text-sm text-slate-900 hover:border-slate-600 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20 transition-all" placeholder="Ej. Depósito BCP #1234">
           </div>
 
-          <button type="submit" [disabled]="formAbono.invalid || procesandoAbono()"
+          <button type="submit" [disabled]="formAbono.invalid || procesandoAbono() || metodosPago().length === 0"
             class="w-full mt-2 py-3.5 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50">
             @if (procesandoAbono()) {
               <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
