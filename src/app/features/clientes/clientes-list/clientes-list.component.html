@@ -149,6 +149,16 @@
                   @if (c.email) {
                     <div class="text-[11px] text-slate-400 mt-0.5">{{ c.email }}</div>
                   }
+                  @if (!c.telefono && !c.email) {
+                    <!-- O-5 audit: badge 'Sin contacto' para clientes sin
+                         telefono ni email. Asi el operador ve de un vistazo
+                         que ese cliente no se puede contactar y deberia
+                         capturar datos antes de cualquier gestion. -->
+                    <span class="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500">
+                      <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18.36 6.64A9 9 0 0 1 20.77 15"/><path d="M6.16 6.16a9 9 0 1 0 12.68 12.68"/><path d="m1 1 22 22"/></svg>
+                      Sin contacto
+                    </span>
+                  }
                 </td>
                 <td class="py-3.5 px-4">
                   <span class="chip chip-neutral">{{ c.tipoDocumentoNombre }}</span>
