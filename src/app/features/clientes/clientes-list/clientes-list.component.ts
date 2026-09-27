@@ -65,6 +65,7 @@ export class ClientesListComponent implements OnInit, OnDestroy {
     hasta: null,
     tipoDocumentoId: null,
     estadoDeuda: null,
+    q: null,
   });
   protected readonly filtroBusqueda = signal<string>('');
 
@@ -79,16 +80,13 @@ export class ClientesListComponent implements OnInit, OnDestroy {
     { value: 'sin-deuda', label: 'Sin deuda' },
   ]);
 
-  protected readonly clientesFiltrados = computed<Cliente[]>(() => {
-    const q = this.filtroBusqueda().toLowerCase().trim();
-    const data = this.clientes();
-    if (!q) return data;
-    return data.filter(
-      (c) =>
-        c.nombre.toLowerCase().includes(q) ||
-        (c.documento && c.documento.toLowerCase().includes(q)),
-    );
-  });
+  /**
+   * G-1 / C-1 audit (fix #8+#9): antes el FE filtraba en memoria con
+   * substring sobre la pagina recibida. Ahora el filtro va al backend
+   * via `q` (server-side LIKE). El array que pinta la tabla es el que
+   * devuelve el endpoint paginado, sin filtrar de nuevo.
+   */
+  protected readonly clientesFiltrados = computed<Cliente[]>(() => this.clientes());
 
   // --- Modal Crear/Editar ---
   protected readonly modalAbierto = signal<boolean>(false);
@@ -211,6 +209,18 @@ export class ClientesListComponent implements OnInit, OnDestroy {
       .pipe(debounceTime(300), distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)))
       .subscribe(() => this.cargarClientes());
 
+    // Debounce 200ms para la busqueda server-side (G-1 / C-1 audit fix #8+#9)
+    this.busquedaSub = this.busqueda$
+      .pipe(debounceTime(200), distinctUntilChanged())
+      .subscribe((q) => {
+        // Al cambiar `q`, reseteamos a la primera pagina porque el
+        // set de resultados cambia. Si el usuario esta en la pagina 5 y
+        // escribe un termino que solo tiene 2 paginas, queremos que vea
+        // la primera pagina de los resultados filtrados.
+        this.filtros.update((f) => ({ ...f, q: q.trim() || null }));
+        this.page.set(1);
+      });
+
     // Debounce 300ms para validar duplicado
     this.documentoSub = this.documento$
       .pipe(debounceTime(300))
@@ -221,6 +231,7 @@ export class ClientesListComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.filtrosSub?.unsubscribe();
+    this.busquedaSub?.unsubscribe();
     this.documentoSub?.unsubscribe();
   }
 
@@ -239,6 +250,7 @@ export class ClientesListComponent implements OnInit, OnDestroy {
       hasta: f.hasta,
       tipoDocumentoId: f.tipoDocumentoId,
       estadoDeuda: f.estadoDeuda,
+      q: f.q,
       page: this.page(),
       size: this.pageSize(),
       // F-1 audit: si la papelera esta activa, pedimos explicitamente
@@ -264,9 +276,19 @@ export class ClientesListComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * G-1 / C-1 audit (fix #8+#9): el input de busqueda dispara un debounce
+   * de 200ms antes de pedir la pagina 1 con `q` al backend. Asi evitamos
+   * mandar un request por cada tecla tipeada. Tambien resetea la pagina
+   * a 1 — sino quedaria en la pagina 5 sin resultados visibles.
+   */
+  private readonly busqueda$ = new Subject<string>();
+  private busquedaSub?: Subscription;
+
   protected onFiltroBusquedaChange(event: Event): void {
     const val = (event.target as HTMLInputElement).value;
     this.filtroBusqueda.set(val);
+    this.busqueda$.next(val);
   }
 
   protected onFiltroFechaChange(campo: 'desde' | 'hasta', valor: string): void {
@@ -283,7 +305,7 @@ export class ClientesListComponent implements OnInit, OnDestroy {
   }
 
   protected limpiarFiltros(): void {
-    this.filtros.set({ desde: null, hasta: null, tipoDocumentoId: null, estadoDeuda: null });
+    this.filtros.set({ desde: null, hasta: null, tipoDocumentoId: null, estadoDeuda: null, q: null });
     this.filtroBusqueda.set('');
     // Reset a la primera pagina para que el usuario vea todo el catalogo
     // despues de limpiar. El effect() del constructor re-disparara la carga.

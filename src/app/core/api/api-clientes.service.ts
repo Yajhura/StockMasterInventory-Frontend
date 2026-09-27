@@ -36,6 +36,9 @@ export class ApiClientesService {
     if (filtros?.hasta) params = params.set('hasta', filtros.hasta);
     if (filtros?.tipoDocumentoId != null) params = params.set('tipoDocumentoId', String(filtros.tipoDocumentoId));
     if (filtros?.estadoDeuda) params = params.set('estadoDeuda', filtros.estadoDeuda);
+    // G-1 / C-1 audit (fix #8+#9): enviamos `q` solo si es no vacio para
+    // no mandar un parametro vacio que confunda al backend o a proxies.
+    if (filtros?.q && filtros.q.trim()) params = params.set('q', filtros.q.trim());
     if (filtros?.incluirEliminados) params = params.set('incluirEliminados', 'true');
     return this.http.get<PaginatedClientes>(this.url, { params });
   }

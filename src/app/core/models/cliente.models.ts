@@ -42,6 +42,10 @@ export interface ClienteFiltros {
   hasta?: string | null;
   tipoDocumentoId?: number | null;
   estadoDeuda?: 'con-deuda' | 'sin-deuda' | null;
+  // G-1 / C-1 audit (fix #8+#9): busqueda server-side libre por
+  // nombre / documento / telefono / email. Antes era un filter() en
+  // memoria sobre los resultados ya paginados.
+  q?: string | null;
   // C-4 / K-4 audit: paginacion server-side. size acepta el clamp
   // del backend (1..200), page es 1-based. Defaults los define el
   // service para no obligar al componente a setearlos siempre.
