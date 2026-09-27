@@ -277,13 +277,23 @@
         </div>
         <div class="surface-card p-3">
           <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500"># Ventas</p>
-          <p class="text-base font-bold text-slate-900 tabular-nums mt-1">{{ ec.cantidadVentas }}</p>
+          <!-- E-2 audit (fix #7): mostramos el total sin paginar y, abajo,
+               el contador "Mostrando N de M" para que el operador sepa
+               que puede pedir mas. -->
+          <p class="text-base font-bold text-slate-900 tabular-nums mt-1">{{ ec.cantidadVentasTotal }}</p>
         </div>
       </section>
 
       <!-- Lista de ventas -->
       <section class="flex-1 overflow-y-auto p-4">
-        <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">Historial de ventas</h4>
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Historial de ventas</h4>
+          <!-- E-2 audit (fix #7): contador "Mostrando N de M" para que el
+               operador sepa cuanto falta por cargar. -->
+          <span class="text-[10px] text-slate-500 tabular-nums font-semibold">
+            Mostrando {{ ec.cantidadVentasMostradas }} de {{ ec.cantidadVentasTotal }}
+          </span>
+        </div>
         @if (ec.ventas.length > 0) {
           <div class="space-y-2">
             @for (v of ec.ventas; track v.id) {
@@ -305,6 +315,14 @@
                   }
                 </div>
               </div>
+            }
+            @if (hayMasVentas()) {
+              <!-- E-2 audit (fix #7): "Ver mas" pide la siguiente pagina al
+                   backend. -->
+              <button type="button" (click)="cargarMasVentas()"
+                class="w-full py-2 mt-2 border border-dashed border-slate-300 rounded-lg text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-400 text-[12px] font-semibold transition-colors flex items-center justify-center gap-1.5">
+                Ver mas ventas
+              </button>
             }
           </div>
         } @else {

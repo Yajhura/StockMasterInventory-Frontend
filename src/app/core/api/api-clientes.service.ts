@@ -73,8 +73,20 @@ export class ApiClientesService {
     return this.http.get(`${this.url}/exportar-excel`, { responseType: 'blob' });
   }
 
-  obtenerEstadoCuenta(id: number): Observable<EstadoCuentaCliente> {
-    return this.http.get<EstadoCuentaCliente>(`${this.url}/${id}/estado-cuenta`);
+  /**
+   * E-2 audit (fix #7): acepta parametros de paginacion para la lista de
+   * ventas. Los totales (facturado / pagado / deuda) siguen siendo globales
+   * y se calculan server-side en SQL.
+   */
+  obtenerEstadoCuenta(
+    id: number,
+    pageVentas: number = 1,
+    sizeVentas: number = 20,
+  ): Observable<EstadoCuentaCliente> {
+    let params = new HttpParams()
+      .set('pageVentas', String(pageVentas))
+      .set('sizeVentas', String(sizeVentas));
+    return this.http.get<EstadoCuentaCliente>(`${this.url}/${id}/estado-cuenta`, { params });
   }
 
   kpis(): Observable<KpiClientes> {

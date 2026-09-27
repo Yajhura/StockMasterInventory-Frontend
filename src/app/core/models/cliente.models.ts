@@ -58,7 +58,11 @@ export interface EstadoCuentaCliente {
   totalFacturado: number;
   totalPagado: number;
   deudaActual: number;
-  cantidadVentas: number;
+  // E-2 audit (fix #7): cantidadVentasTotal = count sin paginar;
+  // cantidadVentasMostradas = count de la pagina actual. Asi el FE puede
+  // mostrar "Mostrando N de M" y habilitar un boton "Ver mas".
+  cantidadVentasTotal: number;
+  cantidadVentasMostradas: number;
   cantidadAbonos: number;
   ventas: Venta[];
 }

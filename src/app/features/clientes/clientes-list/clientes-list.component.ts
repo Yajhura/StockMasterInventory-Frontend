@@ -525,6 +525,8 @@ export class ClientesListComponent implements OnInit, OnDestroy {
   protected verCuenta(clienteId: number): void {
     this.clienteSeleccionado.set(clienteId);
     this.drawerAbierto.set(true);
+    // E-2 audit (fix #7): reset a pagina 1 cada vez que se abre el drawer.
+    this.estadoCuentaPage.set(1);
     this.cargarEstadoCuenta(clienteId);
   }
 
@@ -533,11 +535,14 @@ export class ClientesListComponent implements OnInit, OnDestroy {
     this.clienteSeleccionado.set(null);
     this.estadoCuenta.set(null);
     this.cargandoEstadoCuenta.set(false);
+    this.estadoCuentaPage.set(1);
   }
 
   private cargarEstadoCuenta(clienteId: number): void {
     this.cargandoEstadoCuenta.set(true);
-    this.apiClientes.obtenerEstadoCuenta(clienteId).subscribe({
+    // E-2 audit (fix #7): pagina 1 con default sizeVentas=20 (lo define
+    // el service). Para "Ver mas" se llama con pageVentas incrementada.
+    this.apiClientes.obtenerEstadoCuenta(clienteId, this.estadoCuentaPage()).subscribe({
       next: (data) => {
         this.estadoCuenta.set(data);
         this.cargandoEstadoCuenta.set(false);
@@ -548,5 +553,21 @@ export class ClientesListComponent implements OnInit, OnDestroy {
         this.cerrarDrawer();
       },
     });
+  }
+
+  // --- Drawer pagination (E-2 / fix #7) ---
+  protected readonly estadoCuentaPage = signal<number>(1);
+  protected readonly estadoCuentaSizeVentas = signal<number>(20);
+  protected readonly hayMasVentas = computed<boolean>(() => {
+    const ec = this.estadoCuenta();
+    if (!ec) return false;
+    return ec.cantidadVentasMostradas < ec.cantidadVentasTotal;
+  });
+
+  protected cargarMasVentas(): void {
+    const clienteId = this.clienteSeleccionado();
+    if (!clienteId) return;
+    this.estadoCuentaPage.update((p) => p + 1);
+    this.cargarEstadoCuenta(clienteId);
   }
 }
