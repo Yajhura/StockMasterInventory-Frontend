@@ -251,4 +251,64 @@ describe('CuentasCorrientesComponent cancellations', () => {
     instance.descartarAdvertenciaPagosActivos();
     expect(instance.ventaConPagosActivos()).toBeNull();
   });
+
+  it('opens the confirmation dialog before registering an abono, and registers it on confirm', () => {
+    const instance = component as any;
+    apiVentas.registrarAbono.and.returnValue(of(venta.abonos[0]));
+
+    instance.abrirModalAbono(venta, venta);
+    instance.formAbono.patchValue({ monto: 5, metodoPagoId: 1, observacion: 'Pago cuota 2' });
+
+    instance.guardarAbono();
+
+    expect(instance.confirmandoAbono()).toBeTrue();
+    expect(apiVentas.registrarAbono).not.toHaveBeenCalled();
+
+    instance.confirmarRegistroAbono();
+
+    expect(apiVentas.registrarAbono).toHaveBeenCalledWith(12, {
+      monto: 5,
+      metodoPagoId: 1,
+      observacion: 'Pago cuota 2',
+    });
+    expect(notification.success).toHaveBeenCalledWith('Abono registrado exitosamente');
+    expect(instance.confirmandoAbono()).toBeFalse();
+    expect(instance.modalAbonoAbierto()).toBeFalse();
+  });
+
+  it('cancels the payment confirmation without calling the API and keeps the modal open', () => {
+    const instance = component as any;
+
+    instance.abrirModalAbono(venta, venta);
+    instance.formAbono.patchValue({ monto: 5 });
+
+    instance.guardarAbono();
+    expect(instance.confirmandoAbono()).toBeTrue();
+
+    instance.cancelarConfirmacionAbono();
+    expect(instance.confirmandoAbono()).toBeFalse();
+    expect(instance.modalAbonoAbierto()).toBeTrue();
+    expect(apiVentas.registrarAbono).not.toHaveBeenCalled();
+  });
+
+  it('computes pending installments with their amortized amounts in real time', () => {
+    const instance = component as any;
+    const detalleConCuotas = {
+      ...venta,
+      cuotas: [
+        { ...venta.cuotas[0], id: 3, numero: 1, monto: 10, montoPagado: 0, montoPendiente: 10, fechaVencimiento: '2026-09-20', estado: 'Pendiente' },
+        { ...venta.cuotas[0], id: 4, numero: 2, monto: 10, montoPagado: 0, montoPendiente: 10, fechaVencimiento: '2026-10-20', estado: 'Pendiente' },
+      ],
+    };
+
+    instance.abrirModalAbono(detalleConCuotas, detalleConCuotas);
+    instance.formAbono.patchValue({ monto: 15 });
+
+    const calculadas = instance.cuotasPendientesCalculadas();
+    expect(calculadas.length).toBe(2);
+    expect(calculadas[0].numero).toBe(1);
+    expect(calculadas[0].montoAbonado).toBe(10);
+    expect(calculadas[1].numero).toBe(2);
+    expect(calculadas[1].montoAbonado).toBe(5);
+  });
 });
