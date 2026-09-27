@@ -19,8 +19,15 @@ export class ApiVentasService {
     return this.http.get<Venta[]>(this.url, { params });
   }
 
-  kpisCobranza(): Observable<KpiCobranza> {
-    return this.http.get<KpiCobranza>(`${this.url}/kpis-cobranza`);
+  /**
+   * H-E2 audit: el backend acepta un query param `dias` (1..30) para ajustar
+   * la ventana de "cuotas que vencen en los proximos N dias". Default 7.
+   * Si se omite, no se envia el param y el backend usa su default.
+   */
+  kpisCobranza(dias?: number): Observable<KpiCobranza> {
+    let params = new HttpParams();
+    if (dias != null) params = params.set('dias', String(dias));
+    return this.http.get<KpiCobranza>(`${this.url}/kpis-cobranza`, { params });
   }
 
   /**
