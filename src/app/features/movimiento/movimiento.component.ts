@@ -66,7 +66,7 @@ export class MovimientoComponent implements OnInit {
     productoId: [null, [Validators.required]],
     tipoMovimientoId: [1, [Validators.required]],
     cantidad: [1, [Validators.required, Validators.min(1)]],
-    precioUnitario: [null, [Validators.required, Validators.min(0.01)]],
+    precioUnitario: [null, [Validators.required, Validators.min(0)]],
     observacion: [''],
   });
 

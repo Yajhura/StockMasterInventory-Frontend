@@ -114,7 +114,7 @@
               placeholder="S/. 0.00"
             />
             @if (formMovimiento.get('precioUnitario')?.invalid && formMovimiento.get('precioUnitario')?.touched) {
-              <p class="text-[11px] text-rose-600 mt-1 font-semibold">El precio unitario debe ser mayor a 0.</p>
+              <p class="text-[11px] text-rose-600 mt-1 font-semibold">El precio unitario debe ser mayor o igual a 0.</p>
             }
           </div>
         </div>
