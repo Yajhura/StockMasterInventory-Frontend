@@ -72,8 +72,24 @@ export class ApiClientesService {
     return this.http.post<void>(`${this.url}/${id}/restaurar`, {});
   }
 
-  exportarExcel(): Observable<Blob> {
-    return this.http.get(`${this.url}/exportar-excel`, { responseType: 'blob' });
+  /**
+   * L-1 audit (fix #13): descarga el directorio de clientes en formato
+   * XLSX. Acepta los mismos filtros que listar() para que el FE pueda
+   * exportar la vista actual (incluyendo el toggle de papelera).
+   * Devuelve un Blob para que el componente lo guarde via a[download].
+   */
+  exportarExcel(filtros?: ClienteFiltros): Observable<Blob> {
+    let params = new HttpParams();
+    if (filtros?.desde) params = params.set('desde', filtros.desde);
+    if (filtros?.hasta) params = params.set('hasta', filtros.hasta);
+    if (filtros?.tipoDocumentoId != null) params = params.set('tipoDocumentoId', String(filtros.tipoDocumentoId));
+    if (filtros?.estadoDeuda) params = params.set('estadoDeuda', filtros.estadoDeuda);
+    if (filtros?.q && filtros.q.trim()) params = params.set('q', filtros.q.trim());
+    if (filtros?.incluirEliminados) params = params.set('incluirEliminados', 'true');
+    return this.http.get(`${this.url}/exportar-excel`, {
+      params,
+      responseType: 'blob',
+    });
   }
 
   /**

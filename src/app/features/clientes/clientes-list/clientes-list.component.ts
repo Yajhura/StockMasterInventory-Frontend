@@ -492,10 +492,17 @@ export class ClientesListComponent implements OnInit, OnDestroy {
 
   protected exportarExcel(): void {
     const f = this.filtros();
-    // Reusamos la API listar con filtros y, una vez descargado, el backend
-    // expone /exportar-excel. Mientras el endpoint no exista, mantenemos
-    // un fallback que abre la lista filtrada como CSV local.
-    this.apiClientes.exportarExcel().subscribe({
+    // L-1 audit (fix #13): pasamos los filtros vigentes al endpoint para
+    // que el XLSX exporte exactamente la vista que el operador esta viendo
+    // (incluyendo el toggle de papelera).
+    this.apiClientes.exportarExcel({
+      desde: f.desde,
+      hasta: f.hasta,
+      tipoDocumentoId: f.tipoDocumentoId,
+      estadoDeuda: f.estadoDeuda,
+      q: f.q,
+      incluirEliminados: this.mostrarPapelera(),
+    }).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -505,8 +512,20 @@ export class ClientesListComponent implements OnInit, OnDestroy {
         window.URL.revokeObjectURL(url);
         this.notify.success('Exportación iniciada');
       },
-      error: () => {
-        this.notify.warning('El endpoint /exportar-excel aún no está implementado en backend.');
+      error: (err: any) => {
+        // L-1 audit (fix #13): si el backend devuelve 413 con
+        // code=EXPORT_LIMIT_EXCEEDED lo mostramos literal; el resto cae
+        // al mensaje generico.
+        const code = err?.error?.code;
+        const detail = err?.error?.detail
+          || err?.error?.error
+          || err?.error?.title
+          || 'No se pudo exportar el archivo.';
+        this.notify.error(
+          code === 'EXPORT_LIMIT_EXCEEDED'
+            ? `La exportación supera el límite operativo (${detail}).`
+            : detail,
+        );
       },
     });
   }
