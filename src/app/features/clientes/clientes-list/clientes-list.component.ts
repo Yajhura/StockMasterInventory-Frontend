@@ -20,6 +20,7 @@ import {
   TipoDocumento,
   EstadoCuentaCliente,
   KpiClientes,
+  PaginatedClientes,
 } from '../../../core/models/cliente.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
 
@@ -38,6 +39,16 @@ export class ClientesListComponent implements OnInit, OnDestroy {
   protected readonly clientes = signal<Cliente[]>([]);
   protected readonly cargando = signal<boolean>(true);
   protected readonly tiposDocumento = signal<TipoDocumento[]>([]);
+
+  // --- Paginacion (C-4 / K-4 audit) ---
+  protected readonly totalClientes = signal<number>(0);
+  protected readonly totalPages = signal<number>(0);
+  protected readonly page = signal<number>(1);
+  protected readonly pageSize = signal<number>(50);
+
+  // --- Papelera (F-1 / A-6 audit): toggle que cambia el set visible
+  //     entre "solo activos" (default) y "incluye soft-deleted".
+  protected readonly mostrarPapelera = signal<boolean>(false);
 
   // --- KPIs del directorio ---
   protected readonly kpis = signal<KpiClientes | null>(null);
@@ -161,10 +172,22 @@ export class ClientesListComponent implements OnInit, OnDestroy {
       hasta: f.hasta,
       tipoDocumentoId: f.tipoDocumentoId,
       estadoDeuda: f.estadoDeuda,
+      page: this.page(),
+      size: this.pageSize(),
+      // F-1 audit: si la papelera esta activa, pedimos explicitamente
+      // que el backend incluya soft-deleted en el listado.
+      incluirEliminados: this.mostrarPapelera(),
     };
     this.apiClientes.listar(filtrosEnviar).subscribe({
-      next: (data) => {
-        this.clientes.set(data);
+      next: (data: PaginatedClientes) => {
+        // C-4 audit: el backend ahora devuelve un envelope paginado.
+        // items es la pagina actual; totalItems/totalPages alimentan la UI.
+        this.clientes.set(data.items);
+        this.totalClientes.set(data.totalItems);
+        this.totalPages.set(data.totalPages);
+        // Si el backend clamp-eo la pagina (ej. borraron el ultimo registro),
+        // sincronizamos el signal con la pagina efectiva que devolvio.
+        if (data.page !== this.page()) this.page.set(data.page);
         this.cargando.set(false);
       },
       error: () => {
@@ -195,7 +218,63 @@ export class ClientesListComponent implements OnInit, OnDestroy {
   protected limpiarFiltros(): void {
     this.filtros.set({ desde: null, hasta: null, tipoDocumentoId: null, estadoDeuda: null });
     this.filtroBusqueda.set('');
+    // Reset a la primera pagina para que el usuario vea todo el catalogo
+    // despues de limpiar. El effect() del constructor re-disparara la carga.
+    this.page.set(1);
   }
+
+  /**
+   * F-1 audit: toggle de papelera. Al activarla, recargamos el listado
+   * pidiendo incluirEliminados=true. Al desactivarla, tambien recargamos
+   * para volver a la vista por defecto (solo activos). Reset a pagina 1
+   * porque el set cambia.
+   */
+  protected togglePapelera(): void {
+    this.mostrarPapelera.update((v) => !v);
+    this.page.set(1);
+    // El effect() del constructor va a re-disparar cargarClientes cuando
+    // detecte el cambio de mostrarPapelera... pero aca NO esta en el
+    // signal `filtros`, asi que lo invocamos manualmente.
+    this.cargarClientes();
+  }
+
+  /**
+   * F-1 audit: revierte el soft delete. Solo Admin. El backend limpia
+   * Eliminado/EliminadoEn/EliminadoPor y actualiza ModificadoPor.
+   * Despues recargamos el listado y los KPIs.
+   */
+  protected confirmarRestaurar(cliente: Cliente): void {
+    if (!confirm(`Restaurar a ${cliente.nombre}? Volvera a estar visible en el directorio activo.`)) {
+      return;
+    }
+    this.apiClientes.restaurar(cliente.id).subscribe({
+      next: () => {
+        this.notify.success('Cliente restaurado');
+        this.cargarClientes();
+        this.cargarKpis();
+      },
+      error: (err) => {
+        // 409 Conflict tipico: ya existe otro cliente activo con el mismo
+        // documento. Mostramos el mensaje del backend si esta disponible.
+        const mensaje = err?.error?.error
+          || 'Error al restaurar el cliente';
+        this.notify.error(mensaje);
+      },
+    });
+  }
+
+  /**
+   * Avanza/retrocede a la pagina indicada. Si el numero esta fuera de
+   * [1, totalPages], no hace nada (la UI deshabilita los botones igual).
+   */
+  protected irAPagina(nuevaPagina: number): void {
+    if (nuevaPagina < 1 || nuevaPagina === this.page()) return;
+    this.page.set(nuevaPagina);
+  }
+
+  /** Computed para saber si hay pagina anterior / siguiente. */
+  protected readonly hayPaginaAnterior = computed<boolean>(() => this.page() > 1);
+  protected readonly hayPaginaSiguiente = computed<boolean>(() => this.page() < this.totalPages());
 
   protected abrirModalNuevo(): void {
     this.clienteEnEdicion.set(null);
