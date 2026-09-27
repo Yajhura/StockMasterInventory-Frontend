@@ -111,6 +111,55 @@
     </div>
   </section>
 
+  <!-- N-2 audit: candidatos con similitud JaroWinkler (>= 70%) contra el
+       termino de busqueda. Se muestra ARRIBA del listado principal
+       cuando hay matches y la busqueda substring NO devolvio un match
+       exacto (case-insensitive). Click en cada candidato abre el drawer
+       de estado de cuenta — mismo handler que las filas del listado. -->
+  @if (mostrarSimilares()) {
+    <section class="surface-card p-4 mb-4 border-l-4 !border-l-amber-400">
+      <header class="flex items-center gap-2 mb-2">
+        <svg class="w-4 h-4 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.3-4.3"/>
+        </svg>
+        <h2 class="text-[11px] font-bold uppercase tracking-[0.15em] text-amber-700">Clientes similares</h2>
+        <span class="text-[10px] text-slate-500 ml-1">({{ similares().length }})</span>
+      </header>
+      <p class="text-xs text-slate-500 mb-3 leading-relaxed">
+        No hubo coincidencia exacta, pero encontramos clientes con un nombre parecido. Verificá que ninguno sea el que buscás.
+      </p>
+      <ul class="space-y-2">
+        @for (sim of similares(); track sim.id) {
+          <li>
+            <button
+              type="button"
+              (click)="verCuenta(sim.id)"
+              class="w-full surface-card p-3 hover:border-blue-400 transition-all text-left flex items-start justify-between gap-3"
+            >
+              <div class="text-sm flex-1 min-w-0">
+                <p class="font-bold text-slate-800 truncate">{{ sim.nombre }}</p>
+                @if (sim.documento) {
+                  <p class="text-slate-500 text-[12px] mt-0.5">Doc: {{ sim.documento }}</p>
+                }
+              </div>
+              <!-- N-2 audit: badge % similitud con el mismo umbral visual
+                   que usa el POS (>= 99 verde, >= 80 amber, resto slate).
+                   Asi el operador puede juzgar de un vistazo si es el mismo
+                   cliente o un homonimo. -->
+              <span
+                class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider"
+                [class]="sim.similitud >= 99 ? 'bg-emerald-50 text-emerald-700' : sim.similitud >= 80 ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'"
+              >
+                {{ sim.similitud.toFixed(0) }}% similitud
+              </span>
+            </button>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
   <!-- Lista de Clientes -->
   <div class="surface-card overflow-hidden">
     <div class="overflow-x-auto">

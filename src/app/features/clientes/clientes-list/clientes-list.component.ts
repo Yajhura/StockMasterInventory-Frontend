@@ -11,7 +11,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { ApiClientesService } from '../../../core/api/api-clientes.service';
+import { ApiClientesService, ClienteSimilar } from '../../../core/api/api-clientes.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import {
   Cliente,
@@ -75,6 +75,44 @@ export class ClientesListComponent implements OnInit, OnDestroy {
     q: null,
   });
   protected readonly filtroBusqueda = signal<string>('');
+  // N-2 audit: ultima query de busqueda despues del debounce. La usamos
+  // para detectar match perfecto (case-insensitive equal contra `clientes()`)
+  // y esconder la seccion de similares cuando el operador ya encontro
+  // exactamente lo que buscaba.
+  protected readonly qActual = signal<string>('');
+
+  /**
+   * N-2 audit: candidatos con similitud JaroWinkler >= 70% contra el
+   * termino de busqueda. El directorio los muestra ARRIBA del listado
+   * principal como una pista para el operador cuando el termino es
+   * parecido a un nombre existente pero no matchea exacto (typos,
+   * acentos, dobles espacios, etc). El POS ya consume este mismo
+   * endpoint desde el bundle MEDIUM/LOW.
+   *
+   * requestId + subscripcion unica descartan respuestas tardias si el
+   * operador sigue tipeando (mismo patron que el POS en onClienteSearch).
+   */
+  protected readonly similares = signal<ClienteSimilar[]>([]);
+  private similaresSub?: Subscription;
+  private similaresRequest = 0;
+
+  /**
+   * N-2 audit: si la busqueda substring ya devolvio un cliente cuyo
+   * nombre es exactamente igual a `qActual` (case-insensitive), no
+   * tiene sentido mostrar la seccion de similares — seria redundante.
+   * El computed se re-evalua automaticamente cuando cambia `clientes()`
+   * (carga/refresh del listado) o cuando cambia `qActual` (debounce de
+   * busqueda).
+   */
+  protected readonly hayMatchExacto = computed<boolean>(() => {
+    const q = (this.qActual() ?? '').trim().toLowerCase();
+    if (!q) return false;
+    return this.clientes().some((c) => (c.nombre ?? '').trim().toLowerCase() === q);
+  });
+
+  protected readonly mostrarSimilares = computed<boolean>(
+    () => this.similares().length > 0 && !this.hayMatchExacto(),
+  );
 
   protected readonly opcionesTipoDocumento = computed<DropdownOption<number | null>[]>(() => [
     { value: null, label: 'Todos los tipos' },
@@ -227,8 +265,35 @@ export class ClientesListComponent implements OnInit, OnDestroy {
         // set de resultados cambia. Si el usuario esta en la pagina 5 y
         // escribe un termino que solo tiene 2 paginas, queremos que vea
         // la primera pagina de los resultados filtrados.
-        this.filtros.update((f) => ({ ...f, q: q.trim() || null }));
+        const trimmed = q.trim();
+        this.qActual.set(trimmed);
+        this.filtros.update((f) => ({ ...f, q: trimmed || null }));
         this.page.set(1);
+        // N-2 audit: en paralelo con la busqueda substring, pedimos
+        // candidatos similares al backend (JaroWinkler >= 70%). Si la
+        // query tiene menos de 3 chars, JaroWinkler no es util y el
+        // backend devolveria 400 — limpiamos el resultado y listo.
+        // requestId descarta respuestas tardias si el operador sigue
+        // tipeando antes de que llegue el response.
+        this.similaresSub?.unsubscribe();
+        if (trimmed.length < 3) {
+          this.similares.set([]);
+          return;
+        }
+        const requestId = ++this.similaresRequest;
+        this.similaresSub = this.apiClientes.buscarSimilares(trimmed, 70).subscribe({
+          next: (result) => {
+            if (requestId !== this.similaresRequest) return;
+            this.similares.set(result);
+          },
+          error: () => {
+            if (requestId !== this.similaresRequest) return;
+            // Silencioso: si el endpoint falla, simplemente no mostramos
+            // la seccion de similares. La busqueda substring sigue
+            // funcionando y los KPIs no se ven afectados.
+            this.similares.set([]);
+          },
+        });
       });
 
     // Debounce 300ms para validar duplicado
@@ -243,6 +308,7 @@ export class ClientesListComponent implements OnInit, OnDestroy {
     this.filtrosSub?.unsubscribe();
     this.busquedaSub?.unsubscribe();
     this.documentoSub?.unsubscribe();
+    this.similaresSub?.unsubscribe();
   }
 
   private cargarTiposDocumento(): void {
@@ -317,6 +383,11 @@ export class ClientesListComponent implements OnInit, OnDestroy {
   protected limpiarFiltros(): void {
     this.filtros.set({ desde: null, hasta: null, tipoDocumentoId: null, estadoDeuda: null, q: null });
     this.filtroBusqueda.set('');
+    // N-2 audit: al limpiar los filtros tambien limpiamos la seccion de
+    // similares (no tiene sentido mostrarla sin un termino de busqueda).
+    this.qActual.set('');
+    this.similaresSub?.unsubscribe();
+    this.similares.set([]);
     // Reset a la primera pagina para que el usuario vea todo el catalogo
     // despues de limpiar. El effect() del constructor re-disparara la carga.
     this.page.set(1);
