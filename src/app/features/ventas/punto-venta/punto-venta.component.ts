@@ -161,6 +161,13 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
 
   protected confirmarDuplicadosAbierto = signal(false);
   protected clientesDuplicados = signal<Cliente[]>([]);
+  // G-3 / N-1 audit: lista de candidatos similares con su score
+  // JaroWinkler, para mostrar en el modal de "posible duplicado" el
+  // badge % similitud. La lista ahora viene del backend
+  // (/api/clientes/similares) en lugar de un substring.includes
+  // local — el audit midio FPs ("juan" matcheaba "juana") y FNs
+  // ("Juan Perez" vs "Juan  Perez" por el doble espacio).
+  protected clientesSimilares = signal<import('../../../core/api/api-clientes.service').ClienteSimilar[]>([]);
 
   get detallesArray(): FormArray {
     return this.formVenta.get('detalles') as FormArray;
@@ -575,21 +582,65 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
       return;
     }
 
-    const nombre = this.formCliente.get('nombre')?.value?.toLowerCase().trim() || '';
+    const nombre = this.formCliente.get('nombre')?.value?.trim() || '';
     const documento = this.formCliente.get('documento')?.value?.trim() || '';
 
-    const coincidencias = this.clientes().filter(c => {
-      const matchNombre = c.nombre.toLowerCase().includes(nombre);
-      const matchDoc = documento !== '' && c.documento === documento;
-      return matchNombre || matchDoc;
-    });
+    // G-3 / N-1 audit: el audit recomendo reemplazar el substring
+    // match local por una llamada al endpoint /similares del backend.
+    // El substring tenia falsos positivos ("juan" matcheaba "juana") y
+    // falsos negativos ("Juan Perez" vs "Juan  Perez" por el doble
+    // espacio). Ademas, si el documento es no vacio, tambien checkamos
+    // duplicado exacto por documento — ese sigue siendo local porque la
+    // unicidad por documento esta blindada por el indice unico del DB.
+    const docDuplicado = documento !== ''
+      ? this.clientes().find(c => c.documento === documento)
+      : undefined;
 
-    if (coincidencias.length > 0) {
-      this.clientesDuplicados.set(coincidencias);
+    if (docDuplicado) {
+      this.clientesSimilares.set([{
+        id: docDuplicado.id,
+        nombre: docDuplicado.nombre,
+        documento: docDuplicado.documento,
+        similitud: 100,
+      }]);
       this.confirmarDuplicadosAbierto.set(true);
-    } else {
-      this.ejecutarGuardarClienteRapido();
+      return;
     }
+
+    // Si el nombre tiene < 3 chars, JaroWinkler backend devuelve 400.
+    // Salteamos el check y vamos directo a crear.
+    if (nombre.length < 3) {
+      this.ejecutarGuardarClienteRapido();
+      return;
+    }
+
+    this.apiClientes.buscarSimilares(nombre).subscribe({
+      next: (similares) => {
+        if (similares.length > 0) {
+          this.clientesSimilares.set(similares);
+          this.confirmarDuplicadosAbierto.set(true);
+        } else {
+          this.ejecutarGuardarClienteRapido();
+        }
+      },
+      error: () => {
+        // Si el endpoint falla, no bloquear al operador — crear igual.
+        this.ejecutarGuardarClienteRapido();
+      }
+    });
+  }
+
+  /**
+   * G-3 / N-1 audit: el operador eligio uno de los candidatos
+   * similares — parchamos el formVenta con su id y cerramos el
+   * modal sin crear nada nuevo.
+   */
+  protected elegirClienteSimilar(similar: import('../../../core/api/api-clientes.service').ClienteSimilar): void {
+    this.formVenta.patchValue({ clienteId: similar.id });
+    this.notify.success(`Cliente "${similar.nombre}" seleccionado (similitud ${similar.similitud.toFixed(0)}%).`);
+    this.confirmarDuplicadosAbierto.set(false);
+    this.clientesSimilares.set([]);
+    this.cerrarModalCliente();
   }
 
   protected cancelarGuardarDuplicado() {

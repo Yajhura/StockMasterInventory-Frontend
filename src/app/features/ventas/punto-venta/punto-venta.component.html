@@ -522,24 +522,35 @@
            <h4 class="text-lg font-bold text-slate-900 mb-2">Posible cliente duplicado</h4>
            <p class="text-[13.5px] text-slate-600 mb-4 leading-relaxed">Hemos encontrado clientes existentes con el mismo nombre o documento. ¿Estás seguro de registrar uno nuevo?</p>
 
-           <div class="w-full max-h-[160px] overflow-auto bg-slate-50 border border-slate-200 rounded-xl text-left p-4 mb-6 space-y-3">
-             @for (dup of clientesDuplicados(); track dup.id) {
-               <div class="text-[13.5px]">
-                 <p class="font-bold text-slate-800">{{ dup.nombre }}</p>
-                 <p class="text-slate-500 text-[12px] flex gap-3">
-                   @if (dup.documento) { <span>Doc: {{ dup.documento }}</span> }
-                   @if (dup.telefono) { <span>Tel: {{ dup.telefono }}</span> }
-                 </p>
-               </div>
+           <div class="w-full max-h-[200px] overflow-auto bg-slate-50 border border-slate-200 rounded-xl text-left p-4 mb-6 space-y-2">
+             <!-- G-3 / N-1 audit: usamos clientesSimilares() (con score
+                  JaroWinkler) en lugar de clientesDuplicados() (substring).
+                  El badge % similitud ayuda al operador a juzgar si es el
+                  mismo cliente o un homonimo. -->
+             @for (sim of clientesSimilares(); track sim.id) {
+               <button type="button" (click)="elegirClienteSimilar(sim)" class="w-full text-left p-2 rounded-lg hover:bg-white transition-colors group">
+                 <div class="flex items-start justify-between gap-3">
+                   <div class="text-[13.5px] flex-1 min-w-0">
+                     <p class="font-bold text-slate-800 truncate">{{ sim.nombre }}</p>
+                     @if (sim.documento) {
+                       <p class="text-slate-500 text-[12px]">Doc: {{ sim.documento }}</p>
+                     }
+                   </div>
+                   <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider"
+                     [class]="sim.similitud >= 99 ? 'bg-emerald-50 text-emerald-700' : sim.similitud >= 80 ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'">
+                     {{ sim.similitud.toFixed(0) }}% similitud
+                   </span>
+                 </div>
+               </button>
              }
            </div>
 
            <div class="flex gap-3 w-full mt-auto">
              <button type="button" (click)="cancelarGuardarDuplicado()" class="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-medium text-[14px] hover:bg-slate-50 transition-colors">
-               No guardar
+               Cancelar
              </button>
              <button type="button" (click)="ejecutarGuardarClienteRapido()" class="flex-1 py-2.5 bg-slate-900 text-white rounded-xl font-medium text-[14px] hover:bg-slate-800 transition-colors shadow-lg shadow-black/10">
-               Sí, guardar nuevo
+               Es otro, guardar nuevo
              </button>
            </div>
         </div>

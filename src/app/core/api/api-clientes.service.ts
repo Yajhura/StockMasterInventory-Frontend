@@ -111,4 +111,35 @@ export class ApiClientesService {
   kpis(): Observable<KpiClientes> {
     return this.http.get<KpiClientes>(`${this.url}/kpis`);
   }
+
+  /**
+   * G-3 / N-1 audit (fix #19+#20): busqueda de clientes similares al
+   * nombre tipeado, con similitud JaroWinkler server-side. El POS
+   * llama a este endpoint antes de pedir confirmacion para crear un
+   * cliente nuevo inline — si hay match >= umbral (default 70),
+   * muestra el modal de "posible duplicado" con el badge % similitud.
+   *
+   * El umbral default 70 fue elegido por el audit: por debajo
+   * aparecen falsos positivos (nombres que no son realmente
+   * duplicados); por encima de 99, solo matches exactos.
+   */
+  buscarSimilares(q: string, umbral: number = 70): Observable<ClienteSimilar[]> {
+    let params = new HttpParams().set('q', q.trim());
+    if (umbral !== 70) params = params.set('umbral', String(umbral));
+    return this.http.get<ClienteSimilar[]>(`${this.url}/similares`, { params });
+  }
+}
+
+/**
+ * G-3 / N-1 audit: DTO del response de GET /api/clientes/similares.
+ * Solo expone lo que el POS necesita para el modal de "posible
+ * duplicado" — id para el patch del clienteId si el operador elige
+ * uno existente, nombre+documento para confirmar visualmente, y
+ * similitud (0..100) para el badge.
+ */
+export interface ClienteSimilar {
+  id: number;
+  nombre: string;
+  documento: string | null;
+  similitud: number;
 }
