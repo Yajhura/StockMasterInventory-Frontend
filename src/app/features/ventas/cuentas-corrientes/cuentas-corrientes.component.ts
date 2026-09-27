@@ -511,8 +511,15 @@ export class CuentasCorrientesComponent implements OnInit {
 
   protected abrirAbonoDesdeDetalle(d: VentaDetallada) {
     this.cerrarModalDetalle();
-    // Esperar un tick para que se cierre el modal de detalle antes de abrir el de abono
-    setTimeout(() => {
+    // H-H1 audit: antes había un setTimeout(..., 100) para coordinar el
+    // cierre del modal de detalle y la apertura del modal de abono. El delay
+    // era un hack frágil: en dispositivos lentos 100ms no alcanzaba y los
+    // modales se solapaban visualmente. queueMicrotask agenda el callback
+    // después del tick actual de la microtask queue (Angular ya terminó
+    // de procesar el cambio de signal en este frame), lo que es suficiente
+    // para que el modal de detalle termine su transición antes de que
+    // abramos el de abono — sin la latencia arbitraria de 100ms.
+    queueMicrotask(() => {
       this.abrirModalAbono({
         id: d.id,
         clienteId: d.clienteId,
@@ -526,7 +533,7 @@ export class CuentasCorrientesComponent implements OnInit {
         frecuencia: d.frecuencia,
         fechaInicioCredito: d.fechaInicioCredito
       }, d);
-    }, 100);
+    });
   }
 
   private refrescarDespuesDeAnulacion(ventaId: number) {
