@@ -8,8 +8,9 @@ import { ApiClientesService } from '../../../core/api/api-clientes.service';
 import { ApiProductosService } from '../../../core/api/api-productos.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ProductosState } from '../../../core/state/productos.state';
+import { ClientesStore } from '../../../core/state/clientes.store';
 import { ProductoSelectorItem } from '../../../core/models/inventario.models';
-import { Cliente, CrearClientePayload } from '../../../core/models/cliente.models';
+import { Cliente, CrearClientePayload, ClienteFiltros } from '../../../core/models/cliente.models';
 import { CrearVentaPayload, PagoInicial, Venta, VentaFiltros, KpiVentas, EstadoPago, MetodoPago, CuotaPreview } from '../../../core/models/venta.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
 @Component({
@@ -25,6 +26,11 @@ export class PuntoVentaComponent implements OnInit {
   private readonly apiProductos = inject(ApiProductosService);
   private readonly notify = inject(NotificationService);
   private readonly productosState = inject(ProductosState);
+  // G-2 audit (fix #21): cache compartido de clientes (root-scoped).
+  // Antes este componente llamaba apiClientes.listar(...) directo en
+  // ngOnInit + onClienteSearch; ahora va por el store que dedup-ea
+  // entre pestañas y entre componentes.
+  private readonly clientesStore = inject(ClientesStore);
 
   protected readonly procesando = signal<boolean>(false);
 
@@ -416,15 +422,15 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
     // backend al iniciar. La seleccion del cliente en el POS usa
     // busqueda server-side (mismo handler `onClienteSearch`) que
     // pide una pagina pequena (size=50) por cada termino tipeado.
-    // Cargamos una pagina inicial "vacia" para que el dropdown tenga
-    // algo que mostrar antes del primer keystroke.
-    this.apiClientes.listar({ page: 1, size: 50 }).subscribe({
-      next: (res) => {
-        this.clientes.set(res.items);
-        this.clientesBusqueda.set(res.items);
-      },
-      error: () => this.notify.error('Error al cargar clientes')
-    });
+    // G-2 audit (fix #21): vamos por el store compartido — si
+    // cuentas-corrientes ya cargo esta pagina, la reutilizamos.
+    try {
+      const res = await this.clientesStore.cargar({ page: 1, size: 50 });
+      this.clientes.set(res.items);
+      this.clientesBusqueda.set(res.items);
+    } catch {
+      this.notify.error('Error al cargar clientes');
+    }
 
     this.apiProductos.selector().subscribe({
       next: (res) => this.productos.set(res),
@@ -436,6 +442,8 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
    * G-1 / C-1 audit (fix #9): debounce 200ms + cancel-in-flight para la
    * busqueda de clientes en el dropdown del POS. Cada termino cancela
    * el request anterior (switchMap manual) y reemplaza el cache.
+   * G-2 audit (fix #21): la peticion pasa por el store compartido; el
+   * dedupe se hace por (q, page, size, incluirEliminados).
    */
   private clienteSearchTimer: ReturnType<typeof setTimeout> | null = null;
   private clienteSearchRequest = 0;
@@ -446,15 +454,13 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
     this.clienteSearchTimer = setTimeout(() => {
       this.clienteSearchTimer = null;
       const requestId = ++this.clienteSearchRequest;
-      this.apiClientes.listar({ q: trimmed || undefined, page: 1, size: 50 }).subscribe({
-        next: (res) => {
-          if (requestId !== this.clienteSearchRequest) return;
-          this.clientesBusqueda.set(res.items);
-        },
-        error: () => {
-          if (requestId !== this.clienteSearchRequest) return;
-          // Silencioso: el dropdown muestra "Sin resultados".
-        }
+      const filtros: ClienteFiltros = { q: trimmed || undefined, page: 1, size: 50 };
+      this.clientesStore.cargar(filtros).then((res) => {
+        if (requestId !== this.clienteSearchRequest) return;
+        this.clientesBusqueda.set(res.items);
+      }).catch(() => {
+        if (requestId !== this.clienteSearchRequest) return;
+        // Silencioso: el dropdown muestra "Sin resultados".
       });
     }, 200);
   }
@@ -609,8 +615,12 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
         // G-1 audit (fix #9): sincronizamos tanto el cache de seleccion
         // (`clientesBusqueda`, alimenta el dropdown) como el cache completo
         // (`clientes`, alimenta los lookups internos).
+        // G-2 audit (fix #21): tambien invalidamos el store compartido
+        // asi el siguiente cargar() en POS o cobranza refleja el nuevo
+        // cliente sin stale-while-revalidate raro.
         this.clientes.update(c => [...c, cliente]);
         this.clientesBusqueda.update(c => [...c, cliente]);
+        this.clientesStore.invalidate();
         this.formVenta.patchValue({ clienteId: cliente.id });
         this.notify.success('Cliente creado y seleccionado');
         this.cerrarModalCliente();

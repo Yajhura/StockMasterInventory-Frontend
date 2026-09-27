@@ -5,6 +5,7 @@ import { ApiVentasService } from '../../../core/api/api-ventas.service';
 import { ApiClientesService } from '../../../core/api/api-clientes.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ProductosState } from '../../../core/state/productos.state';
+import { ClientesStore } from '../../../core/state/clientes.store';
 import { Cliente } from '../../../core/models/cliente.models';
 import { Venta, CrearAbonoPayload, VentaDetallada, Cuota, KpiCobranza, VentaFiltros, Abono, EstadoPago, MetodoPago } from '../../../core/models/venta.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
@@ -33,6 +34,10 @@ export class CuentasCorrientesComponent implements OnInit, OnDestroy {
   private readonly notify = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
   private readonly productosState = inject(ProductosState);
+  // G-2 audit (fix #21): cache compartido de clientes; reemplaza el
+  // apiClientes.listar() directo de este componente por el store que
+  // dedup-ea con /punto-venta.
+  private readonly clientesStore = inject(ClientesStore);
 
   // Estado general
   protected readonly ventas = signal<Venta[]>([]);
@@ -304,11 +309,12 @@ export class CuentasCorrientesComponent implements OnInit, OnDestroy {
   private cargarClientes() {
     // C-4 audit: el dropdown de filtro consume la primera pagina. 200 es
     // suficiente para el set realista de clientes que usan POS + cobranza.
-    this.apiClientes.listar({ page: 1, size: 200 }).subscribe({
-      next: (data) => this.clientes.set(data.items),
-      error: () => {
-        // Si falla, el filtro de cliente queda solo con "Todos los clientes".
-      }
+    // G-2 audit (fix #21): pasamos por el store compartido — si /punto-venta
+    // ya pidio esta pagina, la reutilizamos sin round-trip extra.
+    this.clientesStore.cargar({ page: 1, size: 200 }).then((data) => {
+      this.clientes.set(data.items);
+    }).catch(() => {
+      // Si falla, el filtro de cliente queda solo con "Todos los clientes".
     });
   }
 
