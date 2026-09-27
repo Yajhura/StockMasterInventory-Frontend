@@ -616,8 +616,18 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
         this.cerrarModalCliente();
         this.guardandoCliente.set(false);
       },
-      error: () => {
-        this.notify.error('Error al crear cliente');
+      // G-4 audit (fix #12): leer el motivo real del backend
+      // (err.error.error o err.error.title) en lugar del mensaje generico
+      // anterior. Cuando el handler rechaza por DNI/RUC invalido, el FE
+      // ahora muestra el texto exacto, no "Error al crear cliente".
+      error: (err: any) => {
+        const mensaje = err?.error?.error
+          || err?.error?.title
+          || 'Error al crear cliente';
+        const texto = typeof mensaje === 'string'
+          ? mensaje
+          : 'Error al crear cliente';
+        this.notify.error(texto);
         this.guardandoCliente.set(false);
       }
     });

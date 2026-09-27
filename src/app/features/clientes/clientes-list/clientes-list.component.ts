@@ -472,8 +472,19 @@ export class ClientesListComponent implements OnInit, OnDestroy {
             this.cerrarDrawer();
           }
         },
-        error: () => {
-          this.notify.error('Error al eliminar el cliente. Puede que tenga ventas asociadas.');
+        // A-5 audit (fix #11): tipar el error handler y leer el mensaje
+        // real del backend (err.error.error o err.error.title) en lugar
+        // del string generico anterior. Asi cuando el backend devuelve
+        // 400 con "No se puede eliminar un cliente con ventas registradas."
+        // el operador ve ese mensaje, no "Error al eliminar el cliente...".
+        error: (err: any) => {
+          const mensaje = err?.error?.error
+            || err?.error?.title
+            || 'Error al eliminar el cliente';
+          const texto = typeof mensaje === 'string'
+            ? mensaje
+            : 'Error al eliminar el cliente';
+          this.notify.error(texto);
         },
       });
     }
