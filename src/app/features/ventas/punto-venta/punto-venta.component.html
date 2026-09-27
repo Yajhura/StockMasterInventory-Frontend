@@ -169,7 +169,7 @@
 @if (isPosOpen()) {
   <div class="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 anim-fade-in">
 
-    <div class="bg-white w-full max-w-5xl rounded-2xl shadow-[0_24px_48px_-12px_rgba(15,23,42,0.25)] flex flex-col overflow-hidden anim-fade-in-up ring-1 ring-slate-900/5 max-h-[92vh]">
+    <div class="bg-white w-full max-w-[1200px] rounded-2xl shadow-[0_24px_48px_-12px_rgba(15,23,42,0.25)] flex flex-col overflow-hidden anim-fade-in-up ring-1 ring-slate-900/5 max-h-[92vh]">
 
       <form [formGroup]="formVenta" (ngSubmit)="procesarVenta()" class="flex flex-col h-full min-h-0">
 
@@ -197,7 +197,7 @@
         <div class="flex-1 min-h-0 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200/80">
 
           <!-- ============ COLUMNA IZQUIERDA: Cliente + Productos (7 cols) ============ -->
-          <section class="lg:col-span-7 p-6 sm:p-7 space-y-5 bg-white overflow-y-auto">
+          <section class="lg:col-span-7 p-5 sm:p-6 space-y-5 bg-white overflow-y-auto">
 
             <!-- Cliente -->
             <div class="surface-card p-4 sm:p-5 hover:border-slate-300 transition-all">
@@ -275,12 +275,12 @@
                         [ngClass]="{ 'text-rose-600 border-rose-500 focus:border-rose-600 focus:ring-rose-500/20': (ctrl.get('cantidad')?.value || 0) > (ctrl.get('stockActual')?.value || 0) }">
                     </div>
 
-                    <div class="col-span-2 text-right text-xs text-slate-600 tabular-nums">
+                    <div class="col-span-2 text-right text-xs text-slate-600 tabular-nums whitespace-nowrap">
                       S/ {{ ctrl.get('precioUnitario')?.value | number:'1.2-2' }}
                     </div>
 
                     <div class="col-span-3 flex justify-end items-center gap-2">
-                      <div class="text-sm font-bold text-slate-900 text-right tabular-nums">
+                      <div class="text-sm font-bold text-slate-900 text-right tabular-nums whitespace-nowrap">
                         S/ {{ ((ctrl.get('cantidad')?.value || 0) * (ctrl.get('precioUnitario')?.value || 0)) | number:'1.2-2' }}
                       </div>
                       <button type="button" (click)="removerDetalle(i)" title="Eliminar ítem"
@@ -306,7 +306,7 @@
           </section>
 
           <!-- ============ COLUMNA DERECHA: Liquidación y Forma de Pago (5 cols) ============ -->
-          <section class="lg:col-span-5 p-6 sm:p-7 space-y-5 bg-slate-50/50 overflow-y-auto">
+          <section class="lg:col-span-5 p-5 sm:p-6 space-y-5 bg-slate-50/50 overflow-y-auto">
 
             <!-- Card 1: Forma de Pago y Condiciones -->
             <div class="surface-card p-4 sm:p-5 hover:border-slate-300 transition-all space-y-4">

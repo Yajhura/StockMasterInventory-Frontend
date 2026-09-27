@@ -15,6 +15,10 @@ interface CuotaConVencida extends Cuota {
   vencida: boolean;
 }
 
+interface CuotaPendienteAbono extends CuotaConVencida {
+  montoAbonado: number;
+}
+
 type ModoAbonoCredito = 'cuota-vigente' | 'adelantar-cuotas' | 'pagar-todo' | 'otro-monto';
 
 interface CuotaAfectada {
@@ -133,6 +137,47 @@ export class CuentasCorrientesComponent implements OnInit, OnDestroy {
       restante = Math.round((restante - aplicado) * 100) / 100;
       return [{ numero: cuota.numero, monto: aplicado }];
     });
+  });
+
+  protected readonly cuotasAfectadasMap = computed<Map<number, number>>(() => {
+    const map = new Map<number, number>();
+    for (const c of this.cuotasAfectadas()) {
+      map.set(c.numero, c.monto);
+    }
+    return map;
+  });
+
+  protected readonly cuotasPendientesCalculadas = computed<CuotaPendienteAbono[]>(() => {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const afectas = this.cuotasAfectadasMap();
+    return this.cuotasPendientesAbono().map(c => ({
+      ...c,
+      vencida: c.montoPendiente > 0 && new Date(c.fechaVencimiento) < hoy,
+      montoAbonado: afectas.get(c.numero) ?? 0
+    }));
+  });
+
+  protected readonly nuevoSaldo = computed<number>(() => {
+    const venta = this.ventaSeleccionada();
+    if (!venta) return 0;
+    const monto = Math.min(this.montoAbono(), venta.saldoPendiente);
+    return Math.max(0, Math.round((venta.saldoPendiente - monto) * 100) / 100);
+  });
+
+  // Modal de confirmación para registrar abono
+  protected readonly confirmandoAbono = signal<boolean>(false);
+  protected readonly mensajeConfirmacionAbono = computed<string>(() => {
+    const venta = this.ventaSeleccionada();
+    if (!venta) return '¿Deseas registrar este abono?';
+    const monto = Number(this.formAbono.get('monto')?.value) || 0;
+    const metodoId = Number(this.formAbono.get('metodoPagoId')?.value);
+    const metodo = this.metodosPago().find(m => m.id === metodoId)?.nombre ?? 'Efectivo';
+    const afectas = this.cuotasAfectadas().length;
+    const cuotasTexto = venta.esCredito && afectas > 0
+      ? ` Se amortizarán ${afectas} cuota(s) en orden FIFO.`
+      : '';
+    return `¿Confirmás registrar el abono de S/ ${monto.toFixed(2)} (${metodo}) para ${venta.clienteNombre} (Venta #${venta.id})?${cuotasTexto}`;
   });
 
   // Detalles e historial de una venta
@@ -432,9 +477,14 @@ export class CuentasCorrientesComponent implements OnInit, OnDestroy {
     this.ventaSeleccionada.set(null);
     this.detalleAbono.set(null);
     this.cargandoDetalleAbono.set(false);
+    this.confirmandoAbono.set(false);
   }
 
   protected guardarAbono() {
+    this.solicitarConfirmacionAbono();
+  }
+
+  protected solicitarConfirmacionAbono() {
     if (this.formAbono.invalid) {
       this.formAbono.markAllAsTouched();
       return;
@@ -442,13 +492,32 @@ export class CuentasCorrientesComponent implements OnInit, OnDestroy {
     const venta = this.ventaSeleccionada();
     if (!venta) return;
 
-    const val = this.formAbono.value;
+    const monto = Number(this.formAbono.value.monto);
+    if (monto <= 0) {
+      this.notify.error('El monto debe ser mayor a 0');
+      return;
+    }
 
-    if (Number(val.monto) > venta.saldoPendiente) {
+    if (monto > venta.saldoPendiente) {
       this.notify.error(`El monto no puede superar la deuda actual (S/ ${venta.saldoPendiente})`);
       return;
     }
 
+    this.confirmandoAbono.set(true);
+  }
+
+  protected cancelarConfirmacionAbono() {
+    if (!this.procesandoAbono()) {
+      this.confirmandoAbono.set(false);
+    }
+  }
+
+  protected confirmarRegistroAbono() {
+    if (this.procesandoAbono()) return;
+    const venta = this.ventaSeleccionada();
+    if (!venta) return;
+
+    const val = this.formAbono.value;
     const payload: CrearAbonoPayload = {
       monto: Number(val.monto),
       metodoPagoId: Number(val.metodoPagoId),
@@ -459,6 +528,7 @@ export class CuentasCorrientesComponent implements OnInit, OnDestroy {
     this.apiVentas.registrarAbono(venta.id, payload).subscribe({
       next: () => {
         this.notify.success('Abono registrado exitosamente');
+        this.confirmandoAbono.set(false);
         this.cerrarModalAbono();
         this.procesandoAbono.set(false);
         this.cargarDeudas();
