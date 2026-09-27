@@ -162,6 +162,33 @@
         </tbody>
       </table>
     </div>
+
+    <!-- H-F1 audit: paginador. Mostrando X-Y de Z + Anterior / Siguiente. -->
+    @if (totalItems() > 0) {
+      <div class="px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-4 text-xs text-slate-500">
+        <p class="tabular-nums">
+          Mostrando
+          <span class="font-bold text-slate-700">{{ rangoInicio() }}</span> –
+          <span class="font-bold text-slate-700">{{ rangoFin() }}</span>
+          de
+          <span class="font-bold text-slate-700">{{ totalItems() }}</span>
+          deudas
+        </p>
+        <div class="flex items-center gap-2">
+          <button type="button" (click)="irAPaginaAnterior()" [disabled]="!hayPaginaAnterior()"
+            class="px-3 py-1.5 rounded-md font-semibold border border-slate-200 bg-white text-slate-700 hover:border-slate-900 hover:text-slate-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            Anterior
+          </button>
+          <span class="tabular-nums font-semibold text-slate-700">Página {{ page() }} / {{ totalPages() }}</span>
+          <button type="button" (click)="irAPaginaSiguiente()" [disabled]="!hayPaginaSiguiente()"
+            class="px-3 py-1.5 rounded-md font-semibold border border-slate-200 bg-white text-slate-700 hover:border-slate-900 hover:text-slate-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1">
+            Siguiente
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+    }
   </div>
 </div>
 
@@ -275,6 +302,15 @@
                 <option [value]="m.value">{{ m.label }}</option>
               }
             </select>
+            <!-- H-H2 audit: si no hay métodos de pago activos (carga fallida o
+                 catálogo vacío), mostramos un aviso inline y deshabilitamos el
+                 submit. Antes el form quedaba con metodoPagoId=1 (default) y
+                 el backend tiraba un 400 confuso. -->
+            @if (metodosPago().length === 0) {
+              <p class="text-[11px] text-amber-700 mt-1.5 font-semibold">
+                No hay métodos de pago activos. Configurá al menos uno en Catálogos.
+              </p>
+            }
           </div>
 
           <div>
@@ -282,7 +318,7 @@
             <input type="text" formControlName="observacion" class="w-full px-3 py-2.5 bg-white border-2 border-slate-400 rounded-md text-sm text-slate-900 hover:border-slate-600 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20 transition-all" placeholder="Ej. Depósito BCP #1234">
           </div>
 
-          <button type="submit" [disabled]="formAbono.invalid || procesandoAbono()"
+          <button type="submit" [disabled]="formAbono.invalid || procesandoAbono() || metodosPago().length === 0"
             class="w-full mt-2 py-3.5 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50">
             @if (procesandoAbono()) {
               <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
@@ -457,7 +493,7 @@
           }
 
           <!-- Historial de Pagos -->
-          <section class="surface-card p-5">
+          <section id="seccion-historial-pagos" class="surface-card p-5">
             <header class="flex items-center justify-between mb-3">
               <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
                 <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -551,3 +587,47 @@
   (confirmar)="confirmarAnulacionVenta()"
   (cancelar)="cancelarAnulacionVenta()"
 />
+
+<!-- H-G1 audit: advertencia de pagos activos antes de anular la venta.
+     Reemplaza el toast genérico del 400 con contexto accionable: cuántos
+     pagos y por cuánto total. El botón "Ir al historial" cierra el warning
+     y scrollea a la sección de abonos del detalle (id="seccion-historial-pagos"). -->
+@if (ventaConPagosActivos(); as v) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm anim-fade-in">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col anim-fade-in-up">
+      <header class="px-6 py-5 border-b border-slate-100 flex items-start gap-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 grid place-items-center shrink-0">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-rose-600">No se puede anular</p>
+          <h3 class="text-base font-bold text-slate-900 leading-tight mt-0.5">Venta #{{ v.id }} tiene pagos activos</h3>
+        </div>
+      </header>
+      <div class="p-6 space-y-4">
+        <p class="text-sm text-slate-700 leading-relaxed">
+          Esta venta registra
+          <strong class="font-bold text-rose-700">{{ pagosActivosResumen().count }} pago(s) activo(s)</strong>
+          por un total de
+          <strong class="font-bold text-rose-700 tabular-nums">S/ {{ pagosActivosResumen().total | number:'1.2-2' }}</strong>.
+          Antes de anular la venta tenés que anular cada uno de esos pagos.
+        </p>
+        <div class="rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+          <strong class="font-bold">¿Por qué?</strong> Los pagos representan plata ya cobrada. Anularlos requiere un refund manual
+          que sólo vos podés hacer desde el historial.
+        </div>
+      </div>
+      <footer class="px-6 py-4 border-t border-slate-100 flex gap-3 shrink-0 bg-white">
+        <button type="button" (click)="descartarAdvertenciaPagosActivos()"
+          class="px-4 py-2.5 bg-white border-2 border-slate-300 text-slate-700 rounded-lg font-semibold text-sm hover:bg-slate-50 hover:border-slate-900 transition-colors">
+          Entendido
+        </button>
+        <button type="button" (click)="irAlHistorialDePagos()"
+          class="flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Ir al historial de pagos
+        </button>
+      </footer>
+    </div>
+  </div>
+}

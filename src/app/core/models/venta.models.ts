@@ -104,6 +104,10 @@ export interface VentaFiltros {
   hasta: string | null;
   clienteId: number | null;
   estadoPago: EstadoPago | null;
+  /** H-F1 audit: paginación server-side del listado de deudas. */
+  page?: number;
+  /** H-F1 audit: tamaño de página (1..200, clamp server-side). */
+  size?: number;
 }
 
 export interface KpiVentas {

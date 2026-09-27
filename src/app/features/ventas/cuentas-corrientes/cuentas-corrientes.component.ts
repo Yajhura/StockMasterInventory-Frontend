@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ApiVentasService } from '../../../core/api/api-ventas.service';
@@ -27,7 +27,7 @@ interface CuotaAfectada {
   imports: [CommonModule, ReactiveFormsModule, DropdownComponent, ConfirmDialogComponent],
   templateUrl: './cuentas-corrientes.component.html',
 })
-export class CuentasCorrientesComponent implements OnInit {
+export class CuentasCorrientesComponent implements OnInit, OnDestroy {
   private readonly apiVentas = inject(ApiVentasService);
   private readonly apiClientes = inject(ApiClientesService);
   private readonly notify = inject(NotificationService);
@@ -37,6 +37,13 @@ export class CuentasCorrientesComponent implements OnInit {
   // Estado general
   protected readonly ventas = signal<Venta[]>([]);
   protected readonly cargando = signal<boolean>(true);
+
+  // H-F1 audit: estado de paginación del listado de deudas.
+  // page=1 + size=50 son los defaults del backend; el backend clamp a 1..200.
+  protected readonly page = signal<number>(1);
+  protected readonly pageSize = signal<number>(50);
+  protected readonly totalItems = signal<number>(0);
+  protected readonly totalPages = signal<number>(0);
 
   // KPIs de cobranza (endpoint dedicado, no depende de los filtros del listado)
   protected readonly kpisCobranza = signal<KpiCobranza>({
@@ -55,7 +62,9 @@ export class CuentasCorrientesComponent implements OnInit {
     desde: null,
     hasta: null,
     clienteId: null,
-    estadoPago: null
+    estadoPago: null,
+    page: 1,
+    size: 50
   });
 
   // Catálogo de clientes para popular el dropdown de filtro
@@ -79,6 +88,17 @@ export class CuentasCorrientesComponent implements OnInit {
   // Las "deudas" ya vienen filtradas del backend (EstadoPago != 'Pagado' && !Eliminado).
   // No hace falta aplicar filtros client-side adicionales.
   protected readonly deudas = computed(() => this.ventas());
+
+  // H-F1 audit: rango de filas mostrado (1-based, inclusivo).
+  // Usado por el paginador "Mostrando X-Y de Z".
+  protected readonly rangoInicio = computed(() =>
+    this.totalItems() === 0 ? 0 : (this.page() - 1) * this.pageSize() + 1
+  );
+  protected readonly rangoFin = computed(() =>
+    Math.min(this.page() * this.pageSize(), this.totalItems())
+  );
+  protected readonly hayPaginaAnterior = computed(() => this.page() > 1);
+  protected readonly hayPaginaSiguiente = computed(() => this.page() < this.totalPages());
 
   // Modal de Abono
   protected readonly modalAbonoAbierto = signal<boolean>(false);
@@ -120,6 +140,22 @@ export class CuentasCorrientesComponent implements OnInit {
   protected readonly ventaAAnular = signal<VentaDetallada | null>(null);
   protected readonly procesandoAnulacion = signal<boolean>(false);
 
+  // H-G1 audit: cuando una venta tiene pagos activos al intentar anular,
+  // mostramos una advertencia específica (cantidad + monto total) y un
+  // atajo "Ir al historial de pagos" en lugar del ConfirmDialog genérico.
+  // El backend igual rechazaría con 400; acá le damos contexto accionable
+  // antes de que intente.
+  protected readonly ventaConPagosActivos = signal<VentaDetallada | null>(null);
+  protected readonly pagosActivosResumen = computed(() => {
+    const v = this.ventaConPagosActivos();
+    if (!v) return { count: 0, total: 0 };
+    const activos = (v.abonos ?? []).filter(a => a.estado === 'Pagado' && !a.eliminadoEn);
+    return {
+      count: activos.length,
+      total: activos.reduce((acc, a) => acc + a.monto, 0)
+    };
+  });
+
   // Cronograma de cuotas con flag "vencida"
   protected readonly cronogramaConVencida = computed<CuotaConVencida[]>(() => {
     const d = this.ventaDetallada();
@@ -140,6 +176,22 @@ export class CuentasCorrientesComponent implements OnInit {
 
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // H-F2 audit: BroadcastChannel + storage-event fallback para sincronizar
+  // el listado entre pestañas. Si el operador tiene /cuentas-corrientes
+  // abierto en dos pestañas y registra/anula un abono en una, la otra se
+  // refresca automáticamente sin tener que recargar manualmente. Usamos el
+  // canal cuando está disponible (todos los browsers modernos) y caemos al
+  // evento `storage` cuando no — el evento storage NO se dispara en la
+  // pestaña que escribe, sólo en las demás, así que no hay doble-refresh.
+  private static readonly BROADCAST_KEY = 'stockmaster.cuentas-corrientes';
+  private bc: BroadcastChannel | null = null;
+  private readonly storageHandler = (e: StorageEvent) => {
+    if (e.key === CuentasCorrientesComponent.BROADCAST_KEY && e.newValue) {
+      this.cargarDeudas();
+      this.cargarKpisCobranza();
+    }
+  };
+
   constructor() {
     this.formAbono.controls.monto.valueChanges.subscribe(monto => this.montoAbono.set(Number(monto) || 0));
   }
@@ -149,11 +201,69 @@ export class CuentasCorrientesComponent implements OnInit {
     this.cargarKpisCobranza();
     this.cargarClientes();
     this.cargarMetodosPago();
+    this.iniciarBroadcastChannel();
+  }
+
+  ngOnDestroy(): void {
+    this.bc?.close();
+    this.bc = null;
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('storage', this.storageHandler);
+    }
+  }
+
+  private iniciarBroadcastChannel(): void {
+    if (typeof BroadcastChannel !== 'undefined') {
+      this.bc = new BroadcastChannel(CuentasCorrientesComponent.BROADCAST_KEY);
+      this.bc.onmessage = () => {
+        this.cargarDeudas();
+        this.cargarKpisCobranza();
+      };
+      return;
+    }
+    // Fallback para entornos sin BroadcastChannel.
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', this.storageHandler);
+    }
+  }
+
+  /**
+   * H-F2 audit: notifica a las demás pestañas que hubo un cambio de estado
+   * (abono registrado, anulado o venta anulada) para que refresquen su
+   * listado. La pestaña que originó el cambio ya actualizó su propia vista
+   * antes de emitir — el BroadcastChannel sólo sincroniza las pestañas
+   * restantes.
+   */
+  private emitirBroadcastCobranza(): void {
+    if (this.bc) {
+      this.bc.postMessage({ at: Date.now() });
+      return;
+    }
+    if (typeof localStorage !== 'undefined') {
+      // El evento `storage` se dispara en TODAS las pestañas menos la que
+      // escribió, así que evitamos auto-refrescarnos.
+      localStorage.setItem(
+        CuentasCorrientesComponent.BROADCAST_KEY,
+        String(Date.now())
+      );
+    }
   }
 
   protected cargarMetodosPago(): void {
     this.apiVentas.listarMetodosPago().subscribe({
-      next: (res) => this.metodosPago.set(res),
+      next: (res) => {
+        this.metodosPago.set(res);
+        // H-H2 audit: si el form tiene el default metodoPagoId=1 y ese
+        // método existe en la respuesta, lo dejamos. Si NO existe (porque
+        // el admin lo borró o desactivó), seteamos al primer método activo
+        // disponible. Esto evita que el submit mande un id inválido y el
+        // backend responda con un 400 confuso.
+        const currentId = this.formAbono.controls.metodoPagoId.value;
+        const existe = res.some(m => m.id === currentId);
+        if (!existe && res.length > 0) {
+          this.formAbono.patchValue({ metodoPagoId: res[0].id });
+        }
+      },
       error: () => {
         // Si falla, dejamos el dropdown vacío (no spameamos al usuario).
       }
@@ -164,7 +274,12 @@ export class CuentasCorrientesComponent implements OnInit {
     this.cargando.set(true);
     this.apiVentas.listarDeudas(this.filtros()).subscribe({
       next: (data) => {
-        this.ventas.set(data);
+        // H-F1 audit: el backend ahora devuelve PaginatedResponse<Venta>.
+        this.ventas.set(data.items);
+        this.totalItems.set(data.totalItems);
+        this.totalPages.set(data.totalPages);
+        this.page.set(data.page);
+        this.pageSize.set(data.size);
         this.cargando.set(false);
       },
       error: () => {
@@ -172,6 +287,18 @@ export class CuentasCorrientesComponent implements OnInit {
         this.cargando.set(false);
       }
     });
+  }
+
+  protected irAPaginaAnterior() {
+    if (!this.hayPaginaAnterior()) return;
+    this.filtros.update(f => ({ ...f, page: this.page() - 1 }));
+    this.cargarDeudas();
+  }
+
+  protected irAPaginaSiguiente() {
+    if (!this.hayPaginaSiguiente()) return;
+    this.filtros.update(f => ({ ...f, page: this.page() + 1 }));
+    this.cargarDeudas();
   }
 
   private cargarClientes() {
@@ -211,7 +338,7 @@ export class CuentasCorrientesComponent implements OnInit {
   }
 
   protected limpiarFiltros() {
-    this.filtros.set({ desde: null, hasta: null, clienteId: null, estadoPago: null });
+    this.filtros.set({ desde: null, hasta: null, clienteId: null, estadoPago: null, page: 1, size: 50 });
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
       this.debounceTimer = null;
@@ -223,6 +350,9 @@ export class CuentasCorrientesComponent implements OnInit {
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     this.debounceTimer = setTimeout(() => {
       this.debounceTimer = null;
+      // H-F1 audit: cualquier cambio de filtro vuelve a página 1 para no
+      // dejar al usuario en una página vacía fuera del nuevo subset.
+      this.filtros.update(f => ({ ...f, page: 1 }));
       this.cargarDeudas();
     }, 300);
   }
@@ -325,6 +455,7 @@ export class CuentasCorrientesComponent implements OnInit {
         this.procesandoAbono.set(false);
         this.cargarDeudas();
         this.cargarKpisCobranza();
+        this.emitirBroadcastCobranza();
       },
       error: (err) => {
         this.notify.error(this.mensajeError(err, 'Error al registrar abono'));
@@ -375,6 +506,7 @@ export class CuentasCorrientesComponent implements OnInit {
         this.abonoAAnular.set(null);
         this.procesandoAnulacion.set(false);
         this.refrescarDespuesDeAnulacion(venta.id);
+        this.emitirBroadcastCobranza();
       },
       error: (err) => {
         this.notify.error(this.mensajeError(err, 'Error al anular abono'));
@@ -384,11 +516,49 @@ export class CuentasCorrientesComponent implements OnInit {
   }
 
   protected solicitarAnulacionVenta(venta: VentaDetallada) {
+    // H-G1 audit: si la venta tiene abonos vigentes (Pagado y no
+    // eliminados), el backend rechaza con 400 — le mostramos al usuario
+    // el motivo concreto (cantidad + monto total) y lo mandamos al
+    // historial de pagos para que anule primero cada uno. Sin pagos
+    // activos, el ConfirmDialog habitual confirma la cancelación.
+    const pagosActivos = (venta.abonos ?? [])
+      .filter(a => a.estado === 'Pagado' && !a.eliminadoEn);
+    if (pagosActivos.length > 0) {
+      this.ventaConPagosActivos.set(venta);
+      return;
+    }
     this.ventaAAnular.set(venta);
   }
 
   protected cancelarAnulacionVenta() {
     if (!this.procesandoAnulacion()) this.ventaAAnular.set(null);
+  }
+
+  /**
+   * H-G1 audit: el usuario ya está viendo el detalle de la venta cuando
+   * hace click en "Anular venta" — así que "ir al historial" simplemente
+   * cierra el warning y scrollea el modal de detalle hasta la sección de
+   * abonos. Si la invocación viniera de otro contexto (futuro), esto se
+   * podría extender para abrir el modal de detalle primero.
+   */
+  protected irAlHistorialDePagos() {
+    const venta = this.ventaConPagosActivos();
+    this.ventaConPagosActivos.set(null);
+    if (!venta) return;
+    // Si el detalle abierto es el mismo, scrollear; si no, abrirlo.
+    if (this.ventaDetallada()?.id === venta.id) {
+      setTimeout(() => {
+        document.getElementById('seccion-historial-pagos')?.scrollIntoView({
+          behavior: 'smooth', block: 'start'
+        });
+      }, 100);
+    } else {
+      this.verDetalles(venta.id);
+    }
+  }
+
+  protected descartarAdvertenciaPagosActivos() {
+    this.ventaConPagosActivos.set(null);
   }
 
   protected confirmarAnulacionVenta() {
@@ -407,6 +577,7 @@ export class CuentasCorrientesComponent implements OnInit {
         this.cerrarModalDetalle();
         this.cargarDeudas();
         this.cargarKpisCobranza();
+        this.emitirBroadcastCobranza();
       },
       error: (err) => {
         this.notify.error(this.mensajeError(err, 'Error al anular venta'));
@@ -417,8 +588,15 @@ export class CuentasCorrientesComponent implements OnInit {
 
   protected abrirAbonoDesdeDetalle(d: VentaDetallada) {
     this.cerrarModalDetalle();
-    // Esperar un tick para que se cierre el modal de detalle antes de abrir el de abono
-    setTimeout(() => {
+    // H-H1 audit: antes había un setTimeout(..., 100) para coordinar el
+    // cierre del modal de detalle y la apertura del modal de abono. El delay
+    // era un hack frágil: en dispositivos lentos 100ms no alcanzaba y los
+    // modales se solapaban visualmente. queueMicrotask agenda el callback
+    // después del tick actual de la microtask queue (Angular ya terminó
+    // de procesar el cambio de signal en este frame), lo que es suficiente
+    // para que el modal de detalle termine su transición antes de que
+    // abramos el de abono — sin la latencia arbitraria de 100ms.
+    queueMicrotask(() => {
       this.abrirModalAbono({
         id: d.id,
         clienteId: d.clienteId,
@@ -432,7 +610,7 @@ export class CuentasCorrientesComponent implements OnInit {
         frecuencia: d.frecuencia,
         fechaInicioCredito: d.fechaInicioCredito
       }, d);
-    }, 100);
+    });
   }
 
   private refrescarDespuesDeAnulacion(ventaId: number) {
