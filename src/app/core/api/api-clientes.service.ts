@@ -9,6 +9,7 @@ import {
   TipoDocumento,
   EstadoCuentaCliente,
   KpiClientes,
+  PaginatedClientes,
 } from '../models/cliente.models';
 
 @Injectable({ providedIn: 'root' })
@@ -16,13 +17,21 @@ export class ApiClientesService {
   private readonly http = inject(HttpClient);
   private readonly url = `${environment.apiBaseUrl}/api/clientes`;
 
-  listar(filtros?: ClienteFiltros): Observable<Cliente[]> {
-    let params = new HttpParams();
+  /**
+   * C-4 / K-4 audit: el endpoint ahora devuelve el envelope
+   * PaginatedResponse&lt;ClienteResponse&gt; en lugar de un array plano.
+   * Los filtros de paginacion tienen defaults (page=1, size=50) para no
+   * obligar al componente a setearlos siempre.
+   */
+  listar(filtros?: ClienteFiltros): Observable<PaginatedClientes> {
+    let params = new HttpParams()
+      .set('page', String(filtros?.page ?? 1))
+      .set('size', String(filtros?.size ?? 50));
     if (filtros?.desde) params = params.set('desde', filtros.desde);
     if (filtros?.hasta) params = params.set('hasta', filtros.hasta);
     if (filtros?.tipoDocumentoId != null) params = params.set('tipoDocumentoId', String(filtros.tipoDocumentoId));
     if (filtros?.estadoDeuda) params = params.set('estadoDeuda', filtros.estadoDeuda);
-    return this.http.get<Cliente[]>(this.url, { params });
+    return this.http.get<PaginatedClientes>(this.url, { params });
   }
 
   listarTiposDocumento(): Observable<TipoDocumento[]> {

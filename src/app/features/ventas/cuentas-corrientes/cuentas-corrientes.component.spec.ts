@@ -69,7 +69,7 @@ describe('CuentasCorrientesComponent cancellations', () => {
       imports: [CuentasCorrientesComponent],
       providers: [
         { provide: ApiVentasService, useValue: apiVentas },
-        { provide: ApiClientesService, useValue: { listar: () => of([]) } },
+        { provide: ApiClientesService, useValue: { listar: () => of({ items: [], page: 1, size: 50, totalItems: 0, totalPages: 0, hasNext: false, hasPrevious: false }) } },
         { provide: NotificationService, useValue: notification },
         { provide: ProductosState, useValue: { notificarCambioStock: jasmine.createSpy('notificarCambioStock') } },
       ],

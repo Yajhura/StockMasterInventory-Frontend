@@ -402,8 +402,12 @@ export class PuntoVentaComponent implements OnInit {
   }
 
   private async cargarDatos() {
-    this.apiClientes.listar().subscribe({
-      next: (res) => this.clientes.set(res),
+    // C-4 audit: la lista de clientes viene paginada. Pedimos una pagina
+    // grande (size=200) para alimentar el dropdown del POS sin tener que
+    // hidratar mas paginas (los dropdowns de seleccion rara vez pasan de
+    // 200 entradas en una sola pantalla).
+    this.apiClientes.listar({ page: 1, size: 200 }).subscribe({
+      next: (res) => this.clientes.set(res.items),
       error: () => this.notify.error('Error al cargar clientes')
     });
 

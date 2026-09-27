@@ -16,6 +16,16 @@ export interface Cliente {
   tipoDocumentoNombre: string;
   creadoEn: string;
   tieneDeuda: boolean;
+  // --- Auditoria (M-1 / A-2 audit): opcionales para no romper el
+  //     contrato con clientes viejos o responses pre-auditoria.
+  creadoPorId?: number | null;
+  creadoPorNombre?: string | null;
+  modificadoEn?: string | null;
+  modificadoPorId?: number | null;
+  modificadoPorNombre?: string | null;
+  eliminadoEn?: string | null;
+  eliminadoPorId?: number | null;
+  eliminadoPorNombre?: string | null;
 }
 
 export interface CrearClientePayload {
@@ -28,10 +38,15 @@ export interface CrearClientePayload {
 }
 
 export interface ClienteFiltros {
-  desde: string | null;
-  hasta: string | null;
-  tipoDocumentoId: number | null;
-  estadoDeuda: 'con-deuda' | 'sin-deuda' | null;
+  desde?: string | null;
+  hasta?: string | null;
+  tipoDocumentoId?: number | null;
+  estadoDeuda?: 'con-deuda' | 'sin-deuda' | null;
+  // C-4 / K-4 audit: paginacion server-side. size acepta el clamp
+  // del backend (1..200), page es 1-based. Defaults los define el
+  // service para no obligar al componente a setearlos siempre.
+  page?: number;
+  size?: number;
 }
 
 export interface EstadoCuentaCliente {
@@ -49,4 +64,19 @@ export interface KpiClientes {
   clientesConDeuda: number;
   clientesSinDeuda: number;
   nuevosEsteMes: number;
+}
+
+/**
+ * Envelope estandar para endpoints paginados del backend (mismo shape
+ * que /api/productos/buscar y /api/movimientos). Re-declarado aca para
+ * evitar acoplar el modelo de Clientes al de Inventario.
+ */
+export interface PaginatedClientes {
+  items: Cliente[];
+  page: number;
+  size: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
 }
