@@ -100,6 +100,37 @@ export class ClientesListComponent implements OnInit, OnDestroy {
     this.tiposDocumento().map((t) => ({ value: t.id, label: t.nombre })),
   );
 
+  /**
+   * A-1 / B-1 audit (fix #6): placeholder dinamico segun el tipo de
+   * documento seleccionado. DNI = "12345678", RUC = "20123456789", Sin doc.
+   * = vacio.
+   */
+  protected readonly placeholderDocumento = computed<string>(() => {
+    const tipo = this.formCliente.get('tipoDocumentoId')?.value;
+    if (tipo === 1) return 'DNI (8 digitos)';
+    if (tipo === 2) return 'RUC (11 digitos)';
+    return 'Opcional';
+  });
+
+  /**
+   * A-1 / B-1 audit (fix #6): mensaje de error inline para el campo
+   * documento segun el tipo y el motivo del fallo.
+   */
+  protected readonly mensajeErrorDocumento = computed<string>(() => {
+    const ctrl = this.formCliente.get('documento');
+    if (!ctrl || !ctrl.errors) return '';
+    const tipo = this.formCliente.get('tipoDocumentoId')?.value;
+    if (tipo === 1) {
+      if (ctrl.errors['required']) return 'El DNI es obligatorio.';
+      if (ctrl.errors['pattern']) return 'El DNI debe tener exactamente 8 digitos.';
+    }
+    if (tipo === 2) {
+      if (ctrl.errors['required']) return 'El RUC es obligatorio.';
+      if (ctrl.errors['pattern']) return 'El RUC debe tener exactamente 11 digitos.';
+    }
+    return 'Documento invalido.';
+  });
+
   protected formCliente = this.fb.group({
     nombre: ['', Validators.required],
     documento: [''],
@@ -132,6 +163,42 @@ export class ClientesListComponent implements OnInit, OnDestroy {
     this.formCliente.get('documento')?.valueChanges.subscribe((val) => {
       this.documento$.next((val ?? '').toString());
     });
+
+    // A-1 / B-1 audit (fix #6): ajustar validators de `documento` segun
+    // el `tipoDocumentoId`. DNI = 8 digitos, RUC = 11 digitos, Sin doc.
+    // = null/empty (campo opcional). valueChanges dispara cuando el usuario
+    // cambia el dropdown o cuando cargarTiposDocumento re-asigna defaults.
+    this.formCliente.get('tipoDocumentoId')?.valueChanges.subscribe((tipo) => {
+      this.aplicarValidadorDocumento(tipo);
+    });
+    // Aplicar el inicial por si el default (3) ya estaba al construir el form.
+    this.aplicarValidadorDocumento(this.formCliente.get('tipoDocumentoId')?.value);
+  }
+
+  /**
+   * A-1 / B-1 audit (fix #6): agrega o remueve el `Validators.pattern`
+   * del campo `documento` segun el TipoDocumentoId. DNI = exactamente 8
+   * digitos, RUC = exactamente 11, Sin doc. = documento vacio (sin pattern).
+   * Si el valor actual no cumple el nuevo pattern, lo borra y marca el
+   * control como touched para que el error sea visible al usuario.
+   */
+  private aplicarValidadorDocumento(tipoId: number | null | undefined): void {
+    const docCtrl = this.formCliente.get('documento');
+    if (!docCtrl) return;
+    // Siempre limpiamos validators custom y luego re-aplicamos segun tipo.
+    docCtrl.clearValidators();
+    if (tipoId === 1) {
+      docCtrl.addValidators([Validators.pattern(/^\d{8}$/)]);
+    } else if (tipoId === 2) {
+      docCtrl.addValidators([Validators.pattern(/^\d{11}$/)]);
+    }
+    // Sin doc. (3) o tipo desconocido: sin pattern, sigue siendo opcional.
+    docCtrl.updateValueAndValidity();
+    // Si el valor actual no matchea el nuevo pattern, no lo limpiamos
+    // automaticamente — el usuario lo vera en rojo y lo corregira.
+    if (docCtrl.invalid && docCtrl.value) {
+      docCtrl.markAsTouched();
+    }
   }
 
   ngOnInit(): void {
