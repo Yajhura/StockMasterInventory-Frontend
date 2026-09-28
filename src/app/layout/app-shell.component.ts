@@ -126,6 +126,20 @@ import { KardexModalComponent } from '../core/components/kardex-modal.component'
             >
               Catálogo
             </button>
+            <!-- CFG-08: la barra inferior movil es md:hidden, asi que sin
+                 este tab la seccion Configuracion seria inalcanzable en
+                 desktop. Mismo patron que el resto de tabs (texto plano,
+                 icono sliders solo en la barra inferior por espacio). -->
+            <button
+              type="button"
+              role="tab"
+              [class.nav-tab]="true"
+              [class.nav-tab-active]="tabConfigActivo()"
+              [attr.aria-selected]="tabConfigActivo()"
+              (click)="irAConfig()"
+            >
+              Configuración
+            </button>
           </nav>
 
           <div class="flex items-center gap-2 sm:gap-3">
@@ -333,6 +347,27 @@ import { KardexModalComponent } from '../core/components/kardex-modal.component'
             <span class="text-[10px] font-medium text-slate-400 tracking-tight">Reportes</span>
           }
         </button>
+
+        <!-- Item 6: Configuración (CFG-08) -->
+        <button
+          type="button"
+          class="flex flex-col items-center justify-center flex-1 h-full py-1 transition-all relative"
+          (click)="irAConfig()"
+        >
+          @if (tabConfigActivo()) {
+            <div class="w-11 h-11 -mt-5 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30 flex items-center justify-center border-2 border-white scale-105 transition-all">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
+              </svg>
+            </div>
+            <span class="text-[10px] font-bold text-blue-600 tracking-tight mt-0.5">Configuración</span>
+          } @else {
+            <svg class="w-5 h-5 mb-0.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
+            </svg>
+            <span class="text-[10px] font-medium text-slate-400 tracking-tight">Configuración</span>
+          }
+        </button>
       </nav>
 
       <footer class="hidden md:block border-t border-slate-200/70 bg-white/60 backdrop-blur-md">
@@ -430,6 +465,18 @@ export class AppShellComponent implements OnInit {
     this.rutaActiva().startsWith('/catalogo')
   );
 
+  /**
+   * CFG-08: seccion de configuracion publica. Comparte el computed con
+   * la barra inferior movil y con el tab del navbar superior. El guard
+   * `!enCatalogos()` se mantiene por consistencia con los demas items,
+   * aunque `/config` y `/catalogos` son prefijos disjuntos hoy: deja el
+   * patron consistente si mañana se anaden sub-rutas de catálogos bajo
+   * `/config`.
+   */
+  protected readonly tabConfigActivo = computed<boolean>(() =>
+    this.rutaActiva().startsWith('/config') && !this.enCatalogos()
+  );
+
   protected toggleMenu(event: MouseEvent): void {
     event.stopPropagation();
     this.menuAbierto.update((v) => !v);
@@ -477,6 +524,11 @@ export class AppShellComponent implements OnInit {
   protected irACuentasCorrientes(): void {
     this.menuAbierto.set(false);
     this.router.navigateByUrl('/cuentas-corrientes');
+  }
+
+  protected irAConfig(): void {
+    this.menuAbierto.set(false);
+    this.router.navigateByUrl('/config');
   }
 
   protected cerrarSesion(): void {
