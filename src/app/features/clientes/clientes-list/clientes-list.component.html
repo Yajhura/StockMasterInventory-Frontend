@@ -13,16 +13,6 @@
     </div>
 
     <div class="flex flex-wrap items-center gap-2.5">
-      <div class="relative flex-1 sm:w-72">
-        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input
-          type="search"
-          class="input-base pl-9 w-full h-10 text-xs"
-          placeholder="Buscar por nombre o DNI..."
-          [value]="filtroBusqueda()"
-          (input)="onFiltroBusquedaChange($event)"
-        >
-      </div>
       <!-- F-1 audit: toggle de papelera. Cuando esta activo, las acciones
            disponibles en cada fila cambian a "Restaurar" en lugar de
            "Editar / Eliminar".
@@ -58,8 +48,23 @@
   <!-- Barra de Filtros -->
   <section class="surface-card p-4 sm:p-5 mb-5">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3.5 items-end">
+      <!-- Búsqueda por texto o documento -->
+      <div class="lg:col-span-3 flex flex-col">
+        <label class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Buscar</label>
+        <div class="relative w-full">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input
+            type="search"
+            class="input-base pl-9 w-full h-10 text-xs"
+            placeholder="Buscar por nombre o DNI..."
+            [value]="filtroBusqueda()"
+            (input)="onFiltroBusquedaChange($event)"
+          >
+        </div>
+      </div>
+
       <!-- Rango de Fechas con componente compartido -->
-      <div class="lg:col-span-4 flex flex-col">
+      <div class="lg:col-span-3 flex flex-col">
         <label class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Rango de fechas</label>
         <app-date-range-picker
           [desde]="filtros().desde || ''"
@@ -70,18 +75,18 @@
       </div>
 
       <!-- Tipo de documento -->
-      <div class="lg:col-span-3 flex flex-col">
+      <div class="lg:col-span-2 flex flex-col">
         <label class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Tipo de documento</label>
         <app-dropdown
           [options]="opcionesTipoDocumento()"
           [ngModel]="filtros().tipoDocumentoId"
-          placeholder="Todos los tipos"
+          placeholder="Todos"
           (selectionChange)="onFiltroTipoDocChange($any($event))"
         />
       </div>
 
       <!-- Estado deuda -->
-      <div class="lg:col-span-3 flex flex-col">
+      <div class="lg:col-span-2 flex flex-col">
         <label class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Estado deuda</label>
         <app-dropdown
           [options]="opcionesEstadoDeuda()"
