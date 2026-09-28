@@ -7,6 +7,6 @@
  */
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://stockmaster-inventory-production.up.railway.app',
+  apiBaseUrl: 'https://cheslo-001-site1.dtempurl.com/',
   reportesConWac: true,
 };
