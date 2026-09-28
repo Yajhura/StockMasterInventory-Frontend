@@ -82,6 +82,11 @@ export const routes: Routes = [
           import('./features/ventas/cuentas-corrientes/cuentas-corrientes.component').then((m) => m.CuentasCorrientesComponent),
       },
       {
+        path: 'config',
+        loadComponent: () =>
+          import('./features/config/config-page.component').then((m) => m.ConfigPageComponent),
+      },
+      {
         path: 'design-system',
         loadComponent: () =>
           import('./features/design-system/design-system.page.component').then((m) => m.DesignSystemPageComponent),

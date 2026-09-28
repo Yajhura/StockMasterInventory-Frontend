@@ -1,0 +1,19 @@
+/* ConfigPageComponent (CFG-09).
+   La pantalla se apoya casi entera en los buckets globales de
+   styles.css (surface-card, input-base). Este stylesheet solo cubre lo
+   que no tiene equivalente global: el input de archivo, que no puede
+   usar .input-base porque el styling del <input type="file"> vive en el
+   pseudo-elemento `file:` y ese no acepta las utilidades de .input-base. */
+
+/* El input nativo de archivo se ve gris cancelado en Chrome cuando no
+   tiene `file:` overrides; lo forzamos a opaco para que no parezca
+   deshabilitado. */
+input[type='file'] {
+  opacity: 1;
+}
+
+/* El cursor pointer solo tiene sentido sobre el label/control completo,
+   no sobre el texto interno que el browser dibuja. */
+input[type='file']::file-selector-button {
+  cursor: pointer;
+}

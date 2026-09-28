@@ -1,0 +1,208 @@
+<div class="p-4 sm:p-6 max-w-4xl mx-auto anim-fade-in-up">
+  <header class="mb-6 flex items-center gap-3">
+    <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 grid place-items-center shrink-0 border border-blue-100">
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
+      </svg>
+    </div>
+    <div>
+      <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Configuración pública</h1>
+      <p class="text-xs text-slate-500 mt-0.5">
+       Estos datos alimentan la landing pública: nombre de marca, contacto, dirección y logo.
+      </p>
+    </div>
+  </header>
+
+  @if (cargando()) {
+    <section class="surface-card p-5 flex items-center justify-center gap-3">
+      <svg class="w-5 h-5 text-blue-600 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+      <p class="text-sm font-medium text-slate-500">Cargando configuración...</p>
+    </section>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="space-y-4" novalidate>
+      <!-- Identidad -->
+      <section class="surface-card p-4 sm:p-5">
+        <h2 class="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500 mb-4">Identidad</h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="cfg-nombreMarca" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              Nombre de la marca <span class="text-rose-500">*</span>
+            </label>
+            <input
+              id="cfg-nombreMarca"
+              type="text"
+              formControlName="nombreMarca"
+              class="input-base w-full h-10 px-3 text-sm"
+              placeholder="Ej. CHESLO"
+              maxlength="100"
+            >
+            @if (form.controls.nombreMarca.invalid && form.controls.nombreMarca.touched) {
+              <p class="text-[11px] text-rose-600 mt-1 font-semibold">El nombre de la marca es obligatorio.</p>
+            }
+          </div>
+
+          <div>
+            <label for="cfg-ruc" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">RUC</label>
+            <input
+              id="cfg-ruc"
+              type="text"
+              formControlName="ruc"
+              class="input-base w-full h-10 px-3 text-sm tabular-nums"
+              placeholder="Ej. 20512345678"
+              maxlength="20"
+            >
+            <p class="text-[11px] text-slate-400 mt-1">Opcional. Máximo 20 caracteres.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contacto -->
+      <section class="surface-card p-4 sm:p-5">
+        <h2 class="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500 mb-4">Contacto</h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="cfg-email" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Email</label>
+            <input
+              id="cfg-email"
+              type="email"
+              formControlName="email"
+              class="input-base w-full h-10 px-3 text-sm"
+              placeholder="ventas@empresa.com"
+              maxlength="200"
+            >
+            @if (form.controls.email.invalid && form.controls.email.touched) {
+              <p class="text-[11px] text-rose-600 mt-1 font-semibold">El email no tiene un formato válido.</p>
+            }
+          </div>
+
+          <div>
+            <label for="cfg-telefono" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Teléfono</label>
+            <input
+              id="cfg-telefono"
+              type="text"
+              formControlName="telefono"
+              class="input-base w-full h-10 px-3 text-sm tabular-nums"
+              placeholder="+51 926 938 985"
+              maxlength="50"
+            >
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label for="cfg-horario" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Horario de atención</label>
+            <input
+              id="cfg-horario"
+              type="text"
+              formControlName="horarioAtencion"
+              class="input-base w-full h-10 px-3 text-sm"
+              placeholder="Lunes a Domingo: 8:00 AM - 10:00 PM"
+              maxlength="200"
+            >
+          </div>
+
+          <div>
+            <label for="cfg-direccion" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Dirección</label>
+            <input
+              id="cfg-direccion"
+              type="text"
+              formControlName="direccion"
+              class="input-base w-full h-10 px-3 text-sm"
+              placeholder="Lima, Perú"
+              maxlength="300"
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- Logo -->
+      <section class="surface-card p-4 sm:p-5">
+        <h2 class="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500 mb-4">Logo</h2>
+
+        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div class="w-24 h-24 shrink-0 rounded-2xl border border-slate-200 bg-slate-50 grid place-items-center overflow-hidden">
+            @if (logoSrc() && !logoRoto()) {
+              <img
+                [src]="logoSrc()"
+                [alt]="form.controls.nombreMarca.value + ' logo'"
+                class="w-full h-full object-contain p-2"
+                (error)="onLogoError()"
+              >
+            } @else {
+              <div class="text-center px-2">
+                <svg class="w-7 h-7 mx-auto text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="9" cy="9" r="2"/>
+                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                </svg>
+                <p class="text-[10px] font-semibold text-slate-400 mt-1 leading-tight">
+                  {{ logoRoto() ? 'Logo no válido' : 'Sin logo' }}
+                </p>
+              </div>
+            }
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <label for="cfg-logo" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Imagen del logo</label>
+            <input
+              id="cfg-logo"
+              type="file"
+              accept="image/*"
+              class="block w-full text-xs text-slate-600 file:mr-3 file:h-10 file:px-4 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 file:text-xs file:font-bold hover:file:bg-slate-200 transition-colors cursor-pointer"
+              (change)="onLogoSelected($event)"
+            >
+            <p class="text-[11px] text-slate-400 mt-1.5">
+              PNG, JPG o SVG. Máximo 2 MB. Se guarda como base64 y se sirve a la landing.
+            </p>
+            @if (logoBase64()) {
+              <button
+                type="button"
+                (click)="quitarLogo()"
+                class="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold text-rose-600 hover:text-rose-700 transition-colors"
+              >
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Quitar logo
+              </button>
+            }
+          </div>
+        </div>
+      </section>
+
+      <footer class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
+        <p class="text-[11px] text-slate-400">
+          @if (ultimaModificacion(); as mod) {
+            Última modificación: {{ mod | date: 'dd/MM/yyyy HH:mm' }}
+          } @else {
+            Sin modificaciones registradas.
+          }
+        </p>
+
+        <div class="flex items-center gap-2.5">
+          <button
+            type="button"
+            (click)="cancelar()"
+            [disabled]="procesando()"
+            class="px-5 h-10 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 rounded-xl font-bold text-xs transition-all shadow-sm active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            id="cfg-guardar"
+            [disabled]="!formValido() || procesando()"
+            class="px-6 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-blue-500/20 active:scale-[0.98]"
+          >
+            @if (procesando()) {
+              <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+              <span>Guardando...</span>
+            } @else {
+              <span>Guardar cambios</span>
+            }
+          </button>
+        </div>
+      </footer>
+    </form>
+  }
+</div>
