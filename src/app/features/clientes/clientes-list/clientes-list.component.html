@@ -1,20 +1,18 @@
-﻿<div class="p-4 sm:p-6 max-w-7xl mx-auto anim-fade-in-up">
-  <header class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-    <div>
-      <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Directorio de Clientes</h1>
-      <p class="text-sm text-slate-500 mt-0.5">Gestión de cartera de clientes</p>
+<div class="p-4 sm:p-6 max-w-7xl mx-auto anim-fade-in-up">
+  <header class="mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 grid place-items-center shrink-0 border border-blue-100">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Directorio de Clientes</h1>
+        <p class="text-xs text-slate-500 mt-0.5">Gestión y control de cartera de clientes</p>
+      </div>
     </div>
 
-    <div class="flex items-center gap-3 w-full sm:w-auto">
-      <div class="relative flex-1 sm:w-72">
-        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input
-          type="search"
-          class="input-base pl-9 w-full bg-white shadow-sm"
-          placeholder="Buscar por nombre o DNI..."
-          (input)="onFiltroBusquedaChange($event)"
-        >
-      </div>
+    <div class="flex flex-wrap items-center gap-2.5">
       <!-- F-1 audit: toggle de papelera. Cuando esta activo, las acciones
            disponibles en cada fila cambian a "Restaurar" en lugar de
            "Editar / Eliminar".
@@ -26,21 +24,21 @@
           (click)="togglePapelera()"
           [class.bg-amber-50]="mostrarPapelera()"
           [class.border-amber-400]="mostrarPapelera()"
-          [class.text-amber-700]="mostrarPapelera()"
+          [class.text-amber-800]="mostrarPapelera()"
           [class.bg-white]="!mostrarPapelera()"
-          [class.border-slate-200]="!mostrarPapelera()"
-          [class.text-slate-600]="!mostrarPapelera()"
-          class="px-3 py-2 border-2 font-bold text-sm rounded-xl transition-all flex items-center gap-2 flex-shrink-0"
+          [class.border-slate-300]="!mostrarPapelera()"
+          [class.text-slate-700]="!mostrarPapelera()"
+          class="h-10 px-3.5 border font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-sm active:scale-[0.98]"
           [title]="mostrarPapelera() ? 'Ocultar papelera' : 'Mostrar papelera'">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          {{ mostrarPapelera() ? 'Ocultar papelera' : 'Papelera' }}
+          {{ mostrarPapelera() ? 'Papelera activa' : 'Papelera' }}
         </button>
       }
-      <button type="button" (click)="exportarExcel()" class="px-4 py-2 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-bold text-sm rounded-xl transition-all flex items-center gap-2 flex-shrink-0">
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
-        Exportar Excel
+      <button type="button" (click)="exportarExcel()" class="h-10 px-3.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-sm active:scale-[0.98]">
+        <svg class="w-4 h-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
+        Excel
       </button>
-      <button type="button" (click)="abrirModalNuevo()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-sm shadow-blue-600/30 transition-all flex items-center gap-2 flex-shrink-0">
+      <button type="button" (click)="abrirModalNuevo()" class="h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 active:scale-[0.98]">
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
         Nuevo Cliente
       </button>
@@ -48,66 +46,107 @@
   </header>
 
   <!-- Barra de Filtros -->
-  <section class="surface-card p-4 mb-4">
-    <div class="flex flex-wrap items-end gap-3">
-      <div class="flex flex-col gap-1.5">
-        <label class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Desde</label>
-        <input
-          type="date"
-          class="input-base"
-          [value]="filtros().desde ?? ''"
-          (change)="onFiltroFechaChange('desde', $any($event.target).value)"
-        >
+  <section class="surface-card p-4 sm:p-5 mb-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3.5 items-end">
+      <!-- Búsqueda por texto o documento -->
+      <div class="lg:col-span-3 flex flex-col">
+        <label class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Buscar</label>
+        <div class="relative w-full">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input
+            type="search"
+            class="input-base pl-9 w-full h-10 text-xs"
+            placeholder="Buscar por nombre o DNI..."
+            [value]="filtroBusqueda()"
+            (input)="onFiltroBusquedaChange($event)"
+          >
+        </div>
       </div>
-      <div class="flex flex-col gap-1.5">
-        <label class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Hasta</label>
-        <input
-          type="date"
-          class="input-base"
-          [value]="filtros().hasta ?? ''"
-          (change)="onFiltroFechaChange('hasta', $any($event.target).value)"
-        >
+
+      <!-- Rango de Fechas con componente compartido -->
+      <div class="lg:col-span-3 flex flex-col">
+        <label class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Rango de fechas</label>
+        <app-date-range-picker
+          [desde]="filtros().desde || ''"
+          [hasta]="filtros().hasta || ''"
+          (rangeChange)="onRangoFechasChange($event)"
+          placeholder="Filtrar por fecha..."
+        />
       </div>
-      <div class="flex flex-col gap-1.5 sm:w-56">
-        <label class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Tipo de documento</label>
+
+      <!-- Tipo de documento -->
+      <div class="lg:col-span-2 flex flex-col">
+        <label class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Tipo de documento</label>
         <app-dropdown
           [options]="opcionesTipoDocumento()"
-          placeholder="Todos los tipos"
+          [ngModel]="filtros().tipoDocumentoId"
+          placeholder="Todos"
           (selectionChange)="onFiltroTipoDocChange($any($event))"
-        ></app-dropdown>
+        />
       </div>
-      <div class="flex flex-col gap-1.5 sm:w-48">
-        <label class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Estado deuda</label>
+
+      <!-- Estado deuda -->
+      <div class="lg:col-span-2 flex flex-col">
+        <label class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Estado deuda</label>
         <app-dropdown
           [options]="opcionesEstadoDeuda()"
+          [ngModel]="filtros().estadoDeuda"
           placeholder="Todos"
           (selectionChange)="onFiltroEstadoChange($any($event))"
-        ></app-dropdown>
+        />
       </div>
-      <button type="button" (click)="limpiarFiltros()" class="px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-600 hover:bg-slate-100 transition-colors flex items-center gap-1.5">
-        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-        Limpiar
-      </button>
+
+      <!-- Limpiar filtros -->
+      <div class="lg:col-span-2 flex items-center">
+        <button type="button" (click)="limpiarFiltros()"
+          class="w-full h-10 px-3 border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98]">
+          <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Limpiar
+        </button>
+      </div>
     </div>
   </section>
 
   <!-- KPIs del Directorio -->
-  <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-    <div class="surface-card p-4">
-      <p class="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">Total Clientes</p>
-      <p class="text-2xl font-bold text-slate-900 tabular-nums mt-1.5">{{ kpis()?.totalClientes ?? '—' }}</p>
+  <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+    <div class="kpi-card border-l-4 !border-l-slate-400">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Clientes</span>
+        <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 grid place-items-center">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+      </div>
+      <p class="text-2xl font-black text-slate-900 tabular-nums mt-2">{{ kpis()?.totalClientes ?? '—' }}</p>
     </div>
-    <div class="surface-card p-4 border-l-4 !border-l-rose-400">
-      <p class="text-[10px] font-bold uppercase tracking-[0.15em] text-rose-600">Con Deuda</p>
-      <p class="text-2xl font-bold text-rose-700 tabular-nums mt-1.5">{{ kpis()?.clientesConDeuda ?? '—' }}</p>
+
+    <div class="kpi-card border-l-4 !border-l-rose-500">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-rose-600">Con Deuda</span>
+        <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 grid place-items-center">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+      </div>
+      <p class="text-2xl font-black text-rose-700 tabular-nums mt-2">{{ kpis()?.clientesConDeuda ?? '—' }}</p>
     </div>
-    <div class="surface-card p-4 border-l-4 !border-l-emerald-400">
-      <p class="text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-600">Al Día</p>
-      <p class="text-2xl font-bold text-emerald-700 tabular-nums mt-1.5">{{ kpis()?.clientesSinDeuda ?? '—' }}</p>
+
+    <div class="kpi-card border-l-4 !border-l-emerald-500">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-600">Al Día</span>
+        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 grid place-items-center">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+      </div>
+      <p class="text-2xl font-black text-emerald-700 tabular-nums mt-2">{{ kpis()?.clientesSinDeuda ?? '—' }}</p>
     </div>
-    <div class="surface-card p-4 border-l-4 !border-l-blue-400">
-      <p class="text-[10px] font-bold uppercase tracking-[0.15em] text-blue-600">Nuevos del Mes</p>
-      <p class="text-2xl font-bold text-blue-700 tabular-nums mt-1.5">{{ kpis()?.nuevosEsteMes ?? '—' }}</p>
+
+    <div class="kpi-card border-l-4 !border-l-blue-500">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-blue-600">Nuevos del Mes</span>
+        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 grid place-items-center">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+      </div>
+      <p class="text-2xl font-black text-blue-700 tabular-nums mt-2">{{ kpis()?.nuevosEsteMes ?? '—' }}</p>
     </div>
   </section>
 
@@ -161,153 +200,111 @@
   }
 
   <!-- Lista de Clientes -->
-  <div class="surface-card overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse">
-        <thead class="bg-slate-50/80 border-b border-slate-200">
-          <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-            <th class="py-3.5 px-4 w-16">ID</th>
-            <th class="py-3.5 px-4">Nombre Completo</th>
-            <th class="py-3.5 px-4">Tipo Doc</th>
-            <th class="py-3.5 px-4">Documento</th>
-            <th class="py-3.5 px-4">Teléfono</th>
-            <th class="py-3.5 px-4">Estado</th>
-            <th class="py-3.5 px-4 text-right">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @if (cargando()) {
-            <tr>
-              <td colspan="7" class="py-12 text-center">
-                <svg class="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
-                <p class="text-sm font-medium text-slate-500">Cargando clientes...</p>
-              </td>
-            </tr>
-          } @else if (clientesFiltrados().length === 0) {
-            <tr>
-              <td colspan="7" class="py-16 text-center">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-3 text-slate-400">
-                  <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                </div>
-                <p class="text-base font-bold text-slate-700">No se encontraron clientes</p>
-                <p class="text-sm text-slate-500 mt-1">Intenta con otra búsqueda o registra uno nuevo.</p>
-              </td>
-            </tr>
-          }           @else {
-            @for (c of clientesFiltrados(); track c.id) {
-              <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors group">
-                <td class="py-3.5 px-4 text-sm font-mono text-slate-400">#{{ c.id }}</td>
-                <td class="py-3.5 px-4">
-                  <div class="text-sm font-bold text-slate-800">
-                    {{ c.nombre }}
-                    <!-- L-2 audit (fix #22): chip de actividad comercial si el
-                         backend lo devuelve. Solo se popula en el response
-                         individual (GET /api/clientes/{id}); en el listado
-                         paginado viene null. Mostrarlo en cada fila aqui es
-                         'gratis' si el FE ya hace drilldown via drawer. -->
-                    @if (c.cantidadVentas != null && c.cantidadVentas > 0) {
-                      <span class="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 align-middle">
-                        {{ c.cantidadVentas }} {{ c.cantidadVentas === 1 ? 'venta' : 'ventas' }}
-                      </span>
-                    }
-                  </div>
-                  @if (c.email) {
-                    <div class="text-[11px] text-slate-400 mt-0.5">{{ c.email }}</div>
-                  }
-                  @if (!c.telefono && !c.email) {
-                    <!-- O-5 audit: badge 'Sin contacto' para clientes sin
-                         telefono ni email. Asi el operador ve de un vistazo
-                         que ese cliente no se puede contactar y deberia
-                         capturar datos antes de cualquier gestion. -->
-                    <span class="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500">
-                      <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18.36 6.64A9 9 0 0 1 20.77 15"/><path d="M6.16 6.16a9 9 0 1 0 12.68 12.68"/><path d="m1 1 22 22"/></svg>
-                      Sin contacto
-                    </span>
-                  }
-                </td>
-                <td class="py-3.5 px-4">
-                  <span class="chip chip-neutral">{{ c.tipoDocumentoNombre }}</span>
-                </td>
-                <td class="py-3.5 px-4 text-sm text-slate-600 font-mono">{{ c.documento || '-' }}</td>
-                <td class="py-3.5 px-4 text-sm text-slate-600">{{ c.telefono || '-' }}</td>
-                <td class="py-3.5 px-4">
-                  @if (clienteTieneDeuda(c)) {
-                    <span class="chip chip-danger">
-                      <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                      Con deuda
-                    </span>
-                  } @else {
-                    <span class="chip chip-success">
-                      <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>
-                      Sin deuda
-                    </span>
-                  }
-                </td>
-                <td class="py-3.5 px-4 text-right opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div class="flex items-center justify-end gap-1">
-                    @if (mostrarPapelera()) {
-                      <!-- F-1 audit: vista papelera -> unico boton relevante es Restaurar.
-                           H-2 audit: el boton restaurar es Admin-only. -->
-                      @if (auth.esAdmin()) {
-                        <button type="button" (click)="confirmarRestaurar(c)" class="p-2 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors" title="Restaurar">
-                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
-                        </button>
-                      }
-                    } @else {
-                      <button type="button" (click)="verCuenta(c.id)" class="p-2 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors" title="Ver cuenta">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                      </button>
-                      <button type="button" (click)="abrirModalEditar(c)" class="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="Editar">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                      </button>
-                      <!-- H-2 audit: el boton Eliminar es Admin-only. Wrap en
-                           @if (esAdmin()) para que el Operador no lo vea (el
-                           backend igual rechazaria con 403, pero escondemos el
-                           control para no tentarlo). -->
-                      @if (auth.esAdmin()) {
-                        <button type="button" (click)="confirmarEliminar(c)" class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors" title="Eliminar">
-                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                        </button>
-                      }
-                    }
-                  </div>
-                </td>
-              </tr>
+  <app-tabla
+    [cargando]="cargando()"
+    [isEmpty]="clientesFiltrados().length === 0"
+    mensajeVacio="No se encontraron clientes con los filtros seleccionados."
+    [modo]="'paginado'"
+    [page]="page()"
+    [totalPages]="totalPages()"
+    [totalItems]="totalClientes()"
+    [pageSize]="pageSize()"
+    (pageChange)="irAPagina($event)"
+  >
+    <thead table-header>
+      <tr>
+        <th app-th class="w-16">ID</th>
+        <th app-th>Nombre Completo</th>
+        <th app-th>Tipo Doc</th>
+        <th app-th>Documento</th>
+        <th app-th>Teléfono</th>
+        <th app-th>Estado</th>
+        <th app-th align="right">Acciones</th>
+      </tr>
+    </thead>
+    <tbody table-body>
+      @for (c of clientesFiltrados(); track c.id) {
+        <tr app-tr class="group">
+          <td app-td class="text-xs font-mono text-slate-400">#{{ c.id }}</td>
+          <td app-td>
+            <div class="text-sm font-bold text-slate-800">
+              {{ c.nombre }}
+              <!-- L-2 audit (fix #22): chip de actividad comercial si el
+                   backend lo devuelve. Solo se popula en el response
+                   individual (GET /api/clientes/{id}); en el listado
+                   paginado viene null. Mostrarlo en cada fila aqui es
+                   'gratis' si el FE ya hace drilldown via drawer. -->
+              @if (c.cantidadVentas != null && c.cantidadVentas > 0) {
+                <span class="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 align-middle">
+                  {{ c.cantidadVentas }} {{ c.cantidadVentas === 1 ? 'venta' : 'ventas' }}
+                </span>
+              }
+            </div>
+            @if (c.email) {
+              <div class="text-[11px] text-slate-400 mt-0.5">{{ c.email }}</div>
             }
-          }
-        </tbody>
-      </table>
-    </div>
-
-    <!-- C-4 / K-4 audit: paginacion client-side basica. Botones Anterior/Siguiente
-         + indicador "Pagina X de Y". El backend ya clamp-eya size a 1..200. -->
-    @if (totalClientes() > 0) {
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-t border-slate-200 bg-slate-50/40">
-        <p class="text-xs font-medium text-slate-500">
-          Mostrando <span class="font-bold text-slate-700 tabular-nums">{{ clientes().length }}</span>
-          de <span class="font-bold text-slate-700 tabular-nums">{{ totalClientes() }}</span> clientes
-          (pagina <span class="font-bold text-slate-700 tabular-nums">{{ page() }}</span>
-          de <span class="font-bold text-slate-700 tabular-nums">{{ totalPages() }}</span>)
-        </p>
-        <div class="flex items-center gap-2">
-          <button type="button"
-            (click)="irAPagina(page() - 1)"
-            [disabled]="!hayPaginaAnterior()"
-            class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
-            Anterior
-          </button>
-          <button type="button"
-            (click)="irAPagina(page() + 1)"
-            [disabled]="!hayPaginaSiguiente()"
-            class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5">
-            Siguiente
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
-        </div>
-      </div>
-    }
-  </div>
+            @if (!c.telefono && !c.email) {
+              <!-- O-5 audit: badge 'Sin contacto' para clientes sin
+                   telefono ni email. Asi el operador ve de un vistazo
+                   que ese cliente no se puede contactar y deberia
+                   capturar datos antes de cualquier gestion. -->
+              <span class="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18.36 6.64A9 9 0 0 1 20.77 15"/><path d="M6.16 6.16a9 9 0 1 0 12.68 12.68"/><path d="m1 1 22 22"/></svg>
+                Sin contacto
+              </span>
+            }
+          </td>
+          <td app-td>
+            <span class="chip chip-neutral">{{ c.tipoDocumentoNombre }}</span>
+          </td>
+          <td app-td class="text-sm text-slate-600 font-mono">{{ c.documento || '-' }}</td>
+          <td app-td class="text-sm text-slate-600">{{ c.telefono || '-' }}</td>
+          <td app-td>
+            @if (clienteTieneDeuda(c)) {
+              <span class="chip chip-danger">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Con deuda
+              </span>
+            } @else {
+              <span class="chip chip-success">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>
+                Sin deuda
+              </span>
+            }
+          </td>
+          <td app-td align="right">
+            <div class="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+              @if (mostrarPapelera()) {
+                <!-- F-1 audit: vista papelera -> unico boton relevante es Restaurar.
+                     H-2 audit: el boton restaurar es Admin-only. -->
+                @if (auth.esAdmin()) {
+                  <button type="button" (click)="confirmarRestaurar(c)" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="Restaurar">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                  </button>
+                }
+              } @else {
+                <button type="button" (click)="verCuenta(c.id)" class="btn-icon hover:text-blue-600 hover:bg-blue-50" title="Ver cuenta">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+                <button type="button" (click)="abrirModalEditar(c)" class="btn-icon hover:text-blue-600 hover:bg-blue-50" title="Editar">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                </button>
+                <!-- H-2 audit: el boton Eliminar es Admin-only. Wrap en
+                     @if (esAdmin()) para que el Operador no lo vea (el
+                     backend igual rechazaria con 403, pero escondemos el
+                     control para no tentarlo). -->
+                @if (auth.esAdmin()) {
+                  <button type="button" (click)="confirmarEliminar(c)" class="btn-icon hover:text-rose-600 hover:bg-rose-50" title="Eliminar">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                  </button>
+                }
+              }
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </app-tabla>
 </div>
 
 <!-- Drawer Estado de Cuenta -->
@@ -316,9 +313,9 @@
   <aside class="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col anim-fade-in-up">
     @if (estadoCuenta(); as ec) {
       <!-- Header con datos del cliente -->
-      <header class="px-6 py-5 border-b border-slate-200 flex items-start justify-between shrink-0">
+      <header class="px-6 py-5 border-b border-slate-200 flex items-start justify-between shrink-0 bg-slate-50/50">
         <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 grid place-items-center shrink-0">
+          <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 grid place-items-center shrink-0 border border-blue-100">
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
           </div>
           <div>
@@ -327,26 +324,35 @@
             <p class="text-xs text-slate-500 mt-0.5">{{ ec.cliente.tipoDocumentoNombre }}: {{ ec.cliente.documento || '—' }}</p>
           </div>
         </div>
-        <button type="button" (click)="cerrarDrawer()" class="text-slate-400 hover:text-slate-900 bg-white border border-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors">
+        <button type="button" (click)="cerrarDrawer()" class="text-slate-400 hover:text-slate-900 bg-white border border-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-sm">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </header>
 
       <!-- Datos de contacto -->
-      <section class="px-6 py-4 border-b border-slate-100 space-y-1.5 text-sm">
+      <section class="px-6 py-4 border-b border-slate-100 space-y-1.5 text-xs">
         @if (ec.cliente.telefono) {
-          <p class="text-slate-600"><strong class="text-slate-500 font-semibold">Tel:</strong> {{ ec.cliente.telefono }}</p>
+          <p class="text-slate-600 flex items-center gap-1.5">
+            <span class="text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Tel:</span>
+            <span class="font-medium text-slate-800">{{ ec.cliente.telefono }}</span>
+          </p>
         }
         @if (ec.cliente.email) {
-          <p class="text-slate-600"><strong class="text-slate-500 font-semibold">Email:</strong> {{ ec.cliente.email }}</p>
+          <p class="text-slate-600 flex items-center gap-1.5">
+            <span class="text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Email:</span>
+            <span class="font-medium text-slate-800">{{ ec.cliente.email }}</span>
+          </p>
         }
         @if (ec.cliente.direccion) {
-          <p class="text-slate-600"><strong class="text-slate-500 font-semibold">Dir:</strong> {{ ec.cliente.direccion }}</p>
+          <p class="text-slate-600 flex items-center gap-1.5">
+            <span class="text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Dir:</span>
+            <span class="font-medium text-slate-800">{{ ec.cliente.direccion }}</span>
+          </p>
         }
       </section>
 
       <!-- Mini-KPIs -->
-      <section class="grid grid-cols-2 gap-2 p-4 border-b border-slate-100">
+      <section class="grid grid-cols-2 gap-2.5 p-4 border-b border-slate-100 bg-slate-50/30">
         <div class="surface-card p-3">
           <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Facturado</p>
           <p class="text-base font-bold text-slate-900 tabular-nums mt-1">S/ {{ ec.totalFacturado | number:'1.2-2' }}</p>
@@ -355,8 +361,8 @@
           <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pagado</p>
           <p class="text-base font-bold text-emerald-700 tabular-nums mt-1">S/ {{ ec.totalPagado | number:'1.2-2' }}</p>
         </div>
-        <div class="surface-card p-3">
-          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Deuda</p>
+        <div class="surface-card p-3" [class.border-rose-200]="ec.deudaActual > 0">
+          <p class="text-[10px] font-bold uppercase tracking-wider" [class.text-rose-600]="ec.deudaActual > 0" [class.text-slate-500]="ec.deudaActual <= 0">Deuda</p>
           <p class="text-base font-bold tabular-nums mt-1" [class]="ec.deudaActual > 0 ? 'text-rose-700' : 'text-slate-900'">S/ {{ ec.deudaActual | number:'1.2-2' }}</p>
         </div>
         <div class="surface-card p-3">
@@ -384,8 +390,8 @@
               <div class="surface-card p-3 hover:border-slate-300 transition-all">
                 <div class="flex items-center justify-between mb-1">
                   <span class="text-xs font-mono text-slate-400">#{{ v.id }}</span>
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider"
-                    [ngClass]="v.estadoPago === 'Pagado' ? 'bg-emerald-50 text-emerald-700' : v.estadoPago === 'Parcial' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'">
+                  <span class="chip"
+                    [ngClass]="v.estadoPago === 'Pagado' ? 'chip-success' : v.estadoPago === 'Parcial' ? 'chip-warning' : 'chip-danger'">
                     {{ v.estadoPago }}
                   </span>
                 </div>
@@ -393,9 +399,9 @@
                 <div class="flex justify-between text-sm">
                   <span class="font-semibold text-slate-700">S/ {{ v.montoTotal | number:'1.2-2' }}</span>
                   @if (v.saldoPendiente > 0) {
-                    <span class="text-rose-600 font-bold">S/ {{ v.saldoPendiente | number:'1.2-2' }}</span>
+                    <span class="text-rose-600 font-bold tabular-nums">S/ {{ v.saldoPendiente | number:'1.2-2' }}</span>
                   } @else {
-                    <span class="text-emerald-600 text-xs">pagado</span>
+                    <span class="text-emerald-600 text-xs font-semibold">Cubierto</span>
                   }
                 </div>
               </div>
@@ -404,8 +410,8 @@
               <!-- E-2 audit (fix #7): "Ver mas" pide la siguiente pagina al
                    backend. -->
               <button type="button" (click)="cargarMasVentas()"
-                class="w-full py-2 mt-2 border border-dashed border-slate-300 rounded-lg text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-400 text-[12px] font-semibold transition-colors flex items-center justify-center gap-1.5">
-                Ver mas ventas
+                class="w-full py-2.5 mt-2 border border-dashed border-slate-300 rounded-xl text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-400 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                Ver más ventas
               </button>
             }
           </div>
@@ -416,7 +422,7 @@
 
       <footer class="px-6 py-4 border-t border-slate-100 bg-white">
         <button type="button" (click)="cerrarDrawer()"
-          class="w-full py-2.5 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 transition-all">
+          class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition-all shadow-md shadow-blue-500/20 active:scale-[0.98]">
           Cerrar
         </button>
       </footer>
@@ -440,7 +446,7 @@
           <svg class="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
           {{ clienteEnEdicion() ? 'Editar Cliente' : 'Nuevo Cliente' }}
         </h3>
-        <button type="button" (click)="cerrarModal()" class="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-md hover:bg-slate-200/50">
+        <button type="button" (click)="cerrarModal()" class="text-slate-400 hover:text-slate-600 transition-colors p-1.5 rounded-lg hover:bg-slate-100">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
       </header>
@@ -448,43 +454,44 @@
       <div class="p-6">
         <form [formGroup]="formCliente" (ngSubmit)="guardarCliente()" class="space-y-4">
           <div>
-            <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Nombre Completo <span class="text-rose-500">*</span></label>
-            <input type="text" formControlName="nombre" class="input-base w-full" placeholder="Ej. Juan Pérez">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Nombre Completo <span class="text-rose-500">*</span></label>
+            <input type="text" formControlName="nombre" class="input-base w-full h-10 px-3 text-sm" placeholder="Ej. Juan Pérez">
             @if (formCliente.get('nombre')?.invalid && formCliente.get('nombre')?.touched) {
-              <p class="text-[10px] text-rose-600 mt-1 font-semibold">El nombre es requerido.</p>
+              <p class="text-[11px] text-rose-600 mt-1 font-semibold">El nombre es requerido.</p>
             }
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Tipo de documento <span class="text-rose-500">*</span></label>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Tipo de documento <span class="text-rose-500">*</span></label>
               <app-dropdown
                 [options]="opcionesTipoDocumentoForm()"
                 placeholder="Seleccionar tipo"
                 formControlName="tipoDocumentoId"
-              ></app-dropdown>
+              />
               @if (formCliente.get('tipoDocumentoId')?.invalid && formCliente.get('tipoDocumentoId')?.touched) {
-                <p class="text-[10px] text-rose-600 mt-1 font-semibold">Selecciona un tipo de documento.</p>
+                <p class="text-[11px] text-rose-600 mt-1 font-semibold">Selecciona un tipo de documento.</p>
               }
             </div>
             <div>
-              <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Documento / DNI</label>
-              <input type="text" formControlName="documento" class="input-base w-full"
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Documento / DNI</label>
+              <input type="text" formControlName="documento" class="input-base w-full h-10 px-3 text-sm tabular-nums"
                 maxlength="20"
+                appOnlyNumbers
                 [placeholder]="placeholderDocumento()">
               <!-- A-1 / B-1 audit (fix #6): mensaje de error especifico segun
                    el TipoDocumentoId seleccionado. -->
               @if (formCliente.get('documento')?.invalid && formCliente.get('documento')?.touched) {
-                <p class="text-[10px] text-rose-600 mt-1 font-semibold">{{ mensajeErrorDocumento() }}</p>
+                <p class="text-[11px] text-rose-600 mt-1 font-semibold">{{ mensajeErrorDocumento() }}</p>
               }
             </div>
           </div>
 
           <!-- Alerta visual de documento duplicado -->
           @if (documentoDuplicado(); as nombreDuplicado) {
-            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2.5">
-              <svg class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              <p class="text-[12px] text-amber-800 leading-relaxed">
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2.5">
+              <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <p class="text-xs text-amber-800 leading-relaxed">
                 Este documento ya está registrado para <span class="font-bold">{{ nombreDuplicado }}</span>. ¿Querés usar ese cliente?
               </p>
             </div>
@@ -492,43 +499,38 @@
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Teléfono</label>
-              <input type="text" formControlName="telefono" class="input-base w-full" placeholder="Opcional" maxlength="50">
-              <!-- B-3 audit: telefono es texto libre (no validamos formato),
-                   asi que no agregamos inline error aca — el operador lo deja
-                   vacio si quiere y listo. -->
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Teléfono</label>
+              <input type="text" formControlName="telefono" appOnlyNumbers class="input-base w-full h-10 px-3 text-sm tabular-nums" placeholder="Ej. 987 654 321" maxlength="50">
             </div>
             <div>
-              <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Email</label>
-              <input type="email" formControlName="email" class="input-base w-full" placeholder="Opcional" maxlength="100">
-              <!-- B-3 audit: inline validation. El campo es opcional pero si
-                   el operador tipea algo, Validators.email lo valida. Mostramos
-                   el mensaje apenas el control pierda foco + sea invalido. -->
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Email</label>
+              <input type="email" formControlName="email" class="input-base w-full h-10 px-3 text-sm" placeholder="correo@ejemplo.com" maxlength="100">
               @if (formCliente.get('email')?.invalid && formCliente.get('email')?.touched) {
-                <p class="text-[10px] text-rose-600 mt-1 font-semibold">El email no tiene un formato válido.</p>
+                <p class="text-[11px] text-rose-600 mt-1 font-semibold">El email no tiene un formato válido.</p>
               }
             </div>
           </div>
 
           <div>
-            <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Dirección</label>
-            <input type="text" formControlName="direccion" class="input-base w-full" placeholder="Calle, número, ciudad (opcional)">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Dirección</label>
+            <input type="text" formControlName="direccion" class="input-base w-full h-10 px-3 text-sm" placeholder="Av. Los Próceres 123">
           </div>
 
           <div class="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">
-            <button type="button" (click)="cerrarModal()" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
+            <button type="button" (click)="cerrarModal()"
+              class="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl font-bold text-xs hover:bg-slate-50 hover:border-slate-400 transition-all shadow-sm active:scale-[0.98]">
               Cancelar
             </button>
             <button
               type="submit"
               [disabled]="formCliente.invalid || procesando() || documentoDuplicado() !== null"
-              class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-600/30 transition-all flex items-center gap-2 disabled:opacity-50"
+              class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-blue-500/20 active:scale-[0.98]"
             >
               @if (procesando()) {
                 <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
-                Guardando...
+                <span>Guardando...</span>
               } @else {
-                Guardar Cliente
+                <span>Guardar Cliente</span>
               }
             </button>
           </div>

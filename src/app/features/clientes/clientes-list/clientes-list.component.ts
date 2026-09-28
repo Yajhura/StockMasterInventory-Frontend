@@ -1,4 +1,4 @@
-﻿import {
+import {
   Component,
   OnInit,
   OnDestroy,
@@ -8,7 +8,7 @@
   effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ApiClientesService, ClienteSimilar } from '../../../core/api/api-clientes.service';
@@ -23,12 +23,23 @@ import {
   PaginatedClientes,
 } from '../../../core/models/cliente.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
+import { DateRangePickerComponent, DateRange } from '../../../core/components/date-range-picker.component';
+import { TABLA_COMPONENTS } from '../../../core/components/tabla.component';
+import { OnlyNumbersDirective } from '../../../core/directives/only-numbers.directive';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-clientes-list',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DropdownComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    FormsModule,
+    DropdownComponent,
+    DateRangePickerComponent,
+    ...TABLA_COMPONENTS,
+    OnlyNumbersDirective,
+  ],
   templateUrl: './clientes-list.component.html',
 })
 export class ClientesListComponent implements OnInit, OnDestroy {
@@ -329,6 +340,14 @@ export class ClientesListComponent implements OnInit, OnDestroy {
     const val = (event.target as HTMLInputElement).value;
     this.filtroBusqueda.set(val);
     this.busqueda$.next(val);
+  }
+
+  protected onRangoFechasChange(range: DateRange | null): void {
+    this.filtros.update((f) => ({
+      ...f,
+      desde: range?.desde || null,
+      hasta: range?.hasta || null,
+    }));
   }
 
   protected onFiltroFechaChange(campo: 'desde' | 'hasta', valor: string): void {
