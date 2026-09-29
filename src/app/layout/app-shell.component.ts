@@ -29,20 +29,36 @@ import { KardexModalComponent } from '../core/components/kardex-modal.component'
     <div class="min-h-screen flex flex-col bg-slate-50/50">
       <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-slate-200/70">
         <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 h-16 flex items-center justify-between gap-4">
-          <a class="flex items-center gap-2.5 group" href="/inventario">
-            <span
-              class="grid place-items-center w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 shadow-sm shadow-blue-600/30 text-white transition-transform duration-200 group-hover:scale-105"
-              aria-hidden="true"
+          <div class="flex items-center gap-2">
+            <!-- Botón Hamburguesa Móvil (Visible solo en md:hidden) -->
+            <button
+              type="button"
+              class="md:hidden grid place-items-center w-10 h-10 -ml-1 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+              (click)="toggleDrawerMovil()"
+              aria-label="Abrir menú de navegación"
             >
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z" />
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
               </svg>
-            </span>
-            <div class="flex flex-col leading-tight">
-              <span class="text-[17px] font-extrabold tracking-tight text-slate-900">StockMaster</span>
-              <span class="text-[10px] uppercase tracking-[0.18em] text-slate-400 font-semibold hidden sm:inline-block">Inventory v1.0</span>
-            </div>
-          </a>
+            </button>
+
+            <a class="flex items-center gap-2.5 group" href="/inventario">
+              <span
+                class="grid place-items-center w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 shadow-sm shadow-blue-600/30 text-white transition-transform duration-200 group-hover:scale-105"
+                aria-hidden="true"
+              >
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z" />
+                </svg>
+              </span>
+              <div class="flex flex-col leading-tight">
+                <span class="text-[17px] font-extrabold tracking-tight text-slate-900">StockMaster</span>
+                <span class="text-[10px] uppercase tracking-[0.18em] text-slate-400 font-semibold hidden sm:inline-block">Inventory v1.0</span>
+              </div>
+            </a>
+          </div>
 
           <!-- Tabs Navegación Escritorio (Ocultos en Móvil) -->
           <nav class="hidden md:flex ml-6 items-center gap-1" role="tablist" aria-label="Navegación principal">
@@ -219,12 +235,140 @@ import { KardexModalComponent } from '../core/components/kardex-modal.component'
         <router-outlet />
       </main>
 
-      <!-- BARRA DE NAVEGACIÓN MÓVIL INFERIOR CON CÍRCULO FLOTANTE DINÁMICO -->
-      <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] flex items-center justify-around h-16 px-1" role="navigation" aria-label="Navegación móvil">
+      <!-- DRAWER DE NAVEGACIÓN MÓVIL COMPLETA (9 Módulos + Catálogos) -->
+      @if (drawerMovilAbierto()) {
+        <div class="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm anim-fade-in md:hidden" (click)="cerrarDrawerMovil()"></div>
+        <aside class="fixed top-0 left-0 bottom-0 w-[300px] max-w-[85vw] bg-white z-50 shadow-2xl flex flex-col anim-fade-in-up border-r border-slate-200 md:hidden">
+          <!-- Drawer Header -->
+          <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+            <div class="flex items-center gap-2.5">
+              <span class="grid place-items-center w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-sm shadow-blue-600/30">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z" />
+                </svg>
+              </span>
+              <div>
+                <h2 class="text-sm font-extrabold text-slate-900 tracking-tight">StockMaster</h2>
+                <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Menú Principal</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 grid place-items-center transition-colors"
+              (click)="cerrarDrawerMovil()"
+              aria-label="Cerrar menú"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Drawer Navigation List -->
+          <nav class="flex-1 overflow-y-auto p-3 space-y-1">
+            <div class="px-2.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Operaciones</div>
+
+            <button type="button" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all"
+              [ngClass]="tabInventarioActivo() ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="irAInventario()">
+              <svg class="w-4 h-4" [class.text-blue-600]="tabInventarioActivo()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+              <span>Inventario</span>
+            </button>
+
+            <button type="button" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all"
+              [ngClass]="tabMovimientoActivo() ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="irAMovimiento()">
+              <svg class="w-4 h-4" [class.text-blue-600]="tabMovimientoActivo()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4M7 4L3 8M7 4L11 8"/><path d="M17 8V20M17 20L21 16M17 20L13 16"/></svg>
+              <span>Movimiento</span>
+            </button>
+
+            <button type="button" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all"
+              [ngClass]="tabVentasActivo() ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="irAPuntoVenta()">
+              <svg class="w-4 h-4" [class.text-blue-600]="tabVentasActivo()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+              <span>Ventas (POS)</span>
+            </button>
+
+            <button type="button" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all"
+              [ngClass]="tabCuentasActivo() ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="irACuentasCorrientes()">
+              <svg class="w-4 h-4" [class.text-blue-600]="tabCuentasActivo()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+              <span>Cobranzas</span>
+            </button>
+
+            <div class="px-2.5 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Directorio & Análisis</div>
+
+            <button type="button" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all"
+              [ngClass]="tabClientesActivo() ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="irAClientes()">
+              <svg class="w-4 h-4" [class.text-blue-600]="tabClientesActivo()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span>Clientes</span>
+            </button>
+
+            <button type="button" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all"
+              [ngClass]="tabKardexActivo() ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="irAKardex()">
+              <svg class="w-4 h-4" [class.text-blue-600]="tabKardexActivo()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              <span>Kardex</span>
+            </button>
+
+            <button type="button" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all"
+              [ngClass]="tabReportesActivo() ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="irAReportes()">
+              <svg class="w-4 h-4" [class.text-blue-600]="tabReportesActivo()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              <span>Reportes</span>
+            </button>
+
+            <div class="px-2.5 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Catálogo & Ajustes</div>
+
+            <button type="button" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all"
+              [ngClass]="tabCatalogoActivo() ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="irACatalogo()">
+              <svg class="w-4 h-4" [class.text-blue-600]="tabCatalogoActivo()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+              <span>Catálogo PDF</span>
+            </button>
+
+            <button type="button" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all"
+              [ngClass]="tabConfigActivo() ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="irAConfig()">
+              <svg class="w-4 h-4" [class.text-blue-600]="tabConfigActivo()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" /></svg>
+              <span>Configuración</span>
+            </button>
+
+            <button type="button" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all"
+              [ngClass]="enCatalogos() ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'"
+              (click)="irACatalogos()">
+              <svg class="w-4 h-4" [class.text-blue-600]="enCatalogos()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.56 1.03Z" /></svg>
+              <span>Catálogos Auxiliares</span>
+            </button>
+          </nav>
+
+          <!-- Drawer Footer: User & Logout -->
+          <div class="p-3 border-t border-slate-100 bg-slate-50/60">
+            <div class="flex items-center justify-between gap-2 p-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="grid place-items-center w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 text-white text-xs font-bold ring-2 ring-white shrink-0">
+                  {{ iniciales() }}
+                </span>
+                <div class="truncate">
+                  <p class="text-xs font-bold text-slate-800 truncate">{{ auth.currentUser()?.nombreCompleto }}</p>
+                  <p class="text-[10px] text-slate-400 capitalize">{{ auth.currentUser()?.rol }}</p>
+                </div>
+              </div>
+              <button type="button" (click)="cerrarSesion()" title="Cerrar sesión" class="p-2 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors shrink-0">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              </button>
+            </div>
+          </div>
+        </aside>
+      }
+
+      <!-- BARRA DE NAVEGACIÓN MÓVIL INFERIOR CON SCROLL HORIZONTAL Y CÍRCULO FLOTANTE DINÁMICO -->
+      <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] flex items-center overflow-x-auto no-scrollbar h-16 px-1.5" role="navigation" aria-label="Navegación móvil">
         <!-- Item 1: Inventario -->
         <button
           type="button"
-          class="flex flex-col items-center justify-center flex-1 h-full py-1 transition-all relative"
+          class="flex flex-col items-center justify-center min-w-[68px] sm:min-w-[76px] flex-shrink-0 h-full py-1 transition-all relative"
           (click)="irAInventario()"
         >
           @if (tabInventarioActivo()) {
@@ -249,7 +393,7 @@ import { KardexModalComponent } from '../core/components/kardex-modal.component'
         <!-- Item 2: Movimiento -->
         <button
           type="button"
-          class="flex flex-col items-center justify-center flex-1 h-full py-1 transition-all relative"
+          class="flex flex-col items-center justify-center min-w-[68px] sm:min-w-[76px] flex-shrink-0 h-full py-1 transition-all relative"
           (click)="irAMovimiento()"
         >
           @if (tabMovimientoActivo()) {
@@ -269,10 +413,85 @@ import { KardexModalComponent } from '../core/components/kardex-modal.component'
           }
         </button>
 
-        <!-- Item 3: Kardex -->
+        <!-- Item 3: Ventas -->
         <button
           type="button"
-          class="flex flex-col items-center justify-center flex-1 h-full py-1 transition-all relative"
+          class="flex flex-col items-center justify-center min-w-[68px] sm:min-w-[76px] flex-shrink-0 h-full py-1 transition-all relative"
+          (click)="irAPuntoVenta()"
+        >
+          @if (tabVentasActivo()) {
+            <div class="w-11 h-11 -mt-5 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30 flex items-center justify-center border-2 border-white scale-105 transition-all">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="8" cy="21" r="1"/>
+                <circle cx="19" cy="21" r="1"/>
+                <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
+              </svg>
+            </div>
+            <span class="text-[10px] font-bold text-blue-600 tracking-tight mt-0.5">Ventas</span>
+          } @else {
+            <svg class="w-5 h-5 mb-0.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="8" cy="21" r="1"/>
+              <circle cx="19" cy="21" r="1"/>
+              <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
+            </svg>
+            <span class="text-[10px] font-medium text-slate-400 tracking-tight">Ventas</span>
+          }
+        </button>
+
+        <!-- Item 4: Cobranzas -->
+        <button
+          type="button"
+          class="flex flex-col items-center justify-center min-w-[68px] sm:min-w-[76px] flex-shrink-0 h-full py-1 transition-all relative"
+          (click)="irACuentasCorrientes()"
+        >
+          @if (tabCuentasActivo()) {
+            <div class="w-11 h-11 -mt-5 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30 flex items-center justify-center border-2 border-white scale-105 transition-all">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="5" width="20" height="14" rx="2"/>
+                <line x1="2" y1="10" x2="22" y2="10"/>
+              </svg>
+            </div>
+            <span class="text-[10px] font-bold text-blue-600 tracking-tight mt-0.5">Cobranzas</span>
+          } @else {
+            <svg class="w-5 h-5 mb-0.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="2"/>
+              <line x1="2" y1="10" x2="22" y2="10"/>
+            </svg>
+            <span class="text-[10px] font-medium text-slate-400 tracking-tight">Cobranzas</span>
+          }
+        </button>
+
+        <!-- Item 5: Clientes -->
+        <button
+          type="button"
+          class="flex flex-col items-center justify-center min-w-[68px] sm:min-w-[76px] flex-shrink-0 h-full py-1 transition-all relative"
+          (click)="irAClientes()"
+        >
+          @if (tabClientesActivo()) {
+            <div class="w-11 h-11 -mt-5 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30 flex items-center justify-center border-2 border-white scale-105 transition-all">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <span class="text-[10px] font-bold text-blue-600 tracking-tight mt-0.5">Clientes</span>
+          } @else {
+            <svg class="w-5 h-5 mb-0.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            <span class="text-[10px] font-medium text-slate-400 tracking-tight">Clientes</span>
+          }
+        </button>
+
+        <!-- Item 6: Kardex -->
+        <button
+          type="button"
+          class="flex flex-col items-center justify-center min-w-[68px] sm:min-w-[76px] flex-shrink-0 h-full py-1 transition-all relative"
           (click)="irAKardex()"
         >
           @if (tabKardexActivo()) {
@@ -296,10 +515,35 @@ import { KardexModalComponent } from '../core/components/kardex-modal.component'
           }
         </button>
 
-        <!-- Item 4: Catálogo -->
+        <!-- Item 7: Reportes -->
         <button
           type="button"
-          class="flex flex-col items-center justify-center flex-1 h-full py-1 transition-all relative"
+          class="flex flex-col items-center justify-center min-w-[68px] sm:min-w-[76px] flex-shrink-0 h-full py-1 transition-all relative"
+          (click)="irAReportes()"
+        >
+          @if (tabReportesActivo()) {
+            <div class="w-11 h-11 -mt-5 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30 flex items-center justify-center border-2 border-white scale-105 transition-all">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+            </div>
+            <span class="text-[10px] font-bold text-blue-600 tracking-tight mt-0.5">Reportes</span>
+          } @else {
+            <svg class="w-5 h-5 mb-0.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            <span class="text-[10px] font-medium text-slate-400 tracking-tight">Reportes</span>
+          }
+        </button>
+
+        <!-- Item 8: Catálogo -->
+        <button
+          type="button"
+          class="flex flex-col items-center justify-center min-w-[68px] sm:min-w-[76px] flex-shrink-0 h-full py-1 transition-all relative"
           (click)="irACatalogo()"
         >
           @if (tabCatalogoActivo()) {
@@ -323,35 +567,10 @@ import { KardexModalComponent } from '../core/components/kardex-modal.component'
           }
         </button>
 
-        <!-- Item 5: Reportes -->
+        <!-- Item 9: Configuración (CFG-08) -->
         <button
           type="button"
-          class="flex flex-col items-center justify-center flex-1 h-full py-1 transition-all relative"
-          (click)="irAReportes()"
-        >
-          @if (tabReportesActivo()) {
-            <div class="w-11 h-11 -mt-5 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30 flex items-center justify-center border-2 border-white scale-105 transition-all">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="20" x2="18" y2="10"/>
-                <line x1="12" y1="20" x2="12" y2="4"/>
-                <line x1="6" y1="20" x2="6" y2="14"/>
-              </svg>
-            </div>
-            <span class="text-[10px] font-bold text-blue-600 tracking-tight mt-0.5">Reportes</span>
-          } @else {
-            <svg class="w-5 h-5 mb-0.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="20" x2="18" y2="10"/>
-              <line x1="12" y1="20" x2="12" y2="4"/>
-              <line x1="6" y1="20" x2="6" y2="14"/>
-            </svg>
-            <span class="text-[10px] font-medium text-slate-400 tracking-tight">Reportes</span>
-          }
-        </button>
-
-        <!-- Item 6: Configuración (CFG-08) -->
-        <button
-          type="button"
-          class="flex flex-col items-center justify-center flex-1 h-full py-1 transition-all relative"
+          class="flex flex-col items-center justify-center min-w-[68px] sm:min-w-[76px] flex-shrink-0 h-full py-1 transition-all relative"
           (click)="irAConfig()"
         >
           @if (tabConfigActivo()) {
@@ -396,6 +615,7 @@ export class AppShellComponent implements OnInit {
   protected readonly auth = inject(AuthService);
   protected readonly router = inject(Router);
   protected readonly menuAbierto = signal<boolean>(false);
+  protected readonly drawerMovilAbierto = signal<boolean>(false);
   /** Ruta actual normalizada (sin query/fragment). */
   protected readonly rutaActiva = signal<string>(this.router.url);
 
@@ -414,6 +634,14 @@ export class AppShellComponent implements OnInit {
         this.router.navigateByUrl('/movimiento');
       }
     }
+  }
+
+  protected toggleDrawerMovil(): void {
+    this.drawerMovilAbierto.update((v) => !v);
+  }
+
+  protected cerrarDrawerMovil(): void {
+    this.drawerMovilAbierto.set(false);
   }
 
   protected readonly enCatalogos = computed<boolean>(() =>
@@ -484,55 +712,66 @@ export class AppShellComponent implements OnInit {
 
   protected irACatalogos(): void {
     this.menuAbierto.set(false);
+    this.cerrarDrawerMovil();
     this.router.navigateByUrl('/catalogos');
   }
 
   protected irAInventario(): void {
+    this.cerrarDrawerMovil();
     this.shell.setActiveView('inventario');
     this.router.navigateByUrl('/inventario');
   }
 
   protected irAMovimiento(): void {
+    this.cerrarDrawerMovil();
     this.router.navigateByUrl('/movimiento');
   }
 
   protected irAKardex(): void {
+    this.cerrarDrawerMovil();
     this.shell.setActiveView('kardex' as any);
     this.router.navigateByUrl('/kardex');
   }
 
   protected irAReportes(): void {
+    this.cerrarDrawerMovil();
     this.shell.setActiveView('reportes');
     this.router.navigateByUrl('/reportes');
   }
 
   protected irACatalogo(): void {
     this.menuAbierto.set(false);
+    this.cerrarDrawerMovil();
     this.router.navigateByUrl('/catalogo');
   }
 
   protected irAClientes(): void {
     this.menuAbierto.set(false);
+    this.cerrarDrawerMovil();
     this.router.navigateByUrl('/clientes');
   }
 
   protected irAPuntoVenta(): void {
     this.menuAbierto.set(false);
+    this.cerrarDrawerMovil();
     this.router.navigateByUrl('/punto-venta');
   }
 
   protected irACuentasCorrientes(): void {
     this.menuAbierto.set(false);
+    this.cerrarDrawerMovil();
     this.router.navigateByUrl('/cuentas-corrientes');
   }
 
   protected irAConfig(): void {
     this.menuAbierto.set(false);
+    this.cerrarDrawerMovil();
     this.router.navigateByUrl('/config');
   }
 
   protected cerrarSesion(): void {
     this.menuAbierto.set(false);
+    this.cerrarDrawerMovil();
     this.auth.logout();
   }
 

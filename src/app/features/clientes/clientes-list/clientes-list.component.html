@@ -199,112 +199,267 @@
     </section>
   }
 
-  <!-- Lista de Clientes -->
-  <app-tabla
-    [cargando]="cargando()"
-    [isEmpty]="clientesFiltrados().length === 0"
-    mensajeVacio="No se encontraron clientes con los filtros seleccionados."
-    [modo]="'paginado'"
-    [page]="page()"
-    [totalPages]="totalPages()"
-    [totalItems]="totalClientes()"
-    [pageSize]="pageSize()"
-    (pageChange)="irAPagina($event)"
-  >
-    <thead table-header>
-      <tr>
-        <th app-th class="w-16">ID</th>
-        <th app-th>Nombre Completo</th>
-        <th app-th>Tipo Doc</th>
-        <th app-th>Documento</th>
-        <th app-th>Teléfono</th>
-        <th app-th>Estado</th>
-        <th app-th align="right">Acciones</th>
-      </tr>
-    </thead>
-    <tbody table-body>
-      @for (c of clientesFiltrados(); track c.id) {
-        <tr app-tr class="group">
-          <td app-td class="text-xs font-mono text-slate-400">#{{ c.id }}</td>
-          <td app-td>
-            <div class="text-sm font-bold text-slate-800">
-              {{ c.nombre }}
-              <!-- L-2 audit (fix #22): chip de actividad comercial si el
-                   backend lo devuelve. Solo se popula en el response
-                   individual (GET /api/clientes/{id}); en el listado
-                   paginado viene null. Mostrarlo en cada fila aqui es
-                   'gratis' si el FE ya hace drilldown via drawer. -->
-              @if (c.cantidadVentas != null && c.cantidadVentas > 0) {
-                <span class="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 align-middle">
-                  {{ c.cantidadVentas }} {{ c.cantidadVentas === 1 ? 'venta' : 'ventas' }}
-                </span>
-              }
+  <!-- Barra de Vista (Tarjetas / Tabla) y Conteo -->
+  <div class="surface-card p-3 sm:p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div class="flex items-center gap-2">
+      <svg class="w-5 h-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+      </svg>
+      <h3 class="text-sm font-bold text-slate-800">
+        {{ mostrarPapelera() ? 'Clientes en Papelera' : 'Listado de Clientes' }}
+      </h3>
+      <span class="text-xs font-semibold text-slate-400 tabular-nums">
+        ({{ totalClientes() }} {{ totalClientes() === 1 ? 'cliente' : 'clientes' }})
+      </span>
+    </div>
+
+    <!-- Toggle de Vista: Tarjetas / Tabla -->
+    <div class="inline-flex p-1 bg-slate-100 rounded-lg text-xs font-semibold self-start sm:self-auto">
+      <button
+        type="button"
+        class="px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
+        [class.bg-white]="vistaModo() === 'cards'"
+        [class.shadow-sm]="vistaModo() === 'cards'"
+        [class.text-blue-600]="vistaModo() === 'cards'"
+        [class.text-slate-500]="vistaModo() !== 'cards'"
+        (click)="vistaModo.set('cards')"
+      >
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+        Tarjetas
+      </button>
+      <button
+        type="button"
+        class="px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 cursor-pointer"
+        [class.bg-white]="vistaModo() === 'tabla'"
+        [class.shadow-sm]="vistaModo() === 'tabla'"
+        [class.text-blue-600]="vistaModo() === 'tabla'"
+        [class.text-slate-500]="vistaModo() !== 'tabla'"
+        (click)="vistaModo.set('tabla')"
+      >
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Tabla
+      </button>
+    </div>
+  </div>
+
+  @if (vistaModo() === 'cards') {
+    @if (cargando()) {
+      <div class="surface-card p-12 text-center text-slate-400">
+        <svg class="w-8 h-8 animate-spin mx-auto mb-2 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+        <p class="text-xs font-semibold">Cargando clientes...</p>
+      </div>
+    } @else if (clientesFiltrados().length === 0) {
+      <div class="surface-card p-10 text-center text-slate-400">
+        <svg class="w-10 h-10 mx-auto mb-2 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+        <p class="text-xs">No se encontraron clientes con los filtros seleccionados.</p>
+      </div>
+    } @else {
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        @for (c of clientesFiltrados(); track c.id) {
+          <article class="surface-card p-4 rounded-xl border border-slate-200/80 hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
+            <!-- Barra lateral de estado de deuda -->
+            <div class="absolute left-0 top-0 bottom-0 w-1.5" [class.bg-rose-500]="clienteTieneDeuda(c)" [class.bg-emerald-500]="!clienteTieneDeuda(c)"></div>
+
+            <div class="pl-1">
+              <!-- Header de Tarjeta: Nombre, Documento y Badges -->
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[10px] font-mono text-slate-400 font-semibold">#{{ c.id }}</span>
+                    <span class="chip chip-neutral text-[9px]">{{ c.tipoDocumentoNombre }}</span>
+                    @if (c.cantidadVentas != null && c.cantidadVentas > 0) {
+                      <span class="chip bg-blue-50 text-blue-700 text-[9px] font-bold">
+                        {{ c.cantidadVentas }} {{ c.cantidadVentas === 1 ? 'venta' : 'ventas' }}
+                      </span>
+                    }
+                  </div>
+                  <h4 class="text-sm font-bold text-slate-900 leading-snug mt-1 truncate" [title]="c.nombre">
+                    {{ c.nombre }}
+                  </h4>
+                  <p class="text-xs text-slate-500 font-mono mt-0.5">
+                    Doc: {{ c.documento || 'Sin doc' }}
+                  </p>
+                </div>
+
+                <div class="shrink-0">
+                  @if (clienteTieneDeuda(c)) {
+                    <span class="chip chip-danger text-[10px] font-extrabold flex items-center gap-1">
+                      <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      Con deuda
+                    </span>
+                  } @else {
+                    <span class="chip chip-success text-[10px] font-extrabold flex items-center gap-1">
+                      <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>
+                      Al día
+                    </span>
+                  }
+                </div>
+              </div>
+
+              <!-- Contacto con enlaces directos -->
+              <div class="py-2 px-2.5 rounded-lg bg-slate-50 border border-slate-100 my-2 space-y-1 text-xs">
+                @if (c.telefono) {
+                  <div class="flex items-center gap-2 text-slate-600">
+                    <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    <a [href]="'tel:' + c.telefono" class="font-medium text-blue-600 hover:underline truncate">{{ c.telefono }}</a>
+                  </div>
+                }
+                @if (c.email) {
+                  <div class="flex items-center gap-2 text-slate-600">
+                    <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                    <a [href]="'mailto:' + c.email" class="text-slate-600 hover:underline truncate">{{ c.email }}</a>
+                  </div>
+                }
+                @if (!c.telefono && !c.email) {
+                  <span class="inline-flex items-center gap-1 text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64A9 9 0 0 1 20.77 15"/><path d="M6.16 6.16a9 9 0 1 0 12.68 12.68"/><path d="m1 1 22 22"/></svg>
+                    Sin datos de contacto
+                  </span>
+                }
+              </div>
             </div>
-            @if (c.email) {
-              <div class="text-[11px] text-slate-400 mt-0.5">{{ c.email }}</div>
-            }
-            @if (!c.telefono && !c.email) {
-              <!-- O-5 audit: badge 'Sin contacto' para clientes sin
-                   telefono ni email. Asi el operador ve de un vistazo
-                   que ese cliente no se puede contactar y deberia
-                   capturar datos antes de cualquier gestion. -->
-              <span class="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500">
-                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18.36 6.64A9 9 0 0 1 20.77 15"/><path d="M6.16 6.16a9 9 0 1 0 12.68 12.68"/><path d="m1 1 22 22"/></svg>
-                Sin contacto
-              </span>
-            }
-          </td>
-          <td app-td>
-            <span class="chip chip-neutral">{{ c.tipoDocumentoNombre }}</span>
-          </td>
-          <td app-td class="text-sm text-slate-600 font-mono">{{ c.documento || '-' }}</td>
-          <td app-td class="text-sm text-slate-600">{{ c.telefono || '-' }}</td>
-          <td app-td>
-            @if (clienteTieneDeuda(c)) {
-              <span class="chip chip-danger">
-                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                Con deuda
-              </span>
-            } @else {
-              <span class="chip chip-success">
-                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>
-                Sin deuda
-              </span>
-            }
-          </td>
-          <td app-td align="right">
-            <div class="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+
+            <!-- Acciones de Tarjeta -->
+            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2 pl-1">
               @if (mostrarPapelera()) {
-                <!-- F-1 audit: vista papelera -> unico boton relevante es Restaurar.
-                     H-2 audit: el boton restaurar es Admin-only. -->
                 @if (auth.esAdmin()) {
-                  <button type="button" (click)="confirmarRestaurar(c)" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="Restaurar">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                  <button type="button" (click)="confirmarRestaurar(c)"
+                    class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors flex items-center justify-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                    Restaurar
                   </button>
                 }
               } @else {
-                <button type="button" (click)="verCuenta(c.id)" class="btn-icon hover:text-blue-600 hover:bg-blue-50" title="Ver cuenta">
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <button type="button" (click)="verCuenta(c.id)"
+                  class="flex-1 py-1.5 px-2.5 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors flex items-center justify-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Cuenta
                 </button>
-                <button type="button" (click)="abrirModalEditar(c)" class="btn-icon hover:text-blue-600 hover:bg-blue-50" title="Editar">
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                <button type="button" (click)="abrirModalEditar(c)"
+                  class="py-1.5 px-2.5 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center gap-1">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                  Editar
                 </button>
-                <!-- H-2 audit: el boton Eliminar es Admin-only. Wrap en
-                     @if (esAdmin()) para que el Operador no lo vea (el
-                     backend igual rechazaria con 403, pero escondemos el
-                     control para no tentarlo). -->
                 @if (auth.esAdmin()) {
-                  <button type="button" (click)="confirmarEliminar(c)" class="btn-icon hover:text-rose-600 hover:bg-rose-50" title="Eliminar">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                  <button type="button" (click)="confirmarEliminar(c)"
+                    class="py-1.5 px-2 rounded-lg text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors flex items-center justify-center"
+                    title="Eliminar cliente">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                   </button>
                 }
               }
             </div>
-          </td>
-        </tr>
+          </article>
+        }
+      </div>
+
+      <!-- Paginador para la vista de tarjetas -->
+      @if (totalPages() > 1) {
+        <div class="mt-4">
+          <app-paginador
+            [page]="page()"
+            [totalPages]="totalPages()"
+            [totalItems]="totalClientes()"
+            [pageSize]="pageSize()"
+            [cargando]="cargando()"
+            (pageChange)="irAPagina($event)"
+          />
+        </div>
       }
-    </tbody>
-  </app-tabla>
+    }
+  } @else {
+    <!-- Lista de Clientes (Modo Tabla) -->
+    <app-tabla
+      [cargando]="cargando()"
+      [isEmpty]="clientesFiltrados().length === 0"
+      mensajeVacio="No se encontraron clientes con los filtros seleccionados."
+      [modo]="'paginado'"
+      [page]="page()"
+      [totalPages]="totalPages()"
+      [totalItems]="totalClientes()"
+      [pageSize]="pageSize()"
+      (pageChange)="irAPagina($event)"
+    >
+      <thead table-header>
+        <tr>
+          <th app-th class="w-16">ID</th>
+          <th app-th>Nombre Completo</th>
+          <th app-th>Tipo Doc</th>
+          <th app-th>Documento</th>
+          <th app-th>Teléfono</th>
+          <th app-th>Estado</th>
+          <th app-th align="right">Acciones</th>
+        </tr>
+      </thead>
+      <tbody table-body>
+        @for (c of clientesFiltrados(); track c.id) {
+          <tr app-tr class="group">
+            <td app-td class="text-xs font-mono text-slate-400">#{{ c.id }}</td>
+            <td app-td>
+              <div class="text-sm font-bold text-slate-800">
+                {{ c.nombre }}
+                @if (c.cantidadVentas != null && c.cantidadVentas > 0) {
+                  <span class="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 align-middle">
+                    {{ c.cantidadVentas }} {{ c.cantidadVentas === 1 ? 'venta' : 'ventas' }}
+                  </span>
+                }
+              </div>
+              @if (c.email) {
+                <div class="text-[11px] text-slate-400 mt-0.5">{{ c.email }}</div>
+              }
+              @if (!c.telefono && !c.email) {
+                <span class="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500">
+                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18.36 6.64A9 9 0 0 1 20.77 15"/><path d="M6.16 6.16a9 9 0 1 0 12.68 12.68"/><path d="m1 1 22 22"/></svg>
+                  Sin contacto
+                </span>
+              }
+            </td>
+            <td app-td>
+              <span class="chip chip-neutral">{{ c.tipoDocumentoNombre }}</span>
+            </td>
+            <td app-td class="text-sm text-slate-600 font-mono">{{ c.documento || '-' }}</td>
+            <td app-td class="text-sm text-slate-600">{{ c.telefono || '-' }}</td>
+            <td app-td>
+              @if (clienteTieneDeuda(c)) {
+                <span class="chip chip-danger">
+                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  Con deuda
+                </span>
+              } @else {
+                <span class="chip chip-success">
+                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>
+                  Sin deuda
+                </span>
+              }
+            </td>
+            <td app-td align="right">
+              <div class="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                @if (mostrarPapelera()) {
+                  @if (auth.esAdmin()) {
+                    <button type="button" (click)="confirmarRestaurar(c)" class="btn-icon text-emerald-600 hover:bg-emerald-50" title="Restaurar">
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                    </button>
+                  }
+                } @else {
+                  <button type="button" (click)="verCuenta(c.id)" class="btn-icon hover:text-blue-600 hover:bg-blue-50" title="Ver cuenta">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                  <button type="button" (click)="abrirModalEditar(c)" class="btn-icon hover:text-blue-600 hover:bg-blue-50" title="Editar">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                  </button>
+                  @if (auth.esAdmin()) {
+                    <button type="button" (click)="confirmarEliminar(c)" class="btn-icon hover:text-rose-600 hover:bg-rose-50" title="Eliminar">
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                    </button>
+                  }
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </app-tabla>
+  }
 </div>
 
 <!-- Drawer Estado de Cuenta -->
@@ -461,7 +616,7 @@
             }
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Tipo de documento <span class="text-rose-500">*</span></label>
               <app-dropdown
@@ -497,7 +652,7 @@
             </div>
           }
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Teléfono</label>
               <input type="text" formControlName="telefono" appOnlyNumbers class="input-base w-full h-10 px-3 text-sm tabular-nums" placeholder="Ej. 987 654 321" maxlength="50">

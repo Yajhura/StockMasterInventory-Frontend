@@ -15,6 +15,7 @@ import { CrearVentaPayload, PagoInicial, Venta, VentaFiltros, KpiVentas, EstadoP
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
 import { DatePickerComponent } from '../../../core/components/date-picker.component';
 import { DateRangePickerComponent, DateRange } from '../../../core/components/date-range-picker.component';
+import { PaginadorComponent } from '../../../core/components/paginador.component';
 import { TABLA_COMPONENTS } from '../../../core/components/tabla.component';
 
 @Component({
@@ -27,12 +28,23 @@ import { TABLA_COMPONENTS } from '../../../core/components/tabla.component';
     DropdownComponent,
     DatePickerComponent,
     DateRangePickerComponent,
+    PaginadorComponent,
     ...TABLA_COMPONENTS,
     OnlyNumbersDirective
   ],
+  host: {
+    '(window:resize)': 'onResize()'
+  },
   templateUrl: './punto-venta.component.html',
 })
 export class PuntoVentaComponent implements OnInit {
+  protected readonly vistaModo = signal<'cards' | 'tabla'>('cards');
+
+  protected onResize(): void {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024 && this.vistaModo() === 'tabla') {
+      this.vistaModo.set('cards');
+    }
+  }
   private readonly fb = inject(FormBuilder);
   private readonly apiVentas = inject(ApiVentasService);
   private readonly apiClientes = inject(ApiClientesService);
@@ -396,6 +408,9 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
   }
 
   ngOnInit(): void {
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      this.vistaModo.set('tabla');
+    }
     this.cargarVentas();
     this.cargarDatos();
     this.cargarMetodosPago();

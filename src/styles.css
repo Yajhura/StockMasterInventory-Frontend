@@ -203,6 +203,15 @@
   animation: fadeInUp 0.35s ease-out both;
 }
 
+/* Hide scrollbars for clean touch/mobile scroll areas */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 @keyframes pulse-soft {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }

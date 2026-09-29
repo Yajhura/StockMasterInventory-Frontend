@@ -24,6 +24,7 @@ import {
 } from '../../../core/models/cliente.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
 import { DateRangePickerComponent, DateRange } from '../../../core/components/date-range-picker.component';
+import { PaginadorComponent } from '../../../core/components/paginador.component';
 import { TABLA_COMPONENTS } from '../../../core/components/tabla.component';
 import { OnlyNumbersDirective } from '../../../core/directives/only-numbers.directive';
 import { AuthService } from '../../../core/services/auth.service';
@@ -37,9 +38,13 @@ import { AuthService } from '../../../core/services/auth.service';
     FormsModule,
     DropdownComponent,
     DateRangePickerComponent,
+    PaginadorComponent,
     ...TABLA_COMPONENTS,
     OnlyNumbersDirective,
   ],
+  host: {
+    '(window:resize)': 'onResize()',
+  },
   templateUrl: './clientes-list.component.html',
 })
 export class ClientesListComponent implements OnInit, OnDestroy {
@@ -57,6 +62,7 @@ export class ClientesListComponent implements OnInit, OnDestroy {
   protected readonly clientes = signal<Cliente[]>([]);
   protected readonly cargando = signal<boolean>(true);
   protected readonly tiposDocumento = signal<TipoDocumento[]>([]);
+  protected readonly vistaModo = signal<'cards' | 'tabla'>('cards');
 
   // --- Paginacion (C-4 / K-4 audit) ---
   protected readonly totalClientes = signal<number>(0);
@@ -223,6 +229,9 @@ export class ClientesListComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    if (typeof window !== 'undefined') {
+      this.vistaModo.set(window.innerWidth < 1024 ? 'cards' : 'tabla');
+    }
     this.cargarTiposDocumento();
     this.cargarClientes();
     this.cargarKpis();
@@ -284,6 +293,14 @@ export class ClientesListComponent implements OnInit, OnDestroy {
     this.busquedaSub?.unsubscribe();
     this.documentoSub?.unsubscribe();
     this.similaresSub?.unsubscribe();
+  }
+
+  protected onResize(): void {
+    if (typeof window !== 'undefined') {
+      if (window.innerWidth < 1024 && this.vistaModo() === 'tabla') {
+        this.vistaModo.set('cards');
+      }
+    }
   }
 
   private cargarTiposDocumento(): void {

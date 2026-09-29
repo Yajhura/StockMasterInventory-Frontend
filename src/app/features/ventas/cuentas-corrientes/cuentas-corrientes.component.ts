@@ -11,6 +11,7 @@ import { Venta, CrearAbonoPayload, VentaDetallada, Cuota, KpiCobranza, VentaFilt
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
 import { ConfirmDialogComponent } from '../../../core/components/confirm-dialog.component';
 import { DateRangePickerComponent, DateRange } from '../../../core/components/date-range-picker.component';
+import { PaginadorComponent } from '../../../core/components/paginador.component';
 import { TABLA_COMPONENTS } from '../../../core/components/tabla.component';
 
 interface CuotaConVencida extends Cuota {
@@ -37,11 +38,22 @@ interface CuotaAfectada {
     DropdownComponent,
     ConfirmDialogComponent,
     DateRangePickerComponent,
+    PaginadorComponent,
     ...TABLA_COMPONENTS
   ],
+  host: {
+    '(window:resize)': 'onResize()'
+  },
   templateUrl: './cuentas-corrientes.component.html',
 })
 export class CuentasCorrientesComponent implements OnInit, OnDestroy {
+  protected readonly vistaModo = signal<'cards' | 'tabla'>('cards');
+
+  protected onResize(): void {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024 && this.vistaModo() === 'tabla') {
+      this.vistaModo.set('cards');
+    }
+  }
   private readonly apiVentas = inject(ApiVentasService);
   private readonly apiClientes = inject(ApiClientesService);
   private readonly notify = inject(NotificationService);
@@ -259,6 +271,9 @@ export class CuentasCorrientesComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      this.vistaModo.set('tabla');
+    }
     this.cargarDeudas();
     this.cargarKpisCobranza();
     this.cargarClientes();
