@@ -311,4 +311,41 @@ describe('CuentasCorrientesComponent cancellations', () => {
     expect(calculadas[1].numero).toBe(2);
     expect(calculadas[1].montoAbonado).toBe(5);
   });
+
+  it('supports mobile tactile actions: stepper, quick sums, and abonarHastaCuota', () => {
+    const instance = component as any;
+    const detalleConCuotas = {
+      ...venta,
+      saldoPendiente: 30,
+      cuotas: [
+        { ...venta.cuotas[0], id: 3, numero: 1, monto: 10, montoPagado: 0, montoPendiente: 10, fechaVencimiento: '2026-09-20', estado: 'Pendiente' },
+        { ...venta.cuotas[0], id: 4, numero: 2, monto: 10, montoPagado: 0, montoPendiente: 10, fechaVencimiento: '2026-10-20', estado: 'Pendiente' },
+        { ...venta.cuotas[0], id: 5, numero: 3, monto: 10, montoPagado: 0, montoPendiente: 10, fechaVencimiento: '2026-11-20', estado: 'Pendiente' },
+      ],
+    };
+
+    instance.abrirModalAbono(detalleConCuotas, detalleConCuotas);
+    expect(instance.abonoTabMovil()).toBe('pago');
+
+    // Stepper incrementar / decrementar
+    instance.incrementarCuotasAdelantar();
+    expect(instance.cantidadCuotasAdelantar()).toBe(2);
+    expect(instance.formAbono.value.monto).toBe(20);
+
+    instance.decrementarCuotasAdelantar();
+    expect(instance.cantidadCuotasAdelantar()).toBe(1);
+    expect(instance.formAbono.value.monto).toBe(10);
+
+    // abonarHastaCuota
+    instance.abonarHastaCuota(3);
+    expect(instance.cantidadCuotasAdelantar()).toBe(3);
+    expect(instance.formAbono.value.monto).toBe(30);
+
+    // sumarMontoAbono & fijarMontoExacto
+    instance.fijarMontoExacto(5);
+    expect(instance.formAbono.value.monto).toBe(5);
+
+    instance.sumarMontoAbono(10);
+    expect(instance.formAbono.value.monto).toBe(15);
+  });
 });

@@ -16,6 +16,7 @@ import { DropdownComponent, DropdownOption } from '../../../core/components/drop
 import { DatePickerComponent } from '../../../core/components/date-picker.component';
 import { DateRangePickerComponent, DateRange } from '../../../core/components/date-range-picker.component';
 import { PaginadorComponent } from '../../../core/components/paginador.component';
+import { InputMonedaComponent } from '../../../core/components/input-moneda.component';
 import { TABLA_COMPONENTS } from '../../../core/components/tabla.component';
 
 @Component({
@@ -29,6 +30,7 @@ import { TABLA_COMPONENTS } from '../../../core/components/tabla.component';
     DatePickerComponent,
     DateRangePickerComponent,
     PaginadorComponent,
+    InputMonedaComponent,
     ...TABLA_COMPONENTS,
     OnlyNumbersDirective
   ],
@@ -65,6 +67,7 @@ export class PuntoVentaComponent implements OnInit {
   protected readonly ventas = signal<Venta[]>([]);
   protected readonly cargandoVentas = signal<boolean>(true);
   protected readonly isPosOpen = signal<boolean>(false);
+  protected readonly posTabMovil = signal<'productos' | 'cobro'>('productos');
 
   // --- Estado del plan de credito ---
   protected readonly esCredito = signal<boolean>(false);
@@ -309,7 +312,12 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
   protected readonly detalleInvalido = computed(() => {
     const val = this.formValue();
     if (!val || !val.detalles) return false;
-    return val.detalles.some((d: any) => Number(d.cantidad) <= 0 || Number(d.precioUnitario) < 0);
+    // precioUnitario debe ser ESTRICTAMENTE > 0 (no se permite precio
+    // cero: una venta con producto a S/ 0.00 es, en la práctica, una
+    // entrega gratis — fuera del scope del POS). El form validator
+    // sigue en `min(0)` para permitir que el operador borre y retipee
+    // (transitorio); este check es la barrera al confirmar la venta.
+    return val.detalles.some((d: any) => Number(d.cantidad) <= 0 || Number(d.precioUnitario) <= 0);
   });
 
   protected readonly stockExcedido = computed(() => {
@@ -500,11 +508,13 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
   }
 
   protected abrirPOS() {
+    this.posTabMovil.set('productos');
     this.isPosOpen.set(true);
   }
 
   protected cerrarPOS() {
     this.isPosOpen.set(false);
+    this.posTabMovil.set('productos');
     this.formVenta.reset({ clienteId: null, observacion: '' });
     this.detallesArray.clear();
     this.pagosArray.clear();
@@ -594,6 +604,40 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
 
   protected removerDetalle(index: number) {
     this.detallesArray.removeAt(index);
+  }
+
+  protected incrementarCantidad(index: number): void {
+    const control = this.detallesArray.at(index);
+    if (!control) return;
+    const actual = Number(control.get('cantidad')?.value) || 1;
+    const stock = Number(control.get('stockActual')?.value) || 0;
+    if (actual < stock) {
+      control.patchValue({ cantidad: actual + 1 });
+    } else {
+      this.notify.warning(`Stock máximo disponible alcanzado (${stock})`);
+    }
+  }
+
+  protected decrementarCantidad(index: number): void {
+    const control = this.detallesArray.at(index);
+    if (!control) return;
+    const actual = Number(control.get('cantidad')?.value) || 1;
+    if (actual > 1) {
+      control.patchValue({ cantidad: actual - 1 });
+    }
+  }
+
+  protected cambiarCantidadManual(index: number, valor: unknown): void {
+    const control = this.detallesArray.at(index);
+    if (!control) return;
+    const num = Math.max(1, Math.floor(Number(valor) || 1));
+    const stock = Number(control.get('stockActual')?.value) || 0;
+    if (num > stock) {
+      control.patchValue({ cantidad: stock });
+      this.notify.warning(`La cantidad se ajustó al stock disponible (${stock})`);
+    } else {
+      control.patchValue({ cantidad: num });
+    }
   }
 
   protected agregarPagoVacio() {

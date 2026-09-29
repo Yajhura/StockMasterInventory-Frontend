@@ -26,11 +26,13 @@ interface FilaHistorial {
   esStockInicial: boolean;
 }
 
+import { InputMonedaComponent } from '../../core/components/input-moneda.component';
+
 @Component({
   selector: 'app-movimiento',
   standalone: true,
   templateUrl: './movimiento.component.html',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, DropdownComponent, RouterLink, ...TABLA_COMPONENTS],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, DropdownComponent, RouterLink, InputMonedaComponent, ...TABLA_COMPONENTS],
   host: {
     '(window:resize)': 'onResize()'
   }

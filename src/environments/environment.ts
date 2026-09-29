@@ -12,6 +12,6 @@
  */
 export const environment = {
   production: false,
-  apiBaseUrl: '',
+  apiBaseUrl: 'https://localhost:63153',
   reportesConWac: true,
 };

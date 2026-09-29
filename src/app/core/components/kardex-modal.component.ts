@@ -13,11 +13,11 @@ import { TABLA_COMPONENTS } from './tabla.component';
   template: `
     <app-modal-overlay
       [open]="kardex.kardexProductoId() !== null"
-      containerClass="w-full max-w-5xl max-h-[90vh] overflow-hidden"
+      containerClass="w-full max-w-5xl max-h-[92vh] sm:max-h-[90vh] overflow-hidden"
       (close)="cerrar()">
-      <div class="flex flex-col h-full max-h-[90vh]">
+      <div class="flex flex-col h-full max-h-[92vh] sm:max-h-[90vh]">
         <!-- Header sin flex-wrap para impedir que el boton cerrar baje -->
-        <header class="px-6 py-4 border-b border-slate-200 flex items-center justify-between gap-4 flex-nowrap flex-shrink-0">
+        <header class="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 flex items-center justify-between gap-3 sm:gap-4 flex-nowrap flex-shrink-0">
           <div class="min-w-0 flex-1">
             <h3 class="text-sm font-bold text-slate-900 inline-flex items-center gap-2 max-w-full truncate" [title]="nombreProducto()">
               <svg class="w-4 h-4 text-blue-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -30,7 +30,7 @@ import { TABLA_COMPONENTS } from './tabla.component';
           <div class="flex items-center gap-2 flex-shrink-0">
             <button
               type="button"
-              class="grid place-items-center w-9 h-9 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+              class="grid place-items-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
               (click)="cerrar()"
               aria-label="Cerrar modal de Kardex"
               title="Cerrar"
@@ -40,56 +40,140 @@ import { TABLA_COMPONENTS } from './tabla.component';
           </div>
         </header>
 
-        <div class="p-6 overflow-y-auto scrollbar-thin flex-1 min-h-0">
-          <app-tabla
-            modo="scroll"
-            [limiteScroll]="10"
-            [itemsCount]="kardex.kardexMovimientos().length"
-            [cargando]="kardex.kardexCargando()"
-            [isEmpty]="kardex.kardexMovimientos().length === 0"
-            mensajeVacio="Este producto aún no tiene movimientos registrados."
-          >
-            <tr table-header class="text-left">
-              <th app-th>Fecha y Hora</th>
-              <th app-th>Tipo</th>
-              <th app-th align="right">Cant.</th>
-              <th app-th align="right">Precio Unit.</th>
-              <th app-th align="right">Total</th>
-              <th app-th>Cliente</th>
-            </tr>
-
-            <ng-container table-body>
+        <div class="p-3 sm:p-6 overflow-y-auto scrollbar-thin flex-1 min-h-0">
+          <!-- VISTA MÓVIL: Tarjetas Táctiles (sm:hidden) -->
+          <div class="sm:hidden space-y-2.5">
+            @if (kardex.kardexCargando()) {
+              <div class="p-8 text-center text-slate-400">
+                <svg class="w-7 h-7 animate-spin mx-auto mb-2 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+                <p class="text-xs font-semibold">Cargando movimientos...</p>
+              </div>
+            } @else if (kardex.kardexMovimientos().length === 0) {
+              <div class="p-8 text-center text-slate-400">
+                <svg class="w-9 h-9 mx-auto mb-2 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <p class="text-xs">Este producto aún no tiene movimientos registrados.</p>
+              </div>
+            } @else {
               @for (m of kardex.kardexMovimientos(); track m.id) {
-                <tr app-tr>
-                  <td app-td extraClass="text-xs text-slate-600 tabular-nums whitespace-nowrap">{{ formatearFecha(m.fecha) }}</td>
-                  <td app-td>
-                    <span [class]="esIngreso(m) ? 'chip chip-success' : 'chip chip-danger'">
-                      {{ esIngreso(m) ? 'INGRESO' : 'SALIDA' }}
-                    </span>
-                  </td>
-                  <td app-td align="right" extraClass="text-sm font-bold tabular-nums" [class.text-emerald-600]="esIngreso(m)" [class.text-rose-600]="!esIngreso(m)">
-                    {{ esIngreso(m) ? '+' : '-' }}{{ m.cantidad }}
-                  </td>
-                  <td app-td align="right" extraClass="text-sm text-slate-700 tabular-nums whitespace-nowrap">
-                    S/. {{ m.precioUnitario | number:'1.2-2' }}
-                  </td>
-                  <td app-td align="right" extraClass="text-sm font-semibold text-slate-900 tabular-nums whitespace-nowrap">
-                    S/. {{ (m.cantidad * m.precioUnitario) | number:'1.2-2' }}
-                  </td>
-                  <td app-td extraClass="text-xs text-slate-500 max-w-[150px] truncate" [title]="m.cliente || ''">
-                    {{ m.cliente || '—' }}
-                  </td>
-                </tr>
+                <article class="surface-card p-3 rounded-xl border border-slate-200/90 relative overflow-hidden">
+                  <!-- Indicador de color lateral -->
+                  <div
+                    class="absolute left-0 top-0 bottom-0 w-1"
+                    [class.bg-emerald-500]="esIngreso(m)"
+                    [class.bg-rose-500]="!esIngreso(m)"
+                  ></div>
+
+                  <div class="pl-1.5">
+                    <!-- Cabecera de tarjeta: Tipo y Fecha -->
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                      <span [class]="esIngreso(m) ? 'chip chip-success text-[10px] font-extrabold' : 'chip chip-danger text-[10px] font-extrabold'">
+                        {{ esIngreso(m) ? 'INGRESO' : 'SALIDA' }}
+                      </span>
+                      <span class="text-[11px] font-mono text-slate-500 tabular-nums">
+                        {{ formatearFecha(m.fecha) }}
+                      </span>
+                    </div>
+
+                    <!-- Métricas: Cantidad, Precio Unitario, Total -->
+                    <div class="grid grid-cols-3 gap-2 p-2 rounded-lg bg-slate-50 border border-slate-100 my-2">
+                      <div>
+                        <p class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Cant.</p>
+                        <p class="text-xs font-extrabold tabular-nums" [class.text-emerald-600]="esIngreso(m)" [class.text-rose-600]="!esIngreso(m)">
+                          {{ esIngreso(m) ? '+' : '-' }}{{ m.cantidad }}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">P. Unit.</p>
+                        <p class="text-xs font-bold text-slate-700 tabular-nums">
+                          S/. {{ m.precioUnitario | number:'1.2-2' }}
+                        </p>
+                      </div>
+
+                      <div class="text-right">
+                        <p class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Total</p>
+                        <p class="text-xs font-extrabold text-slate-900 tabular-nums">
+                          S/. {{ (m.cantidad * m.precioUnitario) | number:'1.2-2' }}
+                        </p>
+                      </div>
+                    </div>
+
+                    <!-- Pie: Cliente -->
+                    <div class="flex items-center gap-1.5 text-xs text-slate-500 pt-1">
+                      <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <span class="font-medium text-slate-700 truncate text-[11px]">{{ m.cliente || 'Sin cliente registrado' }}</span>
+                    </div>
+                  </div>
+                </article>
               }
-            </ng-container>
-          </app-tabla>
+            }
+          </div>
+
+          <!-- VISTA ESCRITORIO: Tabla tradicional (hidden sm:block) -->
+          <div class="hidden sm:block">
+            <app-tabla
+              modo="scroll"
+              [limiteScroll]="10"
+              [itemsCount]="kardex.kardexMovimientos().length"
+              [cargando]="kardex.kardexCargando()"
+              [isEmpty]="kardex.kardexMovimientos().length === 0"
+              mensajeVacio="Este producto aún no tiene movimientos registrados."
+            >
+              <tr table-header class="text-left">
+                <th app-th>Fecha y Hora</th>
+                <th app-th>Tipo</th>
+                <th app-th align="right">Cant.</th>
+                <th app-th align="right">Precio Unit.</th>
+                <th app-th align="right">Total</th>
+                <th app-th>Cliente</th>
+              </tr>
+
+              <ng-container table-body>
+                @for (m of kardex.kardexMovimientos(); track m.id) {
+                  <tr app-tr>
+                    <td app-td extraClass="text-xs text-slate-600 tabular-nums whitespace-nowrap">{{ formatearFecha(m.fecha) }}</td>
+                    <td app-td>
+                      <span [class]="esIngreso(m) ? 'chip chip-success' : 'chip chip-danger'">
+                        {{ esIngreso(m) ? 'INGRESO' : 'SALIDA' }}
+                      </span>
+                    </td>
+                    <td app-td align="right" extraClass="text-sm font-bold tabular-nums" [class.text-emerald-600]="esIngreso(m)" [class.text-rose-600]="!esIngreso(m)">
+                      {{ esIngreso(m) ? '+' : '-' }}{{ m.cantidad }}
+                    </td>
+                    <td app-td align="right" extraClass="text-sm text-slate-700 tabular-nums whitespace-nowrap">
+                      S/. {{ m.precioUnitario | number:'1.2-2' }}
+                    </td>
+                    <td app-td align="right" extraClass="text-sm font-semibold text-slate-900 tabular-nums whitespace-nowrap">
+                      S/. {{ (m.cantidad * m.precioUnitario) | number:'1.2-2' }}
+                    </td>
+                    <td app-td extraClass="text-xs text-slate-500 max-w-[150px] truncate" [title]="m.cliente || ''">
+                      {{ m.cliente || '—' }}
+                    </td>
+                  </tr>
+                }
+              </ng-container>
+            </app-tabla>
+          </div>
         </div>
 
-        <!-- Footer con botón de cerrar pegado a la derecha -->
-        <footer class="px-6 py-3.5 border-t border-slate-200 bg-slate-50/50 flex items-center justify-end gap-3 flex-shrink-0">
+        <!-- Footer con botón de exportar Excel y cerrar -->
+        <footer class="px-4 sm:px-6 py-3 sm:py-3.5 border-t border-slate-200 bg-slate-50/50 flex items-center justify-between gap-2.5 flex-shrink-0">
+          @if (kardex.kardexMovimientos().length > 0) {
+            <button
+              type="button"
+              class="btn-secondary h-10 sm:h-9 px-3 text-xs font-semibold gap-1.5 text-emerald-700 hover:bg-emerald-50"
+              (click)="exportarExcel()"
+              title="Exportar a Excel"
+            >
+              <svg class="w-4 h-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              <span>Excel</span>
+            </button>
+          } @else {
+            <span></span>
+          }
           <button
             type="button"
-            class="btn-secondary h-9 px-4 text-xs font-semibold"
+            class="btn-secondary h-10 sm:h-9 px-4 text-xs font-semibold"
             (click)="cerrar()"
           >
             Cerrar

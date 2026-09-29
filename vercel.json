@@ -2,6 +2,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist/stockmaster/browser",
   "rewrites": [
+    { "source": "/api/:path*", "destination": "https://cheslo-001-site1.dtempurl.com/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

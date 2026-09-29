@@ -7,6 +7,6 @@
  */
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://cheslo-001-site1.dtempurl.com',
+  apiBaseUrl: '',
   reportesConWac: true,
 };

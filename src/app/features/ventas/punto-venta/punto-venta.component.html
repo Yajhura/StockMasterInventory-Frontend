@@ -332,11 +332,38 @@
           </button>
         </header>
 
+        <!-- ============ TABS MÓVILES (Solo visible en pantallas < lg) ============ -->
+        <div class="lg:hidden flex border-b border-slate-200 bg-slate-100/90 p-1.5 gap-1.5 shrink-0">
+          <button type="button" (click)="posTabMovil.set('productos')"
+            [ngClass]="posTabMovil() === 'productos' ? 'bg-white text-blue-700 shadow-xs font-bold border-slate-200' : 'text-slate-600 hover:text-slate-900 font-medium border-transparent'"
+            class="flex-1 py-2 px-3 rounded-xl text-xs border transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span>1. Productos</span>
+            @if (detallesArray.length > 0) {
+              <span class="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800">
+                {{ detallesArray.length }}
+              </span>
+            }
+          </button>
+
+          <button type="button" (click)="posTabMovil.set('cobro')"
+            [ngClass]="posTabMovil() === 'cobro' ? 'bg-white text-blue-700 shadow-xs font-bold border-slate-200' : 'text-slate-600 hover:text-slate-900 font-medium border-transparent'"
+            class="flex-1 py-2 px-3 rounded-xl text-xs border transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            <span>2. Cobro & Pago</span>
+            @if (totalVenta() > 0) {
+              <span class="text-[11px] font-extrabold tabular-nums text-emerald-700">
+                S/ {{ totalVenta() | number:'1.0-0' }}
+              </span>
+            }
+          </button>
+        </div>
+
         <!-- ============ BODY (2 columnas) ============ -->
         <div class="flex-1 min-h-0 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200/80">
 
           <!-- ============ COLUMNA IZQUIERDA: Cliente + Productos (7 cols) ============ -->
-          <section class="lg:col-span-7 p-5 sm:p-6 space-y-5 bg-white overflow-y-auto">
+          <section [class.hidden]="posTabMovil() !== 'productos'" class="lg:block lg:col-span-7 p-4 sm:p-6 space-y-4 sm:space-y-5 bg-white overflow-y-auto">
 
             <!-- Cliente -->
             <div class="surface-card p-4 sm:p-5 hover:border-slate-300 transition-all">
@@ -356,7 +383,7 @@
                   />
                 </div>
                 <button type="button" (click)="abrirModalCliente()"
-                  class="h-11 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 hover:border-slate-400 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shadow-sm active:scale-[0.98]">
+                  class="h-11 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 hover:border-slate-400 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shadow-sm active:scale-[0.98] cursor-pointer">
                   <svg class="w-4 h-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
                   Nuevo
                 </button>
@@ -374,6 +401,11 @@
                     </span>
                   }
                 </div>
+                @if (detallesArray.length > 0) {
+                  <span class="text-xs font-bold text-slate-900 tabular-nums">
+                    Subtotal: S/ {{ totalVenta() | number:'1.2-2' }}
+                  </span>
+                }
               </div>
 
               <app-dropdown
@@ -383,68 +415,165 @@
                 (selectionChange)="onProductoSeleccionado($event)"
               />
 
-              <!-- Contenedor scrollable horizontal en móviles para el carrito -->
-              <div class="overflow-x-auto no-scrollbar -mx-2 px-2">
-                <div class="min-w-[420px] sm:min-w-0">
-                  <!-- Headers de la tabla -->
-                  @if (detallesArray.length > 0) {
-                    <div class="grid grid-cols-12 gap-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 mt-4 mb-2 px-2">
-                      <div class="col-span-5">Producto</div>
-                      <div class="col-span-2 text-center">Cant.</div>
-                      <div class="col-span-2 text-right">Precio</div>
-                      <div class="col-span-3 text-right pr-2">Subtotal</div>
-                    </div>
-                  }
-
-                  <div formArrayName="detalles" class="max-h-[300px] overflow-y-auto divide-y divide-slate-100 pr-1">
-                    @for (ctrl of detallesArray.controls; track ctrl; let i = $index) {
-                      <div [formGroupName]="i"
-                        class="grid grid-cols-12 gap-3 items-center py-2.5 px-2 hover:bg-slate-50/80 rounded-lg transition-colors group">
-                        <div class="col-span-5 min-w-0 pr-1">
-                          <p class="font-medium text-sm text-slate-800 truncate" [title]="ctrl.get('nombre')?.value">
-                            {{ ctrl.get('nombre')?.value }}
-                          </p>
-                          @if ((ctrl.get('cantidad')?.value || 0) > (ctrl.get('stockActual')?.value || 0)) {
-                            <span class="text-[11px] text-rose-600 font-bold block mt-0.5">
-                              Stock máx: {{ ctrl.get('stockActual')?.value }}
-                            </span>
-                          }
-                        </div>
-
-                        <div class="col-span-2 flex justify-center">
-                          <input type="number" min="1" formControlName="cantidad" max="2147483647"
-                            class="input-base w-16 h-8 text-center text-sm font-bold text-slate-900 tabular-nums"
-                            [ngClass]="{ 'text-rose-600 border-rose-500 focus:border-rose-600 focus:ring-rose-500/20': (ctrl.get('cantidad')?.value || 0) > (ctrl.get('stockActual')?.value || 0) }">
-                        </div>
-
-                        <div class="col-span-2 text-right text-xs text-slate-600 tabular-nums whitespace-nowrap">
-                          S/ {{ ctrl.get('precioUnitario')?.value | number:'1.2-2' }}
-                        </div>
-
-                        <div class="col-span-3 flex justify-end items-center gap-2">
-                          <div class="text-sm font-bold text-slate-900 text-right tabular-nums whitespace-nowrap">
-                            S/ {{ ((ctrl.get('cantidad')?.value || 0) * (ctrl.get('precioUnitario')?.value || 0)) | number:'1.2-2' }}
-                          </div>
-                          <button type="button" (click)="removerDetalle(i)" title="Eliminar ítem"
-                            class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors shrink-0 cursor-pointer">
-                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M18 6 6 18M6 6l12 12"/></svg>
-                          </button>
+              <!-- LISTA DE PRODUCTOS TÁCTIL EN MÓVIL (Sin tablas) -->
+              <div formArrayName="detalles" class="mt-4 space-y-3 sm:hidden max-h-[360px] overflow-y-auto pr-0.5">
+                @for (ctrl of detallesArray.controls; track ctrl; let i = $index) {
+                  <div [formGroupName]="i"
+                    class="p-3.5 bg-slate-50/90 border border-slate-200/90 rounded-2xl flex flex-col gap-2.5 transition-all shadow-2xs">
+                    <!-- Fila 1: Nombre + Subtotal -->
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="min-w-0 flex-1">
+                        <p class="font-bold text-sm text-slate-900 leading-snug truncate" [title]="ctrl.get('nombre')?.value">
+                          {{ ctrl.get('nombre')?.value }}
+                        </p>
+<div class="flex items-center gap-2 mt-1 text-xs text-slate-500 flex-wrap">
+                          <app-input-moneda
+                            formControlName="precioUnitario"
+                            containerClass="inline-flex items-center"
+                            inputClass="w-24 h-7 pl-6 pr-2 text-xs font-bold text-slate-900"
+                            ariaLabel="Precio unitario" />
+                          <span class="text-slate-400 font-medium">c/u</span>
+                          <span class="text-slate-300">·</span>
+                          <span class="inline-flex items-center gap-1 font-semibold"
+                            [class]="(ctrl.get('cantidad')?.value || 0) > (ctrl.get('stockActual')?.value || 0) ? 'text-rose-600' : 'text-slate-500'">
+                            Stock: {{ ctrl.get('stockActual')?.value }}
+                          </span>
                         </div>
                       </div>
-                    }
 
-                    @if (detallesArray.length === 0) {
-                      <div class="py-10 text-center border-2 border-dashed border-slate-200 rounded-xl mt-3 bg-slate-50/50">
-                        <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center mb-2">
-                          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-                        </div>
-                        <p class="text-sm text-slate-600 font-semibold">Aún no agregaste productos</p>
-                        <p class="text-xs text-slate-400 mt-0.5">Buscá por nombre o código en el campo de arriba</p>
+                      <div class="text-right shrink-0">
+                        <span class="text-base font-black text-slate-900 tabular-nums block">
+                          S/ {{ ((ctrl.get('cantidad')?.value || 0) * (ctrl.get('precioUnitario')?.value || 0)) | number:'1.2-2' }}
+                        </span>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Subtotal</span>
+                      </div>
+                    </div>
+
+                    <!-- Fila 2: Stepper táctil + Botón Quitar -->
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-200/60">
+                      <!-- Stepper Táctil grande -->
+                      <div class="inline-flex items-center bg-white border-2 border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                        <button type="button" (click)="decrementarCantidad(i)" [disabled]="(ctrl.get('cantidad')?.value || 1) <= 1"
+                          class="w-10 h-10 flex items-center justify-center text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-white active:scale-95 transition-all cursor-pointer">
+                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        </button>
+                        <input type="number" min="1" [max]="ctrl.get('stockActual')?.value || 2147483647"
+                          [value]="ctrl.get('cantidad')?.value"
+                          (change)="cambiarCantidadManual(i, $any($event.target).value)"
+                          class="w-12 h-10 text-center font-extrabold text-sm text-slate-900 border-x-2 border-slate-200 focus:outline-none focus:bg-blue-50/50 tabular-nums">
+                        <button type="button" (click)="incrementarCantidad(i)" [disabled]="(ctrl.get('cantidad')?.value || 0) >= (ctrl.get('stockActual')?.value || 0)"
+                          class="w-10 h-10 flex items-center justify-center text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-white active:scale-95 transition-all cursor-pointer">
+                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        </button>
+                      </div>
+
+                      <!-- Botón quitar ítem -->
+                      <button type="button" (click)="removerDetalle(i)" title="Eliminar ítem"
+                        class="px-3 py-2 text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl border border-rose-100 transition-colors flex items-center gap-1.5 cursor-pointer">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        <span>Quitar</span>
+                      </button>
+                    </div>
+
+                    @if ((ctrl.get('cantidad')?.value || 0) > (ctrl.get('stockActual')?.value || 0)) {
+                      <div class="p-2 rounded-lg bg-rose-50 text-rose-700 text-xs font-semibold flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <span>Cantidad supera el stock disponible ({{ ctrl.get('stockActual')?.value }})</span>
                       </div>
                     }
                   </div>
+                }
+              </div>
+
+              <!-- LISTA DE PRODUCTOS TIPO RENGLÓN EN ESCRITORIO (sm:block) -->
+              <div class="hidden sm:block mt-3">
+                @if (detallesArray.length > 0) {
+                  <div class="grid grid-cols-[1fr_110px_125px_145px] gap-4 text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 px-2 items-center">
+                    <div>Producto</div>
+                    <div class="text-center">Cant.</div>
+                    <div class="text-right pr-2">Precio</div>
+                    <div class="text-right pr-9">Subtotal</div>
+                  </div>
+                }
+
+                <div formArrayName="detalles" class="max-h-[300px] overflow-y-auto divide-y divide-slate-100 pr-1">
+                  @for (ctrl of detallesArray.controls; track ctrl; let i = $index) {
+                    <div [formGroupName]="i"
+                      class="grid grid-cols-[1fr_110px_125px_145px] gap-4 items-center py-2.5 px-2 hover:bg-slate-50/80 rounded-lg transition-colors group">
+                      <div class="min-w-0 pr-1">
+                        <p class="font-medium text-sm text-slate-800 truncate" [title]="ctrl.get('nombre')?.value">
+                          {{ ctrl.get('nombre')?.value }}
+                        </p>
+                        @if ((ctrl.get('cantidad')?.value || 0) > (ctrl.get('stockActual')?.value || 0)) {
+                          <span class="text-[11px] text-rose-600 font-bold block mt-0.5">
+                            Stock máx: {{ ctrl.get('stockActual')?.value }}
+                          </span>
+                        }
+                      </div>
+
+                      <div class="flex justify-center">
+                        <div class="inline-flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden shadow-2xs">
+                          <button type="button" (click)="decrementarCantidad(i)" [disabled]="(ctrl.get('cantidad')?.value || 1) <= 1"
+                            class="w-7 h-7 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 cursor-pointer">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                          </button>
+                          <input type="number" min="1" formControlName="cantidad" max="2147483647"
+                            class="w-12 h-7 text-center text-xs font-bold text-slate-900 border-x border-slate-200 focus:outline-none tabular-nums"
+                            [ngClass]="{ 'text-rose-600 border-rose-500': (ctrl.get('cantidad')?.value || 0) > (ctrl.get('stockActual')?.value || 0) }">
+                          <button type="button" (click)="incrementarCantidad(i)" [disabled]="(ctrl.get('cantidad')?.value || 0) >= (ctrl.get('stockActual')?.value || 0)"
+                            class="w-7 h-7 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-30 cursor-pointer">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div class="flex justify-end">
+                        <app-input-moneda
+                          formControlName="precioUnitario"
+                          containerClass="w-full max-w-[120px]"
+                          inputClass="w-full h-8 pl-6 pr-2.5 text-right text-xs sm:text-sm font-bold text-slate-900"
+                          ariaLabel="Precio unitario" />
+                      </div>
+
+                      <div class="flex justify-end items-center gap-2">
+                        <div class="text-sm font-bold text-slate-900 text-right tabular-nums whitespace-nowrap">
+                          S/ {{ ((ctrl.get('cantidad')?.value || 0) * (ctrl.get('precioUnitario')?.value || 0)) | number:'1.2-2' }}
+                        </div>
+                        <button type="button" (click)="removerDetalle(i)" title="Eliminar ítem"
+                          class="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors shrink-0 cursor-pointer">
+                          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                        </button>
+                      </div>
+                    </div>
+                  }
                 </div>
               </div>
+
+              @if (detallesArray.length === 0) {
+                <div class="py-10 text-center border-2 border-dashed border-slate-200 rounded-xl mt-3 bg-slate-50/50">
+                  <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center mb-2">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                  </div>
+                  <p class="text-sm text-slate-600 font-semibold">Aún no agregaste productos</p>
+                  <p class="text-xs text-slate-400 mt-0.5">Buscá por nombre o código en el campo de arriba</p>
+                </div>
+              }
+
+              <!-- Botón Móvil: Pasar a Cobro -->
+              @if (detallesArray.length > 0) {
+                <div class="lg:hidden mt-4 pt-3 border-t border-slate-200">
+                  <button type="button" (click)="posTabMovil.set('cobro')"
+                    class="w-full h-12 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/25 flex items-center justify-between px-4 transition-all cursor-pointer">
+                    <div class="flex items-center gap-2">
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                      <span>Continuar al Cobro</span>
+                    </div>
+                    <span class="text-sm font-extrabold tabular-nums bg-white/20 px-2.5 py-1 rounded-lg">
+                      S/ {{ totalVenta() | number:'1.2-2' }} →
+                    </span>
+                  </button>
+                </div>
+              }
             </div>
 
             <!-- Observaciones opcionales -->
@@ -464,7 +593,19 @@
           </section>
 
           <!-- ============ COLUMNA DERECHA: Liquidación y Forma de Pago (5 cols) ============ -->
-          <section class="lg:col-span-5 p-5 sm:p-6 space-y-5 bg-slate-50/50 overflow-y-auto">
+          <section [class.hidden]="posTabMovil() !== 'cobro'" class="lg:block lg:col-span-5 p-4 sm:p-6 space-y-4 sm:space-y-5 bg-slate-50/50 overflow-y-auto">
+
+            <!-- Botón Móvil: Volver a Productos -->
+            <div class="lg:hidden flex items-center justify-between gap-2 pb-1">
+              <button type="button" (click)="posTabMovil.set('productos')"
+                class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 py-2 px-3 rounded-xl transition-all shadow-2xs cursor-pointer">
+                <svg class="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                <span>Volver a productos ({{ detallesArray.length }})</span>
+              </button>
+              <span class="text-xs font-bold text-slate-800 tabular-nums">
+                Total: S/ {{ totalVenta() | number:'1.2-2' }}
+              </span>
+            </div>
 
             <!-- Card 1: Forma de Pago y Condiciones -->
             <div class="surface-card p-4 sm:p-5 hover:border-slate-300 transition-all space-y-4">
@@ -480,13 +621,13 @@
                 <div class="grid grid-cols-2 p-1 bg-slate-100 border border-slate-200/80 rounded-xl">
                   <button type="button" (click)="toggleEsCredito(false)"
                     [ngClass]="!esCredito() ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-500 hover:text-slate-800 font-medium'"
-                    class="py-2 text-xs rounded-lg transition-all flex items-center justify-center gap-1.5">
+                    class="py-2.5 text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                     Contado
                   </button>
                   <button type="button" (click)="toggleEsCredito(true)"
                     [ngClass]="esCredito() ? 'bg-slate-900 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-800 font-medium'"
-                    class="py-2 text-xs rounded-lg transition-all flex items-center justify-center gap-1.5">
+                    class="py-2.5 text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     Crédito
                   </button>
@@ -496,7 +637,15 @@
               <!-- CONTENIDO: CONTADO -->
               @if (!esCredito()) {
                 <div formArrayName="pagos" class="pt-1 space-y-3">
-                  <p class="text-xs font-semibold text-slate-600">Medios de pago</p>
+                  <div class="flex items-center justify-between">
+                    <p class="text-xs font-semibold text-slate-600">Medios de pago</p>
+                    @if (saldoPendiente() > 0 && pagosArray.length === 1) {
+                      <button type="button" (click)="pagosArray.at(0).patchValue({ monto: totalVenta() })"
+                        class="text-[11px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-lg transition-colors cursor-pointer">
+                        Pagar exacto (S/ {{ totalVenta() | number:'1.2-2' }})
+                      </button>
+                    }
+                  </div>
 
                   <div class="space-y-2.5">
                     @for (ctrl of pagosArray.controls; track ctrl; let i = $index) {
@@ -505,14 +654,14 @@
                           <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pago #{{ i + 1 }}</span>
                           @if (pagosArray.length > 1) {
                             <button type="button" (click)="removerPago(i)"
-                              class="text-xs text-rose-600 hover:text-rose-700 font-semibold flex items-center gap-1 transition-colors">
+                              class="text-xs text-rose-600 hover:text-rose-700 font-semibold flex items-center gap-1 transition-colors cursor-pointer">
                               <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
                               Quitar
                             </button>
                           }
                         </div>
 
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div class="relative z-20">
                             <label class="block text-[11px] font-medium text-slate-500 mb-1">Método</label>
                             <app-dropdown
@@ -523,19 +672,19 @@
                           </div>
                           <div>
                             <label class="block text-[11px] font-medium text-slate-500 mb-1">Monto recibido</label>
-                            <div class="relative">
-                              <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400 text-xs font-bold">S/</div>
-                              <input type="number" min="0" step="0.01" formControlName="monto" max="99999999999999.99"
-                                class="input-base w-full h-11 pl-8 pr-3 font-bold text-sm tabular-nums"
-                                placeholder="0.00">
-                            </div>
+                            <app-input-moneda
+                              formControlName="monto"
+                              containerClass="w-full"
+                              inputClass="input-base w-full h-11 pl-8 pr-3 font-bold text-sm"
+                              placeholder="0.00"
+                              ariaLabel="Monto recibido" />
                           </div>
                         </div>
                       </div>
                     }
 
                     <button type="button" (click)="agregarPagoVacio()"
-                      class="w-full py-2 border border-dashed border-slate-300 hover:border-slate-400 rounded-lg text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-50 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
+                      class="w-full py-2.5 border border-dashed border-slate-300 hover:border-slate-400 rounded-lg text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-50 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
                       Agregar otro medio de pago
                     </button>
@@ -549,7 +698,7 @@
                   <p class="text-xs font-semibold text-slate-600">Configuración del crédito</p>
 
                   <!-- Grilla 2x2 para campos amplios y sin solapamiento -->
-                  <div class="grid grid-cols-2 gap-3.5">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <!-- Cuotas -->
                     <div>
                       <label class="block text-xs font-bold text-slate-700 mb-1.5">
@@ -603,14 +752,14 @@
                       <label class="block text-xs font-bold text-slate-700 mb-1.5">
                         Pago inicial <span class="text-slate-400 font-normal text-[11px]">(opc.)</span>
                       </label>
-                      <div class="relative">
-                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400 text-xs font-bold">S/</div>
-                        <input type="number" min="0" step="0.01"
-                          [value]="pagoInicialCredito() || ''"
-                          (input)="pagoInicialCredito.set((+$any($event.target).value) || 0)"
-                          class="input-base w-full h-10 pl-8 pr-3 text-sm font-bold text-slate-900 tabular-nums"
-                          placeholder="0.00">
-                      </div>
+                      <app-input-moneda
+                        [ngModel]="pagoInicialCredito()"
+                        [ngModelOptions]="{ standalone: true }"
+                        (ngModelChange)="pagoInicialCredito.set($event || 0)"
+                        containerClass="w-full"
+                        inputClass="input-base w-full h-10 pl-8 pr-3 text-sm font-bold text-slate-900"
+                        placeholder="0.00"
+                        ariaLabel="Pago inicial" />
                       <p class="text-[11px] text-slate-400 mt-1">Anticipo recibido</p>
                     </div>
                   </div>
@@ -737,22 +886,36 @@
         </div>
 
         <!-- ============ FOOTER ============ -->
-        <footer class="px-6 sm:px-8 py-4 border-t border-slate-200/80 flex items-center justify-between gap-3 shrink-0 bg-white">
+        <footer class="px-4 sm:px-8 py-3.5 sm:py-4 border-t border-slate-200/80 flex items-center justify-between gap-3 shrink-0 bg-white">
           <button type="button" (click)="cerrarPOS()"
-            class="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl font-bold text-xs hover:bg-slate-50 hover:border-slate-400 transition-all shadow-sm active:scale-[0.98]">
+            class="px-4 sm:px-5 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl font-bold text-xs hover:bg-slate-50 hover:border-slate-400 transition-all shadow-sm active:scale-[0.98] cursor-pointer">
             Cancelar
           </button>
-          <button type="submit"
-            [disabled]="formVenta.invalid || procesando() || detallesArray.length === 0 || pagoExcedido() || stockExcedido() || pagoInvalido() || detalleInvalido() || (esCredito() && cantidadCuotasInvalida())"
-            class="px-7 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-blue-500/20 active:scale-[0.98]">
-            @if (procesando()) {
-              <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.22-8.56"/></svg>
-              <span>Procesando...</span>
-            } @else {
-              <span>Confirmar venta</span>
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
+
+          <div class="flex items-center gap-2">
+            <!-- Si está en móvil en el tab de productos y tiene ítems, puede ir a cobrar directamente -->
+            @if (posTabMovil() === 'productos' && detallesArray.length > 0) {
+              <button type="button" (click)="posTabMovil.set('cobro')"
+                class="lg:hidden px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20 active:scale-[0.98] cursor-pointer">
+                <span>Cobrar</span>
+                <span class="tabular-nums font-extrabold">S/ {{ totalVenta() | number:'1.2-2' }}</span>
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
             }
-          </button>
+
+            <button type="submit"
+              [class.hidden]="posTabMovil() === 'productos' && detallesArray.length > 0"
+              class="lg:flex px-5 sm:px-7 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition-all items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-blue-500/20 active:scale-[0.98] cursor-pointer"
+              [disabled]="formVenta.invalid || procesando() || detallesArray.length === 0 || pagoExcedido() || stockExcedido() || pagoInvalido() || detalleInvalido() || (esCredito() && cantidadCuotasInvalida())">
+              @if (procesando()) {
+                <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+                <span>Procesando...</span>
+              } @else {
+                <span>Confirmar venta</span>
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
+              }
+            </button>
+          </div>
         </footer>
 
       </form>
@@ -977,47 +1140,47 @@
           @if (detalleSeleccionado(); as d) {
 
             <!-- KPI Cards Horizontales -->
-            <section class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <section class="grid grid-cols-3 gap-2 sm:gap-3.5">
               <!-- Total Venta -->
-              <div class="surface-card p-4 hover:border-slate-300 transition-all">
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total venta</span>
-                  <div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <div class="surface-card p-2.5 sm:p-4 hover:border-slate-300 transition-all flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-[9px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 truncate">Total venta</span>
+                  <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-slate-100 text-slate-600 hidden sm:flex items-center justify-center">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                   </div>
                 </div>
-                <p class="text-2xl font-black text-slate-900 tabular-nums">S/ {{ d.montoTotal | number:'1.2-2' }}</p>
-                <div class="mt-2 text-[11px] text-slate-400">Importe total facturado</div>
+                <p class="text-sm sm:text-2xl font-black text-slate-900 tabular-nums">S/ {{ d.montoTotal | number:'1.2-2' }}</p>
+                <div class="mt-1 text-[10px] text-slate-400 hidden sm:block">Importe facturado</div>
               </div>
 
               <!-- Pagado -->
-              <div class="surface-card p-4 hover:border-slate-300 transition-all">
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Monto pagado</span>
-                  <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="surface-card p-2.5 sm:p-4 hover:border-slate-300 transition-all flex flex-col justify-between">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-[9px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 truncate">Pagado</span>
+                  <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-emerald-50 text-emerald-600 hidden sm:flex items-center justify-center">
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                   </div>
                 </div>
-                <p class="text-2xl font-black text-emerald-700 tabular-nums">S/ {{ (d.montoTotal - d.saldoPendiente) | number:'1.2-2' }}</p>
-                <div class="mt-2 text-[11px] text-emerald-600 font-medium">
+                <p class="text-sm sm:text-2xl font-black text-emerald-700 tabular-nums">S/ {{ (d.montoTotal - d.saldoPendiente) | number:'1.2-2' }}</p>
+                <div class="mt-1 text-[10px] text-emerald-600 font-medium hidden sm:block">
                   {{ ((d.montoTotal - d.saldoPendiente) / (d.montoTotal || 1) * 100).toFixed(0) }}% cubierto
                 </div>
               </div>
 
               <!-- Saldo Pendiente -->
-              <div class="surface-card p-4 hover:border-slate-300 transition-all"
+              <div class="surface-card p-2.5 sm:p-4 hover:border-slate-300 transition-all flex flex-col justify-between"
                 [ngClass]="d.saldoPendiente > 0 ? 'bg-rose-50/30 border-rose-100' : 'bg-emerald-50/30 border-emerald-100'">
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-[11px] font-bold uppercase tracking-wider" [ngClass]="d.saldoPendiente > 0 ? 'text-rose-700' : 'text-emerald-700'">Saldo pendiente</span>
-                  <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-[9px] sm:text-[11px] font-bold uppercase tracking-wider truncate" [ngClass]="d.saldoPendiente > 0 ? 'text-rose-700' : 'text-emerald-700'">Pendiente</span>
+                  <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full hidden sm:inline-block"
                     [ngClass]="d.saldoPendiente > 0 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'">
-                    {{ d.saldoPendiente > 0 ? 'Pendiente' : 'Completado' }}
+                    {{ d.saldoPendiente > 0 ? 'Pendiente' : 'Al día' }}
                   </span>
                 </div>
-                <p class="text-2xl font-black tabular-nums" [ngClass]="d.saldoPendiente > 0 ? 'text-rose-700' : 'text-emerald-700'">
+                <p class="text-sm sm:text-2xl font-black tabular-nums" [ngClass]="d.saldoPendiente > 0 ? 'text-rose-700' : 'text-emerald-700'">
                   S/ {{ d.saldoPendiente | number:'1.2-2' }}
                 </p>
-                <div class="mt-2 text-[11px]" [ngClass]="d.saldoPendiente > 0 ? 'text-rose-600' : 'text-emerald-600'">
+                <div class="mt-1 text-[10px] hidden sm:block" [ngClass]="d.saldoPendiente > 0 ? 'text-rose-600' : 'text-emerald-600'">
                   {{ d.saldoPendiente > 0 ? 'Deuda por cobrar' : 'Cuenta al día' }}
                 </div>
               </div>
@@ -1030,7 +1193,7 @@
               <div class="lg:col-span-7 space-y-5">
                 @if (d.esCredito) {
                   <!-- Cronograma de Cuotas -->
-                  <section class="surface-card p-5 hover:border-slate-300 transition-all">
+                  <section class="surface-card p-4 sm:p-5 hover:border-slate-300 transition-all">
                     <header class="flex items-center justify-between mb-2">
                       <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
                         <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -1045,7 +1208,56 @@
                     </p>
 
                     @if (cronogramaDetalleConVencida().length > 0) {
-                      <div class="border border-slate-200/80 rounded-xl overflow-hidden shadow-sm">
+                      <!-- MÓVIL: Tarjetas Táctiles (sm:hidden) -->
+                      <div class="sm:hidden space-y-2.5 max-h-[380px] overflow-y-auto pr-0.5">
+                        @for (c of cronogramaDetalleConVencida(); track c.id) {
+                          <div class="p-3.5 rounded-xl border border-slate-200/90 bg-white shadow-2xs"
+                            [ngClass]="{ 'bg-rose-50/30 border-rose-200': c.vencida }">
+                            <div class="flex items-center justify-between mb-2">
+                              <div class="flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-800 text-xs font-black grid place-items-center">
+                                  {{ c.numero }}
+                                </span>
+                                <span class="text-xs font-bold text-slate-900">Cuota {{ c.numero }}</span>
+                              </div>
+                              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                                [ngClass]="{
+                                  'bg-emerald-50 text-emerald-700 border border-emerald-200/60': c.estado === 'Pagada',
+                                  'bg-amber-50 text-amber-700 border border-amber-200/60': c.estado === 'Parcial',
+                                  'bg-rose-50 text-rose-700 border border-rose-200/60': c.estado === 'Vencida' || c.vencida,
+                                  'bg-slate-100 text-slate-600 border border-slate-200/60': c.estado === 'Pendiente' && !c.vencida
+                                }">
+                                {{ c.vencida && c.estado !== 'Pagada' ? 'Vencida' : c.estado }}
+                              </span>
+                            </div>
+
+                            <div class="flex items-center gap-1.5 text-[11px] text-slate-500 mb-2">
+                              <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                              <span>Vence: <strong class="text-slate-700">{{ c.fechaVencimiento | date:'dd/MM/yyyy' }}</strong></span>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-1.5 p-2 rounded-lg bg-slate-50/80 border border-slate-100 text-[11px]">
+                              <div>
+                                <span class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold block">Monto</span>
+                                <span class="font-bold text-slate-800 tabular-nums">S/ {{ c.monto | number:'1.2-2' }}</span>
+                              </div>
+                              <div>
+                                <span class="text-[9px] uppercase tracking-wider text-emerald-600 font-semibold block">Pagado</span>
+                                <span class="font-bold text-emerald-700 tabular-nums">S/ {{ c.montoPagado | number:'1.2-2' }}</span>
+                              </div>
+                              <div>
+                                <span class="text-[9px] uppercase tracking-wider text-rose-500 font-semibold block">Pendiente</span>
+                                <span class="font-bold tabular-nums" [ngClass]="c.montoPendiente > 0 ? 'text-rose-700' : 'text-slate-400'">
+                                  S/ {{ c.montoPendiente | number:'1.2-2' }}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        }
+                      </div>
+
+                      <!-- DESKTOP: Tabla (hidden sm:block) -->
+                      <div class="hidden sm:block border border-slate-200/80 rounded-xl overflow-hidden shadow-sm">
                         <div class="max-h-[380px] overflow-y-auto">
                           <table class="w-full text-left text-xs whitespace-nowrap">
                             <thead class="bg-slate-50 border-b border-slate-200/80 sticky top-0 z-10">
@@ -1099,7 +1311,7 @@
                   </section>
                 } @else {
                   <!-- Venta Contado: Productos a la izquierda -->
-                  <section class="surface-card p-5 hover:border-slate-300 transition-all">
+                  <section class="surface-card p-4 sm:p-5 hover:border-slate-300 transition-all">
                     <header class="flex items-center justify-between mb-3">
                       <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
                         <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
@@ -1108,7 +1320,27 @@
                       <span class="text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full tabular-nums">{{ d.detalles.length }} ítems</span>
                     </header>
                     @if (d.detalles.length > 0) {
-                      <div class="border border-slate-200/80 rounded-xl overflow-hidden shadow-sm">
+                      <!-- MÓVIL: Tarjetas de Producto (sm:hidden) -->
+                      <div class="sm:hidden space-y-2 max-h-[380px] overflow-y-auto pr-0.5">
+                        @for (p of d.detalles; track p.id) {
+                          <div class="p-3 rounded-xl border border-slate-200/80 bg-white shadow-2xs flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                              <p class="text-xs font-bold text-slate-900 truncate" [title]="p.productoNombre">{{ p.productoNombre }}</p>
+                              <div class="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
+                                <span class="font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 tabular-nums">Cant: {{ p.cantidad }}</span>
+                                <span class="tabular-nums">S/ {{ p.precioUnitario | number:'1.2-2' }} c/u</span>
+                              </div>
+                            </div>
+                            <div class="text-right shrink-0">
+                              <span class="text-[10px] text-slate-400 uppercase tracking-wider block">Subtotal</span>
+                              <span class="text-sm font-black text-slate-900 tabular-nums">S/ {{ p.subtotal | number:'1.2-2' }}</span>
+                            </div>
+                          </div>
+                        }
+                      </div>
+
+                      <!-- DESKTOP: Tabla (hidden sm:block) -->
+                      <div class="hidden sm:block border border-slate-200/80 rounded-xl overflow-hidden shadow-sm">
                         <div class="max-h-[380px] overflow-y-auto">
                           <table class="w-full text-left text-xs whitespace-nowrap">
                             <thead class="bg-slate-50 border-b border-slate-200/80 sticky top-0 z-10">
@@ -1145,7 +1377,7 @@
               <div class="lg:col-span-5 space-y-5">
                 @if (d.esCredito) {
                   <!-- Sección: Productos (colapsada en columna derecha para ventas a crédito) -->
-                  <section class="surface-card p-5 hover:border-slate-300 transition-all">
+                  <section class="surface-card p-4 sm:p-5 hover:border-slate-300 transition-all">
                     <header class="flex items-center justify-between mb-3">
                       <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
                         <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
@@ -1154,7 +1386,23 @@
                       <span class="text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full tabular-nums">{{ d.detalles.length }} ítems</span>
                     </header>
                     @if (d.detalles.length > 0) {
-                      <div class="border border-slate-200/80 rounded-xl overflow-hidden shadow-sm">
+                      <!-- MÓVIL: Tarjetas de Producto (sm:hidden) -->
+                      <div class="sm:hidden space-y-2 max-h-[220px] overflow-y-auto pr-0.5">
+                        @for (p of d.detalles; track p.id) {
+                          <div class="p-2.5 rounded-xl border border-slate-200/80 bg-white shadow-2xs flex items-center justify-between gap-2.5">
+                            <div class="min-w-0">
+                              <p class="text-xs font-bold text-slate-900 truncate" [title]="p.productoNombre">{{ p.productoNombre }}</p>
+                              <p class="text-[11px] text-slate-500 mt-0.5">Cant: <strong class="text-slate-700">{{ p.cantidad }}</strong></p>
+                            </div>
+                            <div class="text-right shrink-0">
+                              <span class="text-xs font-black text-slate-900 tabular-nums">S/ {{ p.subtotal | number:'1.2-2' }}</span>
+                            </div>
+                          </div>
+                        }
+                      </div>
+
+                      <!-- DESKTOP: Tabla (hidden sm:block) -->
+                      <div class="hidden sm:block border border-slate-200/80 rounded-xl overflow-hidden shadow-sm">
                         <div class="max-h-[200px] overflow-y-auto">
                           <table class="w-full text-left text-xs whitespace-nowrap">
                             <thead class="bg-slate-50 border-b border-slate-200/80 sticky top-0 z-10">
@@ -1185,7 +1433,7 @@
                 }
 
                 <!-- Sección: Abonos -->
-                <section class="surface-card p-5 hover:border-slate-300 transition-all">
+                <section class="surface-card p-4 sm:p-5 hover:border-slate-300 transition-all">
                   <header class="flex items-center justify-between mb-3">
                     <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
                       <svg class="w-4 h-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1197,7 +1445,38 @@
                   </header>
 
                   @if (d.abonos.length > 0) {
-                    <div class="border border-slate-200/80 rounded-xl overflow-hidden shadow-sm">
+                    <!-- MÓVIL: Tarjetas de Abono (sm:hidden) -->
+                    <div class="sm:hidden space-y-2 max-h-[260px] overflow-y-auto pr-0.5">
+                      @for (a of d.abonos; track a.id) {
+                        <div class="p-3 rounded-xl border transition-colors flex items-center justify-between gap-3"
+                          [ngClass]="a.estado === 'Anulado' ? 'bg-rose-50/40 border-rose-100' : 'bg-slate-50/70 border-slate-200/80'">
+                          <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0"
+                              [class.bg-rose-100]="a.estado === 'Anulado'" [class.text-rose-700]="a.estado === 'Anulado'">
+                              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            </div>
+                            <div class="min-w-0">
+                              <p class="text-xs font-bold text-slate-800 truncate">{{ a.estado === 'Anulado' ? 'Abono anulado' : 'Abono en ' + (a.metodoPagoNombre || 'Método') }}</p>
+                              <p class="text-[10px] text-slate-500 truncate">{{ a.fecha | date:'dd/MM/yyyy HH:mm' }}
+                                @if (a.observacion) {<span> · {{ a.observacion }}</span>}
+                              </p>
+                            </div>
+                          </div>
+                          <div class="text-right shrink-0">
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider block mb-0.5"
+                              [ngClass]="a.estado === 'Anulado' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'">
+                              {{ a.estado }}
+                            </span>
+                            <span class="text-xs font-bold tabular-nums" [ngClass]="a.estado === 'Anulado' ? 'text-slate-400 line-through' : 'text-emerald-700'">
+                              + S/ {{ a.monto | number:'1.2-2' }}
+                            </span>
+                          </div>
+                        </div>
+                      }
+                    </div>
+
+                    <!-- DESKTOP: Tabla (hidden sm:block) -->
+                    <div class="hidden sm:block border border-slate-200/80 rounded-xl overflow-hidden shadow-sm">
                       <div class="max-h-[250px] overflow-y-auto">
                         <table class="w-full text-left text-xs whitespace-nowrap">
                           <thead class="bg-slate-50 border-b border-slate-200/80 sticky top-0 z-10">

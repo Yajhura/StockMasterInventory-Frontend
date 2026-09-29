@@ -38,8 +38,19 @@ interface FilaHistorial {
   standalone: true,
   templateUrl: './dashboard.component.html',
   imports: [CommonModule, ReactiveFormsModule, FormsModule, ConfirmDialogComponent, DropdownComponent, RouterLink, PaginadorComponent, ...TABLA_COMPONENTS],
+  host: {
+    '(window:resize)': 'onResize()',
+  },
 })
 export class DashboardComponent implements OnInit {
+  protected readonly vistaModo = signal<'cards' | 'tabla'>('cards');
+
+  protected onResize(): void {
+    if (typeof window !== 'undefined') {
+      this.vistaModo.set(window.innerWidth < 768 ? 'cards' : 'tabla');
+    }
+  }
+
   protected readonly productos = inject(ProductosState);
   protected readonly catalogos = inject(CatalogosState);
   protected readonly kardex = inject(KardexState);
@@ -341,6 +352,8 @@ export class DashboardComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
+    this.onResize();
+
     // Sincronizar el form reactivo con los signals usados en computed.
     this.formMovimiento.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))

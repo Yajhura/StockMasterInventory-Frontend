@@ -23,6 +23,8 @@ import {
   CrearProductoPayload,
 } from '../../core/models/inventario.models';
 
+import { InputMonedaComponent } from '../../core/components/input-moneda.component';
+
 type Modo = 'crear' | 'editar';
 
 const MAX_IMAGE_MB = 2;
@@ -31,7 +33,7 @@ const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 @Component({
   selector: 'app-nuevo-producto',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, InputMonedaComponent],
   templateUrl: './nuevo-producto.component.html',
 })
 export class NuevoProductoComponent implements OnInit {

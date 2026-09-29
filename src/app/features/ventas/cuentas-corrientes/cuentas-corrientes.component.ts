@@ -12,6 +12,7 @@ import { DropdownComponent, DropdownOption } from '../../../core/components/drop
 import { ConfirmDialogComponent } from '../../../core/components/confirm-dialog.component';
 import { DateRangePickerComponent, DateRange } from '../../../core/components/date-range-picker.component';
 import { PaginadorComponent } from '../../../core/components/paginador.component';
+import { InputMonedaComponent } from '../../../core/components/input-moneda.component';
 import { TABLA_COMPONENTS } from '../../../core/components/tabla.component';
 
 interface CuotaConVencida extends Cuota {
@@ -39,6 +40,7 @@ interface CuotaAfectada {
     ConfirmDialogComponent,
     DateRangePickerComponent,
     PaginadorComponent,
+    InputMonedaComponent,
     ...TABLA_COMPONENTS
   ],
   host: {
@@ -135,13 +137,14 @@ export class CuentasCorrientesComponent implements OnInit, OnDestroy {
 
   // Modal de Abono
   protected readonly modalAbonoAbierto = signal<boolean>(false);
+  protected readonly abonoTabMovil = signal<'pago' | 'cuotas'>('pago');
   protected readonly procesandoAbono = signal<boolean>(false);
   protected readonly ventaSeleccionada = signal<Venta | null>(null);
   protected readonly detalleAbono = signal<VentaDetallada | null>(null);
   protected readonly cargandoDetalleAbono = signal<boolean>(false);
   protected readonly modoAbonoCredito = signal<ModoAbonoCredito>('otro-monto');
   protected readonly cantidadCuotasAdelantar = signal<number>(1);
-  private readonly montoAbono = signal<number>(0);
+  protected readonly montoAbono = signal<number>(0);
 
   protected readonly cuotasPendientesAbono = computed(() => (this.detalleAbono()?.cuotas ?? [])
     .filter(c => c.montoPendiente > 0)
@@ -467,6 +470,7 @@ export class CuentasCorrientesComponent implements OnInit, OnDestroy {
 
   protected abrirModalAbono(venta: Venta, detalle?: VentaDetallada) {
     this.ventaSeleccionada.set(venta);
+    this.abonoTabMovil.set('pago');
     this.detalleAbono.set(null);
     this.cantidadCuotasAdelantar.set(1);
     this.formAbono.reset({
@@ -523,12 +527,54 @@ export class CuentasCorrientesComponent implements OnInit, OnDestroy {
     this.seleccionarModoAbono('adelantar-cuotas');
   }
 
+  protected incrementarCuotasAdelantar() {
+    const max = this.cuotasPendientesAbono().length;
+    if (this.cantidadCuotasAdelantar() < max) {
+      this.cantidadCuotasAdelantar.update(c => c + 1);
+      this.seleccionarModoAbono('adelantar-cuotas');
+    }
+  }
+
+  protected decrementarCuotasAdelantar() {
+    if (this.cantidadCuotasAdelantar() > 1) {
+      this.cantidadCuotasAdelantar.update(c => c - 1);
+      this.seleccionarModoAbono('adelantar-cuotas');
+    }
+  }
+
+  protected abonarHastaCuota(numeroCuota: number) {
+    const pendientes = this.cuotasPendientesAbono();
+    const index = pendientes.findIndex(c => c.numero === numeroCuota);
+    if (index >= 0) {
+      this.cantidadCuotasAdelantar.set(index + 1);
+      this.seleccionarModoAbono('adelantar-cuotas');
+    }
+  }
+
+  protected sumarMontoAbono(adicional: number) {
+    const venta = this.ventaSeleccionada();
+    if (!venta) return;
+    const actual = Number(this.formAbono.get('monto')?.value) || 0;
+    const nuevo = Math.min(venta.saldoPendiente, Math.round((actual + adicional) * 100) / 100);
+    this.formAbono.patchValue({ monto: nuevo });
+    this.seleccionarOtroMonto();
+  }
+
+  protected fijarMontoExacto(monto: number) {
+    const venta = this.ventaSeleccionada();
+    if (!venta) return;
+    const clamp = Math.max(0.01, Math.min(venta.saldoPendiente, Math.round(monto * 100) / 100));
+    this.formAbono.patchValue({ monto: clamp });
+    this.seleccionarOtroMonto();
+  }
+
   protected seleccionarOtroMonto() {
     this.modoAbonoCredito.set('otro-monto');
   }
 
   protected cerrarModalAbono() {
     this.modalAbonoAbierto.set(false);
+    this.abonoTabMovil.set('pago');
     this.ventaSeleccionada.set(null);
     this.detalleAbono.set(null);
     this.cargandoDetalleAbono.set(false);
