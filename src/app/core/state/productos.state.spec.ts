@@ -51,6 +51,10 @@ const SAMPLE_PRODUCTO: Producto = {
   modificadoEn: null,
   modificadoPorId: null,
   modificadoPorNombre: null,
+  // DESC-12: campo nuevo del Producto interface. El literal debe
+  // incluirlo explicito para no romper el strict object-literal check
+  // de TypeScript (tsc rechaza propiedades faltantes en assignability).
+  descripcion: null,
 };
 
 const SAMPLE_MOVIMIENTO = {
@@ -145,7 +149,7 @@ describe('ProductosState', () => {
   describe('buscarProductos', () => {
     it('forwards search params to the API and stores the response', async () => {
       apiProductos.buscar.and.returnValue(of({
-        items: [{ id: 1, nombre: 'A', codigoBarra: 'cb-1', categoriaId: 1, marcaId: 1, stockActual: 10, stockMinimo: 5, precioVentaSugerido: 100, atributosCount: 0, eliminado: false, creadoEn: '', creadoPorId: null, creadoPorNombre: null, modificadoEn: null, modificadoPorId: null, modificadoPorNombre: null, imagenMime: null, imagenDataUrl: null }],
+        items: [{ id: 1, nombre: 'A', codigoBarra: 'cb-1', categoriaId: 1, marcaId: 1, stockActual: 10, stockMinimo: 5, precioVentaSugerido: 100, atributosCount: 0, eliminado: false, creadoEn: '', creadoPorId: null, creadoPorNombre: null, modificadoEn: null, modificadoPorId: null, modificadoPorNombre: null, imagenMime: null, imagenDataUrl: null, descripcion: null }],
         page: 1, size: 10, totalItems: 1, totalPages: 1, hasNext: false, hasPrevious: false,
       }));
 

@@ -74,6 +74,12 @@ export interface Producto {
   stockInicial?: number;
   stockInicialPrecioUnitario?: number;
   stockInicialObservacion?: string;
+  /**
+   * Texto libre opcional (copy de marketing, observaciones largas del
+   * proveedor, compatibilidad, presentacion). Hasta 1000 caracteres
+   * Unicode. Null si no se informo.
+   */
+  descripcion: string | null;
 }
 
 export interface CrearProductoPayload {
@@ -98,6 +104,13 @@ export interface CrearProductoPayload {
   stockInicialPrecioUnitario?: number;
   /** Observacion del movimiento inicial (proveedor, factura, etc.). */
   stockInicialObservacion?: string | null;
+  /**
+   * Texto libre opcional (copy de marketing, observaciones largas del
+   * proveedor, compatibilidad, presentacion). Hasta 1000 caracteres
+   * Unicode. Omitir o null = sin descripcion. Se hereda a
+   * ActualizarProductoPayload via extends (NO redeclarar alla).
+   */
+  descripcion?: string | null;
 }
 
 export interface ActualizarProductoPayload extends CrearProductoPayload {
@@ -190,6 +203,12 @@ export interface ProductoListItem {
   // --- Imagen (thumb) ---
   imagenMime: string | null;
   imagenDataUrl: string | null;
+  /**
+   * Texto libre opcional. Hasta 1000 caracteres Unicode. Null si no se
+   * informo al crear/editar. Presente en la lista paginada para
+   * mostrar extractos en el catalogo (PDF/Excel) sin pedir el detalle.
+   */
+  descripcion: string | null;
 }
 
 /**
