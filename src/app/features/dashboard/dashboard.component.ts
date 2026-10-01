@@ -226,6 +226,7 @@ export class DashboardComponent implements OnInit {
         modificadoPorNombre: cached.modificadoPorNombre,
         imagenMime: cached.imagenMime,
         imagenDataUrl: cached.imagenDataUrl,
+        descripcion: cached.descripcion,
       };
     }
     // Si no, lo tomamos de la lista paginada

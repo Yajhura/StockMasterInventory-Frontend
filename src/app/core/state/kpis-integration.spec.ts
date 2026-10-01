@@ -54,6 +54,10 @@ function makeProducto(id: number, stockActual: number, stockMinimo: number): Pro
     modificadoPorNombre: null,
     imagenMime: null,
     imagenDataUrl: null,
+    // DESC-12: el ProductoListItem interface ahora exige el campo
+    // (tsc strict object-literal). Los specs existentes no lo necesitan
+    // para sus asserts pero el compilador lo requiere.
+    descripcion: null,
   };
 }
 

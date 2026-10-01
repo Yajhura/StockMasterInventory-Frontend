@@ -68,6 +68,10 @@ export class NuevoProductoComponent implements OnInit {
     stockInicial: [0, [Validators.min(0)]],
     stockInicialPrecioUnitario: [0, [Validators.min(0.01)]],
     stockInicialObservacion: [''],
+    // Descripcion: opcional, hasta 1000 chars. NO required: el campo
+    // es libre; los productos existentes sin descripcion no deben
+    // obligar a un re-save.
+    descripcion: ['', [Validators.maxLength(1000)]],
   });
 
   // ---------- Imagen ----------
@@ -236,6 +240,11 @@ export class NuevoProductoComponent implements OnInit {
       stockInicial: p.stockInicial ?? 0,
       stockInicialPrecioUnitario: p.stockInicialPrecioUnitario ?? 0,
       stockInicialObservacion: p.stockInicialObservacion ?? '',
+      // patchear la descripcion actual. Sin esto, el PUT mandaria
+      // descripcion: undefined y el backend (que recibe el campo como
+      // string?) lo trataria como null -> borraria la descripcion
+      // existente al editar.
+      descripcion: p.descripcion ?? '',
     });
     this.prepararImagenYAtributosDe(p);
   }
@@ -378,6 +387,9 @@ export class NuevoProductoComponent implements OnInit {
         stockInicial: stockInicialNum,
         stockInicialPrecioUnitario: Math.max(0, Number(v.stockInicialPrecioUnitario ?? 0)),
         stockInicialObservacion: (v.stockInicialObservacion ?? '').toString().trim() || undefined,
+        // Descripcion: trim y null si queda vacio (asi no enviamos strings
+        // en blanco que disparen overwrites raros en el backend).
+        descripcion: (v.descripcion ?? '').toString().trim() || null,
       };
 
       if (this.modo() === 'editar' && this.productoId() !== null) {

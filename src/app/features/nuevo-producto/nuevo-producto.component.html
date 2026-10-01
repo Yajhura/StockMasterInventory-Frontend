@@ -47,6 +47,22 @@
               <p class="text-[11px] text-rose-600 mt-1 font-semibold">El nombre es obligatorio (1-200 caracteres).</p>
             }
           </div>
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block text-xs font-medium text-slate-700">Descripción <span class="text-slate-400 font-normal">(opcional)</span></label>
+              <span class="text-[11px] tabular-nums text-slate-400">{{ (form.get('descripcion')?.value ?? '').toString().length }} / 1000</span>
+            </div>
+            <textarea
+              formControlName="descripcion"
+              class="input-base h-auto min-h-[88px] sm:min-h-[100px] py-2 resize-none w-full text-xs sm:text-sm"
+              placeholder="Describa el producto..."
+              rows="3"
+              maxlength="1000"
+            ></textarea>
+            @if (form.get('descripcion')?.touched && form.get('descripcion')?.invalid) {
+              <p class="text-[11px] text-rose-600 mt-1 font-semibold">La descripción admite hasta 1000 caracteres.</p>
+            }
+          </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
             <div>
               <label class="block text-xs font-medium text-slate-700 mb-1.5">Marca <span class="text-slate-400 font-normal">(opcional)</span></label>

@@ -16,6 +16,8 @@ interface ProductoCatalogo {
   marca: string | null;
   categoria: string | null;
   imagenDataUrl: string | null;
+  /** Texto libre opcional. Null = sin descripcion. */
+  descripcion: string | null;
 }
 
 @Component({
@@ -89,6 +91,9 @@ export class CatalogoComponent implements OnInit {
           marca: marcaNom || null,
           categoria: catNom || null,
           imagenDataUrl: p.imagenDataUrl ?? null,
+          // Propagar descripcion del backend; sin esto, el campo
+          // desaparece silenciosamente del PDF/Excel.
+          descripcion: p.descripcion ?? null,
         };
       });
       if (this.marcaFiltro) {
