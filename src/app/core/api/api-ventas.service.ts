@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { PaginatedResponse } from '../models/inventario.models';
-import { Venta, VentaDetallada, CrearVentaPayload, CrearAbonoPayload, Abono, VentaFiltros, KpiCobranza, MetodoPago, CuotaPreview } from '../models/venta.models';
+import { Venta, VentaDetallada, CrearVentaPayload, EditarVentaPayload, CrearAbonoPayload, Abono, VentaFiltros, KpiCobranza, MetodoPago, CuotaPreview } from '../models/venta.models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiVentasService {
@@ -52,6 +52,10 @@ export class ApiVentasService {
 
   registrarVenta(payload: CrearVentaPayload): Observable<Venta> {
     return this.http.post<Venta>(this.url, payload);
+  }
+
+  editarVenta(id: number, payload: EditarVentaPayload): Observable<Venta> {
+    return this.http.put<Venta>(`${this.url}/${id}`, payload);
   }
 
   registrarAbono(ventaId: number, payload: CrearAbonoPayload): Observable<Abono> {

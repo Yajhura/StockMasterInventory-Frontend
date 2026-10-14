@@ -211,11 +211,25 @@
               </div>
             </div>
 
-            <button type="button" (click)="verDetalleVenta(v.id)"
-              class="w-full py-2.5 px-3 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-[0.98]">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-              Ver detalle de la venta
-            </button>
+            <div class="grid" [ngClass]="v.estadoPago !== 'Anulado' ? 'grid-cols-3 gap-1.5' : 'grid-cols-1'">
+              <button type="button" (click)="verDetalleVenta(v.id)"
+                class="py-2.5 px-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 transition-colors flex items-center justify-center gap-1 cursor-pointer shadow-sm active:scale-[0.98]">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                Ver
+              </button>
+              @if (v.estadoPago !== 'Anulado') {
+                <button type="button" (click)="abrirModalEdicion(v)"
+                  class="py-2.5 px-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 transition-colors flex items-center justify-center gap-1 cursor-pointer shadow-sm active:scale-[0.98]">
+                  <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                  Editar
+                </button>
+                <button type="button" (click)="solicitarAnularVenta(v)"
+                  class="py-2.5 px-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 hover:border-rose-300 transition-colors flex items-center justify-center gap-1 cursor-pointer shadow-sm active:scale-[0.98]">
+                  <svg class="w-4 h-4 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>
+                  Anular
+                </button>
+              }
+            </div>
           </div>
         }
       </div>
@@ -257,7 +271,7 @@
         <th app-th align="right">Monto Total</th>
         <th app-th align="right">Saldo Pend.</th>
         <th app-th align="center">Estado</th>
-        <th app-th align="center" extraClass="w-24">Acciones</th>
+        <th app-th align="center" extraClass="w-48">Acciones</th>
       </tr>
 
       <ng-container table-body>
@@ -281,12 +295,28 @@
               </span>
             </td>
             <td app-td align="center">
-              <button type="button" (click)="verDetalleVenta(v.id)"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 transition-colors cursor-pointer"
-                title="Ver detalle de la venta">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                Ver
-              </button>
+              <div class="flex items-center justify-center gap-1.5">
+                <button type="button" (click)="verDetalleVenta(v.id)"
+                  class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 transition-colors cursor-pointer"
+                  title="Ver detalle de la venta">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Ver
+                </button>
+                @if (v.estadoPago !== 'Anulado') {
+                  <button type="button" (click)="abrirModalEdicion(v)"
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
+                    title="Editar fecha u observación">
+                    <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                    Editar
+                  </button>
+                  <button type="button" (click)="solicitarAnularVenta(v)"
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 hover:border-rose-300 transition-colors cursor-pointer"
+                    title="Anular venta">
+                    <svg class="w-3.5 h-3.5 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>
+                    Anular
+                  </button>
+                }
+              </div>
             </td>
           </tr>
         }
@@ -365,28 +395,43 @@
           <!-- ============ COLUMNA IZQUIERDA: Cliente + Productos (7 cols) ============ -->
           <section [class.hidden]="posTabMovil() !== 'productos'" class="lg:block lg:col-span-7 p-4 sm:p-6 space-y-4 sm:space-y-5 bg-white overflow-y-auto">
 
-            <!-- Cliente -->
+            <!-- Cliente y Fecha de Venta -->
             <div class="surface-card p-4 sm:p-5 hover:border-slate-300 transition-all">
-              <div class="flex items-center gap-1.5 mb-3">
-                <label class="text-xs font-bold uppercase tracking-wider text-slate-700">Cliente</label>
-                <span class="text-rose-500 font-bold">*</span>
-              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4 items-end">
+                <div class="sm:col-span-8">
+                  <div class="flex items-center gap-1.5 mb-2">
+                    <label class="text-xs font-bold uppercase tracking-wider text-slate-700">Cliente</label>
+                    <span class="text-rose-500 font-bold">*</span>
+                  </div>
+                  <div class="flex gap-2 items-center">
+                    <div class="flex-1">
+                      <app-dropdown
+                        formControlName="clienteId"
+                        [options]="opcionesCliente()"
+                        placeholder="Buscar o seleccionar cliente..."
+                        [searchable]="true"
+                        (searchChange)="onClienteSearch($event)"
+                      />
+                    </div>
+                    <button type="button" (click)="abrirModalCliente()"
+                      class="h-11 px-3 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 hover:border-slate-400 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shadow-sm active:scale-[0.98] cursor-pointer">
+                      <svg class="w-4 h-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                      Nuevo
+                    </button>
+                  </div>
+                </div>
 
-              <div class="flex gap-2.5 items-center">
-                <div class="flex-1">
-                  <app-dropdown
-                    formControlName="clienteId"
-                    [options]="opcionesCliente()"
-                    placeholder="Buscar o seleccionar cliente..."
-                    [searchable]="true"
-                    (searchChange)="onClienteSearch($event)"
+                <div class="sm:col-span-4">
+                  <div class="flex items-center gap-1.5 mb-2">
+                    <label class="text-xs font-bold uppercase tracking-wider text-slate-700">Fecha de emisión</label>
+                    <span class="text-rose-500 font-bold">*</span>
+                  </div>
+                  <input
+                    type="date"
+                    formControlName="fecha"
+                    class="input-base w-full h-11 text-xs font-medium"
                   />
                 </div>
-                <button type="button" (click)="abrirModalCliente()"
-                  class="h-11 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 hover:border-slate-400 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shadow-sm active:scale-[0.98] cursor-pointer">
-                  <svg class="w-4 h-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-                  Nuevo
-                </button>
               </div>
             </div>
 
@@ -1122,10 +1167,26 @@
             }
           </div>
         </div>
-        <button type="button" (click)="cerrarModalDetalle()"
-          class="text-slate-400 hover:text-slate-700 transition-colors p-2 rounded-lg hover:bg-slate-100">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
-        </button>
+        <div class="flex items-center gap-2">
+          @if (detalleSeleccionado(); as d) {
+            @if (d.estadoPago !== 'Anulado') {
+              <button type="button" (click)="abrirModalEdicion(d)"
+                class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 border border-slate-300 shadow-xs cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                Editar
+              </button>
+              <button type="button" (click)="solicitarAnularVenta(d)"
+                class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 border border-rose-300 shadow-xs cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>
+                Anular
+              </button>
+            }
+          }
+          <button type="button" (click)="cerrarModalDetalle()"
+            class="text-slate-400 hover:text-slate-700 transition-colors p-2 rounded-lg hover:bg-slate-100">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
       </header>
 
       <!-- BODY scrollable -->
@@ -1540,3 +1601,102 @@
     </div>
   </div>
 }
+
+<!--
+  ============================================================================
+  MODAL EDICIÓN DE VENTA — Modificar Fecha y Observación
+  ----------------------------------------------------------------------------
+  Garantiza inmutabilidad de cuotas y abonos:
+    · No recalcula cuotas ni abonos.
+    · Valida que la fecha de la venta no sea posterior a cuotas/abonos activos.
+  ============================================================================
+-->
+@if (modalEdicionAbierto()) {
+  <div class="fixed inset-0 z-[90] bg-slate-950/40 backdrop-blur-md flex items-center justify-center p-4 anim-fade-in">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden anim-fade-in-up">
+      <!-- HEADER -->
+      <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 grid place-items-center border border-blue-100">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+              <path d="m15 5 4 4"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Editar venta #{{ ventaAEditar()?.id }}</h3>
+            <p class="text-xs text-slate-500">Modificá la fecha u observación de la venta</p>
+          </div>
+        </div>
+        <button type="button" (click)="cerrarModalEdicion()"
+          class="text-slate-400 hover:text-slate-700 p-2 rounded-lg hover:bg-slate-100 transition-colors">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- FORM -->
+      <form [formGroup]="formEdicionVenta" (ngSubmit)="guardarEdicionVenta()" class="p-6 space-y-4">
+        <!-- Fecha -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            Fecha de la venta <span class="text-rose-500">*</span>
+          </label>
+          <input
+            type="date"
+            formControlName="fecha"
+            class="input-base w-full text-xs font-medium"
+          />
+          <p class="text-[11px] text-slate-500 mt-1">
+            Por consistencia contable, no puede ser posterior a cuotas ni abonos ya registrados.
+          </p>
+        </div>
+
+        <!-- Observación -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+            Observación
+          </label>
+          <textarea
+            formControlName="observacion"
+            rows="3"
+            maxlength="500"
+            placeholder="Observación o nota interna de la venta..."
+            class="input-base w-full text-xs font-normal resize-none"
+          ></textarea>
+        </div>
+
+        <!-- ACCIONES -->
+        <div class="mt-6 flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <button type="button" (click)="cerrarModalEdicion()"
+            class="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl font-bold text-xs hover:bg-slate-50 transition-all shadow-sm active:scale-[0.98]">
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            [disabled]="formEdicionVenta.invalid || guardandoEdicion()"
+            class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-blue-500/20 active:scale-[0.98]"
+          >
+            @if (guardandoEdicion()) {
+              <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.22-8.56"/></svg>
+            } @else {
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>
+            }
+            Guardar cambios
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<app-confirm-dialog
+  [visible]="ventaAAnular() !== null"
+  [variant]="'danger'"
+  titulo="Anular venta"
+  [mensaje]="'Vas a anular la venta #' + (ventaAAnular()?.id | number:'3.0-0') + '. Esta acción revierte el inventario en Kardex y no se puede deshacer.'"
+  textoConfirmar="Anular venta"
+  textoCancelar="Cancelar"
+  [cargando]="procesandoAnulacion()"
+  (confirmar)="confirmarAnulacionVenta()"
+  (cancelar)="cancelarAnulacionVenta()"
+/>

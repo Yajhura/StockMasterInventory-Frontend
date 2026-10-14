@@ -11,13 +11,14 @@ import { ProductosState } from '../../../core/state/productos.state';
 import { ClientesStore } from '../../../core/state/clientes.store';
 import { ProductoSelectorItem } from '../../../core/models/inventario.models';
 import { Cliente, CrearClientePayload, ClienteFiltros } from '../../../core/models/cliente.models';
-import { CrearVentaPayload, PagoInicial, Venta, VentaFiltros, KpiVentas, EstadoPago, MetodoPago, CuotaPreview, VentaDetallada, Cuota } from '../../../core/models/venta.models';
+import { CrearVentaPayload, EditarVentaPayload, PagoInicial, Venta, VentaFiltros, KpiVentas, EstadoPago, MetodoPago, CuotaPreview, VentaDetallada, Cuota } from '../../../core/models/venta.models';
 import { DropdownComponent, DropdownOption } from '../../../core/components/dropdown.component';
 import { DatePickerComponent } from '../../../core/components/date-picker.component';
 import { DateRangePickerComponent, DateRange } from '../../../core/components/date-range-picker.component';
 import { PaginadorComponent } from '../../../core/components/paginador.component';
 import { InputMonedaComponent } from '../../../core/components/input-moneda.component';
 import { TABLA_COMPONENTS } from '../../../core/components/tabla.component';
+import { ConfirmDialogComponent } from '../../../core/components/confirm-dialog.component';
 
 @Component({
   selector: 'app-punto-venta',
@@ -31,6 +32,7 @@ import { TABLA_COMPONENTS } from '../../../core/components/tabla.component';
     DateRangePickerComponent,
     PaginadorComponent,
     InputMonedaComponent,
+    ConfirmDialogComponent,
     ...TABLA_COMPONENTS,
     OnlyNumbersDirective
   ],
@@ -193,6 +195,7 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
 
   protected formVenta: FormGroup = this.fb.group({
     clienteId: [null, Validators.required],
+    fecha: [new Date().toISOString().split('T')[0], Validators.required],
     observacion: ['', Validators.maxLength(500)],
     detalles: this.fb.array([], Validators.required),
     pagos: this.fb.array([])
@@ -210,6 +213,19 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
   protected readonly modalDetalleAbierto = signal<boolean>(false);
   protected readonly detalleSeleccionado = signal<VentaDetallada | null>(null);
   protected readonly cargandoDetalle = signal<boolean>(false);
+
+  // Modal Edición de Venta
+  protected readonly modalEdicionAbierto = signal<boolean>(false);
+  protected readonly ventaAEditar = signal<Venta | VentaDetallada | null>(null);
+  protected readonly guardandoEdicion = signal<boolean>(false);
+  protected formEdicionVenta: FormGroup = this.fb.group({
+    fecha: ['', Validators.required],
+    observacion: ['', Validators.maxLength(500)]
+  });
+
+  // Anulación de Venta
+  protected readonly ventaAAnular = signal<Venta | VentaDetallada | null>(null);
+  protected readonly procesandoAnulacion = signal<boolean>(false);
 
   protected readonly cronogramaDetalleConVencida = computed<(Cuota & { vencida: boolean })[]>(() => {
     const d = this.detalleSeleccionado();
@@ -515,7 +531,7 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
   protected cerrarPOS() {
     this.isPosOpen.set(false);
     this.posTabMovil.set('productos');
-    this.formVenta.reset({ clienteId: null, observacion: '' });
+    this.formVenta.reset({ clienteId: null, fecha: new Date().toISOString().split('T')[0], observacion: '' });
     this.detallesArray.clear();
     this.pagosArray.clear();
     this.agregarPagoVacio();
@@ -718,6 +734,98 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
     this.detalleSeleccionado.set(null);
   }
 
+  protected abrirModalEdicion(venta: Venta | VentaDetallada): void {
+    if (venta.estadoPago === 'Anulado') {
+      this.notify.warning('No se puede editar una venta anulada');
+      return;
+    }
+    this.ventaAEditar.set(venta);
+    const fechaIso = venta.fecha ? new Date(venta.fecha).toISOString().split('T')[0] : '';
+    const obs = (venta as any).observacion ?? '';
+    this.formEdicionVenta.reset({
+      fecha: fechaIso,
+      observacion: obs
+    });
+    this.modalEdicionAbierto.set(true);
+  }
+
+  protected cerrarModalEdicion(): void {
+    this.modalEdicionAbierto.set(false);
+    this.ventaAEditar.set(null);
+    this.formEdicionVenta.reset();
+  }
+
+  protected guardarEdicionVenta(): void {
+    if (this.formEdicionVenta.invalid) {
+      this.formEdicionVenta.markAllAsTouched();
+      return;
+    }
+
+    const venta = this.ventaAEditar();
+    if (!venta) return;
+
+    const val = this.formEdicionVenta.value;
+    const payload: EditarVentaPayload = {
+      fecha: val.fecha,
+      observacion: val.observacion ? val.observacion.toString().trim() : null
+    };
+
+    this.guardandoEdicion.set(true);
+    this.apiVentas.editarVenta(venta.id, payload).subscribe({
+      next: () => {
+        this.notify.success(`Venta #${venta.id} actualizada correctamente`);
+        this.guardandoEdicion.set(false);
+        const ventaId = venta.id;
+        this.cerrarModalEdicion();
+        if (this.modalDetalleAbierto() && this.detalleSeleccionado()?.id === ventaId) {
+          this.verDetalleVenta(ventaId);
+        }
+        this.cargarVentas();
+      },
+      error: (err) => {
+        const msg = err?.error?.detail || err?.error?.error || err?.error || 'Error al actualizar la venta';
+        this.notify.error(typeof msg === 'string' ? msg : 'Error al actualizar la venta');
+        this.guardandoEdicion.set(false);
+      }
+    });
+  }
+
+  protected solicitarAnularVenta(venta: Venta | VentaDetallada): void {
+    if (venta.estadoPago === 'Anulado') {
+      this.notify.warning('La venta ya se encuentra anulada');
+      return;
+    }
+    this.ventaAAnular.set(venta);
+  }
+
+  protected cancelarAnulacionVenta(): void {
+    if (!this.procesandoAnulacion()) {
+      this.ventaAAnular.set(null);
+    }
+  }
+
+  protected confirmarAnulacionVenta(): void {
+    const venta = this.ventaAAnular();
+    if (!venta || this.procesandoAnulacion()) return;
+
+    this.procesandoAnulacion.set(true);
+    this.apiVentas.anularVenta(venta.id).subscribe({
+      next: () => {
+        this.notify.success(`Venta #${venta.id} anulada exitosamente`);
+        this.productosState.notificarCambioStock();
+        this.ventaAAnular.set(null);
+        this.procesandoAnulacion.set(false);
+        this.cerrarModalDetalle();
+        this.cargarVentas();
+      },
+      error: (err) => {
+        const msg = err?.error?.detail || err?.error?.error || err?.error || 'Error al anular la venta';
+        this.notify.error(typeof msg === 'string' ? msg : 'Error al anular la venta');
+        this.procesandoAnulacion.set(false);
+      }
+    });
+  }
+
   protected setTipoDocumento(tipoId: number) {
     this.formCliente.patchValue({ tipoDocumentoId: tipoId });
     if (tipoId === 3) { // Sin doc
@@ -909,6 +1017,7 @@ protected readonly opcionesCliente = computed<DropdownOption[]>(() =>
 
     const payload: CrearVentaPayload = {
       clienteId: Number(value.clienteId),
+      fecha: value.fecha ? value.fecha : null,
       detalles: value.detalles.map((d: any) => ({
         productoId: Number(d.productoId),
         cantidad: Number(d.cantidad),

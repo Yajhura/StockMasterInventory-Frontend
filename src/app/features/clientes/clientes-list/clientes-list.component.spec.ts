@@ -201,4 +201,24 @@ describe('ClientesListComponent — N-2 similitud en directorio', () => {
 
     expect(verCuentaSpy).toHaveBeenCalledWith(7);
   }));
+
+  it('muestra el boton de eliminar en la tabla y llama a apiClientes.eliminar tras confirmar', fakeAsync(() => {
+    const cliente = makeClient(99, 'Carlos V');
+    (component as any).clientes.set([cliente]);
+    (component as any).vistaModo.set('tabla');
+    fixture.detectChanges();
+
+    apiClientes.eliminar.and.returnValue(of(void 0));
+    spyOn(window, 'confirm').and.returnValue(true);
+
+    const html = fixture.nativeElement as HTMLElement;
+    const botonEliminar = html.querySelector('button[title="Eliminar cliente"]') as HTMLButtonElement;
+    expect(botonEliminar).not.toBeNull('el boton de eliminar cliente debe existir en la fila de la tabla');
+
+    botonEliminar.click();
+    tick();
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(apiClientes.eliminar).toHaveBeenCalledWith(99);
+  }));
 });
