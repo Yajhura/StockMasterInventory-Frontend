@@ -48,14 +48,15 @@ describe('PuntoVentaComponent credit sales', () => {
 
   beforeEach(() => {
     apiVentas = jasmine.createSpyObj<ApiVentasService>('ApiVentasService', [
-      'listar', 'listarMetodosPago', 'previewPlan', 'registrarVenta',
+      'listar', 'listarMetodosPago', 'previewPlan', 'registrarVenta', 'editarVenta',
     ]);
     apiVentas.listar.and.returnValue(of([]));
     apiVentas.listarMetodosPago.and.returnValue(of([]));
     apiVentas.previewPlan.and.returnValue(of([]));
     apiVentas.registrarVenta.and.returnValue(of({} as Venta));
+    apiVentas.editarVenta.and.returnValue(of({} as Venta));
 
-    notification = jasmine.createSpyObj<NotificationService>('NotificationService', ['success', 'error']);
+    notification = jasmine.createSpyObj<NotificationService>('NotificationService', ['success', 'error', 'warning']);
 
     TestBed.configureTestingModule({
       imports: [PuntoVentaComponent],
@@ -420,15 +421,17 @@ describe('PuntoVentaComponent ver detalle venta modal', () => {
 
   beforeEach(() => {
     apiVentas = jasmine.createSpyObj<ApiVentasService>('ApiVentasService', [
-      'listar', 'listarMetodosPago', 'previewPlan', 'registrarVenta', 'obtener',
+      'listar', 'listarMetodosPago', 'previewPlan', 'registrarVenta', 'editarVenta', 'obtener', 'anularVenta',
     ]);
     apiVentas.listar.and.returnValue(of([]));
     apiVentas.listarMetodosPago.and.returnValue(of([]));
     apiVentas.previewPlan.and.returnValue(of([]));
     apiVentas.registrarVenta.and.returnValue(of({} as Venta));
+    apiVentas.editarVenta.and.returnValue(of({} as Venta));
     apiVentas.obtener.and.returnValue(of(detalleMock));
+    apiVentas.anularVenta.and.returnValue(of(void 0 as any));
 
-    notification = jasmine.createSpyObj<NotificationService>('NotificationService', ['success', 'error']);
+    notification = jasmine.createSpyObj<NotificationService>('NotificationService', ['success', 'error', 'warning']);
 
     TestBed.configureTestingModule({
       imports: [PuntoVentaComponent],
@@ -500,7 +503,170 @@ describe('PuntoVentaComponent ver detalle venta modal', () => {
     expect(instance.modalDetalleAbierto()).toBeFalse();
     expect(instance.detalleSeleccionado()).toBeNull(
       'importante: el detalle se descarta para evitar leaks entre ventas');
-    // cargandoDetalle no se toca en cerrarModalDetalle (es exclusiva del
-    // handler de fetch). Si cambia el contrato, este test lo va a marcar.
+  });
+
+  it('formVenta inicializa con fecha de hoy y procesarVenta la envia en el payload', () => {
+    const instance = component as any;
+    const hoyStr = new Date().toISOString().split('T')[0];
+    expect(instance.formVenta.get('fecha')?.value).toBe(hoyStr);
+
+    instance.formVenta.patchValue({
+      clienteId: 7,
+      fecha: '2026-10-10'
+    });
+    instance.productos.set([{ id: 1, nombre: 'P1', codigoBarra: null, stockActual: 10, stockMinimo: 1, precioVentaSugerido: 50 }]);
+    instance.onProductoSeleccionado(1);
+    instance.pagosArray.at(0).patchValue({ monto: 50, metodoPagoId: 1 });
+
+    instance.procesarVenta();
+
+    expect(apiVentas.registrarVenta).toHaveBeenCalledWith(jasmine.objectContaining({
+      clienteId: 7,
+      fecha: '2026-10-10'
+    }));
+  });
+
+  it('abrirModalEdicion abre modal y precarga fecha y observacion', () => {
+    const instance = component as any;
+    const ventaMock: any = {
+      id: 55,
+      fecha: '2026-10-12T10:00:00Z',
+      observacion: 'Nota inicial',
+      estadoPago: 'Pendiente'
+    };
+
+    instance.abrirModalEdicion(ventaMock);
+
+    expect(instance.modalEdicionAbierto()).toBeTrue();
+    expect(instance.ventaAEditar()).toBe(ventaMock);
+    expect(instance.formEdicionVenta.get('fecha')?.value).toBe('2026-10-12');
+    expect(instance.formEdicionVenta.get('observacion')?.value).toBe('Nota inicial');
+  });
+
+  it('abrirModalEdicion con venta anulada emite warning y no abre modal', () => {
+    const instance = component as any;
+    const ventaAnulada: any = {
+      id: 56,
+      fecha: '2026-10-12T10:00:00Z',
+      estadoPago: 'Anulado'
+    };
+
+    instance.abrirModalEdicion(ventaAnulada);
+
+    expect(instance.modalEdicionAbierto()).toBeFalse();
+    expect(notification.warning).toHaveBeenCalledWith('No se puede editar una venta anulada');
+  });
+
+  it('guardarEdicionVenta llama a apiVentas.editarVenta, notifica y cierra modal', () => {
+    const instance = component as any;
+    const ventaMock: any = {
+      id: 55,
+      fecha: '2026-10-12T10:00:00Z',
+      observacion: '',
+      estadoPago: 'Pendiente'
+    };
+
+    instance.abrirModalEdicion(ventaMock);
+    instance.formEdicionVenta.patchValue({
+      fecha: '2026-10-11',
+      observacion: 'Nota corregida'
+    });
+
+    instance.guardarEdicionVenta();
+
+    expect(apiVentas.editarVenta).toHaveBeenCalledWith(55, {
+      fecha: '2026-10-11',
+      observacion: 'Nota corregida'
+    });
+    expect(notification.success).toHaveBeenCalledWith('Venta #55 actualizada correctamente');
+    expect(instance.modalEdicionAbierto()).toBeFalse();
+  });
+
+  it('guardarEdicionVenta con error del backend muestra notificacion y deja modal abierto', () => {
+    const instance = component as any;
+    const ventaMock: any = {
+      id: 55,
+      fecha: '2026-10-12T10:00:00Z',
+      estadoPago: 'Pendiente'
+    };
+
+    apiVentas.editarVenta.and.returnValue(
+      throwError(() => ({
+        error: { detail: 'La fecha no puede ser posterior a las cuotas.' }
+      }))
+    );
+
+    instance.abrirModalEdicion(ventaMock);
+    instance.formEdicionVenta.patchValue({
+      fecha: '2026-10-25'
+    });
+
+    instance.guardarEdicionVenta();
+
+    expect(notification.error).toHaveBeenCalledWith('La fecha no puede ser posterior a las cuotas.');
+    expect(instance.modalEdicionAbierto()).toBeTrue();
+    expect(instance.guardandoEdicion()).toBeFalse();
+  });
+
+  describe('Anulación de ventas', () => {
+    it('solicitarAnularVenta fija ventaAAnular cuando la venta no está anulada', () => {
+      const instance = component as any;
+      const venta: any = { id: 77, estadoPago: 'Pendiente' };
+
+      instance.solicitarAnularVenta(venta);
+
+      expect(instance.ventaAAnular()).toEqual(venta);
+    });
+
+    it('solicitarAnularVenta emite advertencia si la venta ya está anulada', () => {
+      const instance = component as any;
+      const venta: any = { id: 78, estadoPago: 'Anulado' };
+
+      instance.solicitarAnularVenta(venta);
+
+      expect(instance.ventaAAnular()).toBeNull();
+      expect(notification.warning).toHaveBeenCalledWith('La venta ya se encuentra anulada');
+    });
+
+    it('cancelarAnulacionVenta resetea ventaAAnular si no está procesando', () => {
+      const instance = component as any;
+      instance.ventaAAnular.set({ id: 77, estadoPago: 'Pendiente' });
+
+      instance.cancelarAnulacionVenta();
+
+      expect(instance.ventaAAnular()).toBeNull();
+    });
+
+    it('confirmarAnulacionVenta exitoso llama apiVentas.anularVenta, notifica stock, éxito y recarga', () => {
+      const instance = component as any;
+      const venta: any = { id: 77, estadoPago: 'Pendiente' };
+      instance.ventaAAnular.set(venta);
+      instance.modalDetalleAbierto.set(true);
+      instance.detalleSeleccionado.set({ id: 77 } as any);
+
+      spyOn(instance, 'cargarVentas');
+
+      instance.confirmarAnulacionVenta();
+
+      expect(apiVentas.anularVenta).toHaveBeenCalledWith(77);
+      expect(notification.success).toHaveBeenCalledWith('Venta #77 anulada exitosamente');
+      expect(instance.ventaAAnular()).toBeNull();
+      expect(instance.modalDetalleAbierto()).toBeFalse();
+      expect(instance.cargarVentas).toHaveBeenCalled();
+    });
+
+    it('confirmarAnulacionVenta con error del backend muestra error y libera procesando', () => {
+      const instance = component as any;
+      const venta: any = { id: 77, estadoPago: 'Pendiente' };
+      instance.ventaAAnular.set(venta);
+      apiVentas.anularVenta.and.returnValue(
+        throwError(() => ({ error: { detail: 'No se puede anular porque tiene abonos activos.' } }))
+      );
+
+      instance.confirmarAnulacionVenta();
+
+      expect(notification.error).toHaveBeenCalledWith('No se puede anular porque tiene abonos activos.');
+      expect(instance.procesandoAnulacion()).toBeFalse();
+    });
   });
 });

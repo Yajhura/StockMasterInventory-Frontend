@@ -65,12 +65,18 @@ export interface PagoInicial {
 
 export interface CrearVentaPayload {
   clienteId: number;
+  fecha?: string | null;
   detalles: CrearVentaDetalle[];
   pagos: PagoInicial[];
   observacion: string | null;
   cantidadCuotas: number | null;
   frecuencia: string | null;
   fechaInicioCredito: string | null;
+}
+
+export interface EditarVentaPayload {
+  fecha: string;
+  observacion?: string | null;
 }
 
 export interface CrearAbonoPayload {

@@ -214,4 +214,16 @@ describe('ApiVentasService (REQ-TEST-004)', () => {
     expect(req.request.body).toBeNull();
     req.flush(null, { status: 204, statusText: 'No Content' });
   });
+
+  it('put_editar_venta_sends_payload_to_api_ventas_id', () => {
+    const editPayload = { fecha: '2026-10-10', observacion: 'Venta actualizada' };
+    service.editarVenta(99, editPayload).subscribe((res) => {
+      expect(res).toEqual(mockVenta);
+    });
+
+    const req = httpTesting.expectOne(`${API_VENTAS}/99`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual(editPayload);
+    req.flush(mockVenta);
+  });
 });
